@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Connexion Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',sans-serif;
+  background:#0D0D0D;
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.2) 0%,transparent 70%);
+  pointer-events:none
+}
+.box{
+  background:#141420;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:24px;
+  padding:52px 44px;
+  width:100%;max-width:400px;
+  position:relative;z-index:1;
+  box-shadow:0 32px 64px rgba(0,0,0,0.4)
+}
+.logo{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:2rem;
+  color:white;text-align:center;margin-bottom:6px
+}
+.logo span{color:#1A3CFF}
+.subtitle{
+  text-align:center;color:rgba(255,255,255,0.3);
+  font-size:0.82rem;margin-bottom:40px;
+  letter-spacing:0.05em;text-transform:uppercase
+}
+.field{margin-bottom:16px}
+label{
+  display:block;font-size:0.75rem;font-weight:600;
+  color:rgba(255,255,255,0.35);letter-spacing:0.1em;
+  text-transform:uppercase;margin-bottom:8px
+}
+input{
+  width:100%;padding:13px 16px;
+  background:rgba(255,255,255,0.05);
+  border:1.5px solid rgba(255,255,255,0.1);
+  border-radius:10px;color:white;
+  font-size:0.92rem;font-family:'Inter',sans-serif;
+  outline:none;transition:border-color .2s
+}
+input:focus{border-color:#1A3CFF}
+input::placeholder{color:rgba(255,255,255,0.2)}
+.btn-login{
+  width:100%;padding:14px;
+  background:#1A3CFF;color:white;
+  border:none;border-radius:10px;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:0.95rem;
+  cursor:pointer;margin-top:8px;
+  transition:all .2s;letter-spacing:0.02em
+}
+.btn-login:hover{background:#1430e0;transform:translateY(-1px)}
+.btn-login:active{transform:translateY(0)}
+.error{
+  background:rgba(255,68,68,0.1);
+  border:1px solid rgba(255,68,68,0.3);
+  color:#ff7070;border-radius:8px;
+  padding:10px 14px;font-size:0.83rem;
+  margin-top:14px;display:none;text-align:center
+}
+.back{
+  text-align:center;margin-top:24px;
+  font-size:0.82rem;color:rgba(255,255,255,0.2)
+}
+.back a{color:rgba(255,255,255,0.4);text-decoration:none}
+.back a:hover{color:white}
+.loading{opacity:0.6;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">Flin<span>pay</span></div>
+  <div class="subtitle">Panneau d'administration</div>
+
+  <div class="field">
+    <label>Identifiant</label>
+    <input type="text" id="username" placeholder="admin" autocomplete="username">
+  </div>
+  <div class="field">
+    <label>Mot de passe</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter') doLogin()">
+  </div>
+  <button class="btn-login" id="btn-login" onclick="doLogin()">
+    Se connecter →
+  </button>
+  <div class="error" id="error-msg"></div>
+  <div class="back"><a href="/">← Retour au site</a></div>
+</div>
+
+<script>
+async function doLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btn-login');
+  const err = document.getElementById('error-msg');
+
+  if (!username || !password) {
+    showError('Veuillez remplir tous les champs');
+    return;
+  }
+
+  btn.textContent = 'Connexion...';
+  btn.classList.add('loading');
+  err.style.display = 'none';
+
+  try {
+    const r = await fetch('/admin/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password})
+    });
+    const data = await r.json();
+    if (data.ok) {
+      window.location.href = '/admin';
+    } else {
+      showError(data.error || 'Identifiants incorrects');
+    }
+  } catch(e) {
+    showError('Erreur de connexion. Réessayez.');
+  }
+
+  btn.textContent = 'Se connecter →';
+  btn.classList.remove('loading');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

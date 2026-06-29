@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ cfg.get('hero_title', 'Flinpay') }} — Paiements sans frontières</title>
+<meta name="description" content="{{ cfg.get('hero_subtitle', 'Agrégateur de paiement mobile en Afrique') }}">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;
+  --black:#0D0D0D;--white:#fff;--bg:#F5F6FA;
+  --text:#1A1A2E;--muted:#8A8FA8
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--white);color:var(--text);overflow-x:hidden}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
+
+/* ANNOUNCEMENT */
+.announce{
+  background:var(--blue);color:white;
+  text-align:center;padding:10px 20px;
+  font-size:0.85rem;font-weight:500
+}
+
+/* NAV */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(255,255,255,0.93);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid #E8EAF0;
+  padding:0 6%;height:68px;
+  display:flex;align-items:center;justify-content:space-between
+}
+.nav-logo{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:1.5rem;
+  color:var(--black);text-decoration:none
+}
+.nav-logo span{color:var(--blue)}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{
+  text-decoration:none;color:var(--muted);
+  font-size:0.9rem;font-weight:500;transition:color .2s
+}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:flex;gap:10px}
+.btn{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:0.88rem;
+  padding:10px 22px;border-radius:10px;
+  border:none;cursor:pointer;
+  text-decoration:none;display:inline-block;
+  transition:all .2s
+}
+.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
+.btn-outline:hover{background:var(--blue);color:white}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:#1430e0;transform:translateY(-1px)}
+.btn-gold{background:var(--gold);color:var(--black)}
+.btn-gold:hover{background:#e6a200}
+.btn-lg{padding:15px 34px;font-size:1rem;border-radius:12px}
+
+/* HERO */
+.hero{
+  min-height:93vh;background:var(--black);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;padding:80px 6%;
+  position:relative;overflow:hidden
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 55% at 50% 0%,rgba(26,60,255,0.22) 0%,transparent 70%)
+}
+.hero::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 50% 40% at 85% 100%,rgba(0,196,140,0.1) 0%,transparent 60%)
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(26,60,255,0.15);
+  border:1px solid rgba(26,60,255,0.3);
+  color:#7B9FFF;border-radius:50px;
+  padding:6px 18px;font-size:0.78rem;
+  font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;margin-bottom:30px;
+  position:relative;z-index:1
+}
+.hero h1{
+  font-size:clamp(2.8rem,6vw,5.5rem);
+  font-weight:800;color:white;
+  line-height:1.05;letter-spacing:-0.03em;
+  max-width:950px;margin-bottom:24px;
+  position:relative;z-index:1
+}
+.hero h1 .accent{
+  background:linear-gradient(135deg,var(--blue),var(--green));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text
+}
+.hero p{
+  font-size:1.12rem;color:rgba(255,255,255,0.58);
+  max-width:600px;line-height:1.75;
+  margin-bottom:44px;position:relative;z-index:1
+}
+.hero-btns{
+  display:flex;gap:14px;flex-wrap:wrap;
+  justify-content:center;position:relative;z-index:1
+}
+.hero-arrows{
+  display:flex;align-items:center;gap:16px;
+  margin-bottom:52px;position:relative;z-index:1
+}
+.arrow-track{display:flex;align-items:center;gap:0}
+.arrow-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.arrow-line{height:2px;width:90px}
+.arrow-tip-r{
+  width:0;height:0;border-style:solid;
+  border-width:5px 0 5px 9px;
+  border-color:transparent transparent transparent
+}
+.arrow-tip-l{
+  width:0;height:0;border-style:solid;
+  border-width:5px 9px 5px 0;
+  border-color:transparent
+}
+
+/* COUNTRIES BAND */
+.countries-band{
+  background:#0A0A18;
+  padding:22px 6%;overflow:hidden;
+  border-top:1px solid rgba(255,255,255,0.05);
+  border-bottom:1px solid rgba(255,255,255,0.05)
+}
+.countries-scroll{
+  display:flex;gap:32px;
+  animation:scroll 25s linear infinite;
+  width:max-content
+}
+.countries-scroll:hover{animation-play-state:paused}
+.country-pill{
+  display:flex;align-items:center;gap:8px;
+  color:rgba(255,255,255,0.45);font-size:0.85rem;
+  white-space:nowrap;font-weight:500
+}
+.country-pill span:first-child{font-size:1.2rem}
+@keyframes scroll{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}
+
+/* STATS */
+.stats-section{
+  background:var(--black);
+  padding:50px 6%;
+  border-bottom:1px solid rgba(255,255,255,0.05)
+}
+.stats-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  max-width:900px;margin:0 auto
+}
+.stat-item{
+  text-align:center;padding:20px;
+  border-right:1px solid rgba(255,255,255,0.07)
+}
+.stat-item:last-child{border-right:none}
+.stat-icon{font-size:1.6rem;margin-bottom:10px}
+.stat-value{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:2.2rem;
+  color:white;letter-spacing:-0.02em
+}
+.stat-label{
+  font-size:0.8rem;color:rgba(255,255,255,0.38);
+  margin-top:5px
+}
+
+/* SECTION BASE */
+section{padding:96px 6%}
+.section-eyebrow{
+  font-size:0.73rem;font-weight:700;
+  letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--blue);margin-bottom:14px
+}
+.section-title{
+  font-size:clamp(1.8rem,3.5vw,2.8rem);
+  font-weight:800;letter-spacing:-0.02em;
+  margin-bottom:16px;line-height:1.12
+}
+.section-sub{
+  font-size:1rem;color:var(--muted);
+  max-width:520px;line-height:1.75
+}
+.section-header{margin-bottom:60px}
+.centered{text-align:center}
+.centered .section-sub{margin:0 auto}
+
+/* FEATURES */
+.features-section{background:var(--bg)}
+.features-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:22px;max-width:1100px;margin:0 auto
+}
+.feature-card{
+  background:white;border-radius:18px;
+  padding:34px;border:1px solid #E8EAF0;
+  transition:all .25s;position:relative;overflow:hidden
+}
+.feature-card::after{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:3px;
+  background:var(--card-color,var(--blue));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .35s
+}
+.feature-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 20px 44px rgba(0,0,0,0.09)
+}
+.feature-card:hover::after{transform:scaleX(1)}
+.feature-icon{
+  width:54px;height:54px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;margin-bottom:20px
+}
+.feature-card h3{
+  font-size:1.05rem;font-weight:700;margin-bottom:10px
+}
+.feature-card p{
+  font-size:0.875rem;color:var(--muted);line-height:1.65
+}
+
+/* HOW */
+.how-section{background:white}
+.steps-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:0;max-width:1000px;margin:0 auto;
+  position:relative
+}
+.steps-grid::before{
+  content:'';position:absolute;
+  top:32px;left:12%;right:12%;height:2px;
+  background:linear-gradient(to right,var(--blue),var(--green));
+  z-index:0
+}
+.step{text-align:center;padding:0 16px;position:relative;z-index:1}
+.step-num{
+  width:64px;height:64px;border-radius:50%;
+  background:white;border:3px solid var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:1.2rem;color:var(--blue);
+  margin:0 auto 22px
+}
+.step h4{font-size:0.95rem;font-weight:700;margin-bottom:8px}
+.step p{font-size:0.82rem;color:var(--muted);line-height:1.6}
+
+/* PRICING */
+.pricing-section{background:var(--bg)}
+.pricing-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:22px;max-width:1020px;margin:0 auto;align-items:start
+}
+.pricing-card{
+  background:white;border-radius:22px;
+  padding:38px 32px;border:2px solid #E8EAF0;
+  transition:all .25s;position:relative
+}
+.pricing-card.popular{
+  border-color:var(--blue);
+  transform:translateY(-10px);
+  box-shadow:0 28px 56px rgba(26,60,255,0.15)
+}
+.popular-badge{
+  position:absolute;top:-15px;left:50%;
+  transform:translateX(-50%);
+  background:var(--blue);color:white;
+  font-size:0.7rem;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  padding:5px 18px;border-radius:50px
+}
+.plan-name{
+  font-size:0.78rem;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px
+}
+.plan-price{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:2.4rem;
+  letter-spacing:-0.02em;color:var(--text)
+}
+.plan-period{font-size:0.9rem;color:var(--muted);font-weight:400}
+.plan-desc{
+  font-size:0.85rem;color:var(--muted);
+  margin:12px 0 26px;line-height:1.6
+}
+.plan-features{list-style:none;margin-bottom:30px}
+.plan-features li{
+  font-size:0.85rem;padding:9px 0;
+  border-bottom:1px solid #F0F2F7;
+  display:flex;align-items:center;gap:10px
+}
+.plan-features li::before{
+  content:'✓';color:var(--green);
+  font-weight:800;flex-shrink:0
+}
+.plan-features li:last-child{border-bottom:none}
+.plan-btn{
+  display:block;width:100%;text-align:center;
+  padding:13px;border-radius:10px;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:0.9rem;
+  text-decoration:none;transition:all .2s;border:none;cursor:pointer
+}
+
+/* TESTIMONIALS */
+.testimonials-section{background:white}
+.testi-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:22px;max-width:1100px;margin:0 auto
+}
+.testi-card{
+  background:var(--bg);border-radius:18px;
+  padding:30px;border:1px solid #E8EAF0
+}
+.testi-quote{
+  font-size:0.92rem;color:var(--text);
+  line-height:1.75;margin-bottom:22px;
+  font-style:italic
+}
+.testi-author{display:flex;align-items:center;gap:12px}
+.author-av{
+  width:44px;height:44px;border-radius:50%;
+  background:var(--blue);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:1.1rem;flex-shrink:0
+}
+.author-name{font-weight:700;font-size:0.9rem}
+.author-role{font-size:0.78rem;color:var(--muted);margin-top:2px}
+
+/* COUNTRIES SECTION */
+.countries-section{background:var(--bg)}
+.countries-grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:16px;max-width:1000px;margin:0 auto
+}
+.country-card{
+  background:white;border-radius:14px;
+  padding:20px 14px;text-align:center;
+  border:1px solid #E8EAF0;transition:all .2s
+}
+.country-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 24px rgba(0,0,0,0.08);
+  border-color:var(--blue)
+}
+.country-flag{font-size:2rem;margin-bottom:8px}
+.country-name{font-size:0.78rem;font-weight:600;color:var(--text)}
+.country-currency{font-size:0.7rem;color:var(--muted);margin-top:2px}
+
+/* CTA */
+.cta-section{
+  background:var(--black);padding:110px 6%;
+  text-align:center;position:relative;overflow:hidden
+}
+.cta-section::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(26,60,255,0.18) 0%,transparent 70%)
+}
+.cta-section h2{
+  font-size:clamp(2rem,4vw,3.5rem);
+  color:white;font-weight:800;
+  letter-spacing:-0.02em;margin-bottom:20px;
+  position:relative
+}
+.cta-section p{
+  color:rgba(255,255,255,0.45);font-size:1rem;
+  margin-bottom:38px;position:relative
+}
+.cta-btns{
+  display:flex;gap:14px;justify-content:center;
+  flex-wrap:wrap;position:relative
+}
+
+/* FOOTER */
+footer{
+  background:#07070F;padding:56px 6% 32px;
+  border-top:1px solid rgba(255,255,255,0.05)
+}
+.footer-grid{
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:40px;margin-bottom:48px
+}
+.footer-logo{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:1.5rem;color:white;
+  text-decoration:none;display:inline-block;margin-bottom:12px
+}
+.footer-logo span{color:var(--blue)}
+.footer-tagline{
+  font-size:0.85rem;color:rgba(255,255,255,0.25);
+  line-height:1.6;max-width:240px
+}
+.footer-col h4{
+  font-size:0.72rem;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(255,255,255,0.25);margin-bottom:16px
+}
+.footer-col ul{list-style:none}
+.footer-col li{margin-bottom:10px}
+.footer-col a{
+  color:rgba(255,255,255,0.45);font-size:0.87rem;
+  text-decoration:none;transition:color .2s
+}
+.footer-col a:hover{color:white}
+.footer-bottom{
+  border-top:1px solid rgba(255,255,255,0.05);
+  padding-top:24px;
+  display:flex;justify-content:space-between;
+  align-items:center;flex-wrap:wrap;gap:12px
+}
+.footer-copy{font-size:0.8rem;color:rgba(255,255,255,0.2)}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  .nav-links{display:none}
+  .features-grid,.pricing-grid,.testi-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .steps-grid{grid-template-columns:repeat(2,1fr)}
+  .steps-grid::before{display:none}
+  .countries-grid{grid-template-columns:repeat(3,1fr)}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .pricing-card.popular{transform:none}
+}
+@media(max-width:520px){
+  .hero-btns,.cta-btns{flex-direction:column;align-items:center}
+  .countries-grid{grid-template-columns:repeat(2,1fr)}
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Announcement -->
+{% if cfg.get('announcement_bar') %}
+<div class="announce">✨ {{ cfg.get('announcement_bar') }}</div>
+{% endif %}
+
+<!-- Nav -->
+<nav>
+  <a href="/" class="nav-logo">Flin<span>pay</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Fonctionnalités</a></li>
+    <li><a href="#how">Intégration</a></li>
+    <li><a href="#pricing">Tarifs</a></li>
+    <li><a href="#countries">Pays</a></li>
+    <li><a href="#testimonials">Avis</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="/docs" class="btn btn-outline">Documentation</a>
+    <a href="#pricing" class="btn btn-primary">Commencer</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-arrows">
+    <div class="arrow-track">
+      <div class="arrow-dot" style="background:#1A3CFF"></div>
+      <div class="arrow-line" style="background:linear-gradient(to right,#1A3CFF,rgba(26,60,255,0.2))"></div>
+      <div class="arrow-tip-r" style="border-left-color:#1A3CFF"></div>
+    </div>
+    <div style="width:24px"></div>
+    <div class="arrow-track" style="flex-direction:row-reverse">
+      <div class="arrow-dot" style="background:#FFB400"></div>
+      <div class="arrow-line" style="background:linear-gradient(to left,#FFB400,rgba(255,180,0,0.2))"></div>
+      <div class="arrow-tip-l" style="border-right-color:#FFB400"></div>
+    </div>
+  </div>
+
+  <div class="hero-badge">🌍 Agrégateur de paiement africain</div>
+
+  <h1>
+    {{ cfg.get('hero_title', 'Paiements sans').rsplit(' ', 1)[0] }}
+    <span class="accent">{{ cfg.get('hero_title', 'Paiements sans frontières.').rsplit(' ', 1)[-1] }}</span>
+  </h1>
+
+  <p>{{ cfg.get('hero_subtitle', 'Une seule API pour tous les opérateurs mobile money en Afrique.') }}</p>
+
+  <div class="hero-btns">
+    <a href="#pricing" class="btn btn-primary btn-lg">
+      {{ cfg.get('hero_cta_primary', 'Commencer gratuitement') }}
+    </a>
+    <a href="/docs" class="btn btn-lg" style="border:2px solid rgba(255,255,255,0.25);color:white;background:transparent">
+      {{ cfg.get('hero_cta_secondary', 'Voir la documentation') }}
+    </a>
+  </div>
+</section>
+
+<!-- Countries scrolling band -->
+<div class="countries-band">
+  <div class="countries-scroll">
+    {% for c in countries * 3 %}
+    <div class="country-pill">
+      <span>{{ c.flag }}</span>
+      <span>{{ c.name }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-section">
+  <div class="stats-grid">
+    {% for s in stats %}
+    <div class="stat-item">
+      <div class="stat-icon">{{ s.icon or '' }}</div>
+      <div class="stat-value">{{ s.value }}</div>
+      <div class="stat-label">{{ s.label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Features -->
+<section class="features-section" id="features">
+  <div class="section-header centered">
+    <div class="section-eyebrow">Fonctionnalités</div>
+    <h2 class="section-title">Tout ce dont vous avez besoin</h2>
+    <p class="section-sub">Une plateforme complète pour accepter, envoyer et gérer les paiements mobiles en Afrique.</p>
+  </div>
+  <div class="features-grid">
+    {% for f in features %}
+    <div class="feature-card" style="--card-color:{{ f.color or '#1A3CFF' }}">
+      <div class="feature-icon" style="background:{{ f.color or '#1A3CFF' }}18">
+        {{ f.icon or '⚡' }}
+      </div>
+      <h3>{{ f.title }}</h3>
+      <p>{{ f.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how-section" id="how">
+  <div class="section-header centered">
+    <div class="section-eyebrow">Intégration</div>
+    <h2 class="section-title">Opérationnel en 4 étapes</h2>
+    <p class="section-sub">De l'inscription au premier paiement reçu en moins d'une journée.</p>
+  </div>
+  <div class="steps-grid">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h4>Créez un compte</h4>
+      <p>Inscription gratuite en 2 minutes, sans document requis.</p>
+    </div>
+    <div class="step">
+      <div class="step-num" style="border-color:var(--gold);color:var(--gold)">2</div>
+      <h4>Obtenez votre clé API</h4>
+      <p>Générez votre clé depuis le dashboard et déclarez votre IP.</p>
+    </div>
+    <div class="step">
+      <div class="step-num" style="border-color:var(--green);color:var(--green)">3</div>
+      <h4>Intégrez l'API</h4>
+      <p>Un seul endpoint POST. Compatible Python, JS, PHP, et plus.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h4>Recevez les paiements</h4>
+      <p>Webhook automatique à chaque transaction confirmée.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing-section" id="pricing">
+  <div class="section-header centered">
+    <div class="section-eyebrow">Tarifs</div>
+    <h2 class="section-title">Simple et transparent</h2>
+    <p class="section-sub">Commencez gratuitement, évoluez selon votre croissance.</p>
+  </div>
+  <div class="pricing-grid">
+    {% for p in plans %}
+    {% set feats = p.features | tojson | safe %}
+    <div class="pricing-card {% if p.is_popular %}popular{% endif %}">
+      {% if p.is_popular %}<div class="popular-badge">⭐ Populaire</div>{% endif %}
+      <div class="plan-name">{{ p.name }}</div>
+      <div class="plan-price">
+        {{ p.price }}<span class="plan-period">{{ p.period or '' }}</span>
+      </div>
+      <div class="plan-desc">{{ p.description or '' }}</div>
+      <ul class="plan-features">
+        {% if p.features %}
+          {% for feat in p.features | replace('[','') | replace(']','') | replace('"','') | split(',') %}
+          <li>{{ feat | trim }}</li>
+          {% endfor %}
+        {% endif %}
+      </ul>
+      <a href="#" class="plan-btn {% if p.is_popular %}btn-primary{% else %}btn-outline{% endif %} btn">
+        {{ p.cta_text or 'Choisir' }}
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Countries -->
+<section class="countries-section" id="countries">
+  <div class="section-header centered">
+    <div class="section-eyebrow">Couverture</div>
+    <h2 class="section-title">12 pays, une seule API</h2>
+    <p class="section-sub">Flinpay couvre les principaux marchés d'Afrique francophone et anglophone.</p>
+  </div>
+  <div class="countries-grid">
+    {% for c in countries %}
+    <div class="country-card">
+      <div class="country-flag">{{ c.flag }}</div>
+      <div class="country-name">{{ c.name }}</div>
+      <div class="country-currency">{{ c.currency }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonials-section" id="testimonials">
+  <div class="section-header centered">
+    <div class="section-eyebrow">Témoignages</div>
+    <h2 class="section-title">Ils nous font confiance</h2>
+    <p class="section-sub">Des milliers de marchands et développeurs utilisent Flinpay chaque jour.</p>
+  </div>
+  <div class="testi-grid">
+    {% for t in testimonials %}
+    <div class="testi-card">
+      <p class="testi-quote">"{{ t.content }}"</p>
+      <div class="testi-author">
+        <div class="author-av">{{ t.avatar_letter or t.name[0] }}</div>
+        <div>
+          <div class="author-name">{{ t.country_flag or '' }} {{ t.name }}</div>
+          <div class="author-role">{{ t.role or '' }}{% if t.company %} · {{ t.company }}{% endif %}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Prêt à encaisser<br>vos premiers paiements ?</h2>
+  <p>Rejoignez des milliers de marchands qui font confiance à Flinpay.</p>
+  <div class="cta-btns">
+    <a href="#pricing" class="btn btn-primary btn-lg">Créer un compte gratuit</a>
+    <a href="/docs" class="btn btn-gold btn-lg">Voir la documentation →</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="/" class="footer-logo">Flin<span>pay</span></a>
+      <p class="footer-tagline">{{ cfg.get('footer_text', 'Paiements sans frontières pour l\'Afrique.') }}</p>
+    </div>
+    <div class="footer-col">
+      <h4>Produit</h4>
+      <ul>
+        <li><a href="#features">Fonctionnalités</a></li>
+        <li><a href="#pricing">Tarifs</a></li>
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="#countries">Pays couverts</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Entreprise</h4>
+      <ul>
+        <li><a href="#">À propos</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Partenaires</a></li>
+        <li><a href="#">Carrières</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="mailto:{{ cfg.get('contact_email', 'contact@flinpay.com') }}">Contact</a></li>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="/admin/login">Admin</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2025 Flinpay. Tous droits réservés.</div>
+    <div style="display:flex;gap:20px">
+      <a href="#" style="color:rgba(255,255,255,0.3);font-size:0.8rem;text-decoration:none">FR</a>
+      <a href="#" style="color:rgba(255,255,255,0.3);font-size:0.8rem;text-decoration:none">EN</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
