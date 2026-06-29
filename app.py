@@ -378,3 +378,7 @@ def api_register():
         return jsonify({'ok': False, 'error': 'Erreur serveur, réessayez'}), 500
 
     return jsonify({'ok': True, 'message': 'Compte créé avec succès'})
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
