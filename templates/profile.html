@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Profil</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;--danger:#FF4444}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--black);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;text-decoration:none}
+.logo-text span{color:var(--blue)}
+.close-sb{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-group{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 20px 5px}
+.nav-link{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.45);font-size:0.86rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .2s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.15);border-left-color:var(--blue)}
+.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
+.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06)}
+.user-row{display:flex;align-items:center;gap:10px}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.88rem}
+.user-name{font-size:0.83rem;font-weight:600;color:white}
+.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3)}
+.logout-link{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.25);font-size:0.78rem;padding:10px 20px 14px;text-decoration:none;border-top:1px solid rgba(255,255,255,0.04);transition:color .2s}
+.logout-link:hover{color:#ff7070}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150}
+.overlay.show{display:block}
+.main{margin-left:250px;min-height:100vh}
+.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:62px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.burger{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
+.burger-line{width:22px;height:2px;background:var(--text);border-radius:2px;display:block}
+.page-title{font-size:1rem;font-weight:700}
+.content{padding:28px;max-width:900px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
+.card-head{padding:16px 22px;border-bottom:1px solid #F0F2F7;display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:0.9rem;font-weight:700}
+.card-body{padding:22px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em}
+.form-input{padding:10px 14px;border:1.5px solid #E0E2EC;border-radius:9px;font-size:0.88rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--blue)}
+.form-input:disabled{background:var(--bg);color:var(--muted)}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.84rem;padding:10px 20px;border-radius:9px;border:none;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:#1430e0}
+.btn-danger{background:var(--danger);color:white}
+.btn-sm{padding:7px 14px;font-size:0.76rem}
+.avatar-big{width:80px;height:80px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2rem;margin:0 auto 16px}
+.profile-header{text-align:center;padding:24px;border-bottom:1px solid #F0F2F7}
+.profile-name{font-size:1.2rem;font-weight:800;margin-bottom:4px}
+.profile-email{font-size:0.85rem;color:var(--muted)}
+.plan-pill{display:inline-block;background:#EEF2FF;color:var(--blue);font-size:0.72rem;font-weight:700;padding:4px 12px;border-radius:20px;margin-top:8px}
+.strength-bar{height:4px;background:#E8EAF0;border-radius:2px;margin-top:6px;overflow:hidden}
+.strength-fill{height:100%;border-radius:2px;transition:all .3s;width:0%}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:white;padding:12px 20px;border-radius:11px;font-size:0.85rem;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+#toast.show{transform:translateY(0);opacity:1}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .burger{display:flex}
+  .close-sb{display:block}
+  .grid-2{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeSB()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+    <button class="close-sb" onclick="closeSB()">✕</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group">Principal</div>
+    <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon">💳</span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon">🔗</span> Liens de paiement</a>
+    <div class="nav-group">Développeur</div>
+    <a class="nav-link" href="/api-keys"><span class="icon">🔑</span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon">🪝</span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon">🧪</span> Sandbox</a>
+    <div class="nav-group">Compte</div>
+    <a class="nav-link active" href="/profile"><span class="icon">👤</span> Profil</a>
+    <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon">🎁</span> Parrainage</a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="user-row">
+      <div class="user-av" id="user-av">U</div>
+      <div><div class="user-name" id="user-name">Utilisateur</div><div class="user-email" id="user-email">—</div></div>
+    </div>
+  </div>
+  <a class="logout-link" href="/login">🚪 Déconnexion</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <button class="burger" onclick="openSB()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+    <div class="page-title">👤 Profil</div>
+  </div>
+  <div class="content">
+
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="profile-header">
+            <div class="avatar-big" id="av-big">U</div>
+            <div class="profile-name" id="profile-name">—</div>
+            <div class="profile-email" id="profile-email">—</div>
+            <div class="plan-pill">🚀 Plan Starter</div>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <div class="form-label">Prénom</div>
+                <input class="form-input" id="p-firstname" type="text" placeholder="Kouamé">
+              </div>
+              <div class="form-group">
+                <div class="form-label">Nom</div>
+                <input class="form-input" id="p-lastname" type="text" placeholder="Diallo">
+              </div>
+              <div class="form-group full">
+                <div class="form-label">Email</div>
+                <input class="form-input" id="p-email" type="email" disabled>
+              </div>
+              <div class="form-group full">
+                <div class="form-label">Entreprise</div>
+                <input class="form-input" id="p-company" type="text" placeholder="Mon Entreprise">
+              </div>
+              <div class="form-group">
+                <div class="form-label">Téléphone</div>
+                <input class="form-input" id="p-phone" type="tel">
+              </div>
+              <div class="form-group">
+                <div class="form-label">Pays</div>
+                <input class="form-input" id="p-country" type="text" disabled>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:18px;width:100%" onclick="saveProfile()">💾 Enregistrer les modifications</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">🔒 Sécurité</div></div>
+          <div class="card-body">
+            <div class="form-group" style="margin-bottom:12px">
+              <div class="form-label">Mot de passe actuel</div>
+              <input class="form-input" id="p-oldpass" type="password" placeholder="••••••••">
+            </div>
+            <div class="form-group" style="margin-bottom:8px">
+              <div class="form-label">Nouveau mot de passe</div>
+              <input class="form-input" id="p-newpass" type="password" placeholder="Min. 8 caractères" oninput="checkStr(this.value)">
+              <div class="strength-bar"><div class="strength-fill" id="str-fill"></div></div>
+            </div>
+            <div class="form-group" style="margin-bottom:16px">
+              <div class="form-label">Confirmer</div>
+              <input class="form-input" id="p-newpass2" type="password" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" style="width:100%" onclick="changePass()">🔒 Mettre à jour</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title">📱 Authentification 2FA</div></div>
+          <div class="card-body">
+            <div style="font-size:0.83rem;color:var(--muted);margin-bottom:14px">Ajoutez une couche de sécurité supplémentaire à votre compte.</div>
+            <button class="btn btn-primary btn-sm" onclick="toast('Fonctionnalité bientôt disponible')">Activer le 2FA</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title">⚠️ Zone dangereuse</div></div>
+          <div class="card-body">
+            <div style="font-size:0.83rem;color:var(--muted);margin-bottom:14px">La suppression de votre compte est définitive et irréversible.</div>
+            <button class="btn btn-danger btn-sm" onclick="deleteAccount()">🗑 Supprimer mon compte</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'#00C48C':'#FF4444';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+function checkStr(v){const f=document.getElementById('str-fill');let s=0;if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;const c=['#FF4444','#FF8C00','#FFB400','#00C48C'][s-1]||'';f.style.width=s*25+'%';f.style.background=c}
+function saveProfile(){toast('Profil mis à jour avec succès !')}
+function changePass(){
+  const op=document.getElementById('p-oldpass').value;
+  const np=document.getElementById('p-newpass').value;
+  const np2=document.getElementById('p-newpass2').value;
+  if(!op){toast('Entrez votre mot de passe actuel',false);return}
+  if(np.length<8){toast('Nouveau mot de passe trop court',false);return}
+  if(np!==np2){toast('Les mots de passe ne correspondent pas',false);return}
+  toast('Mot de passe mis à jour !')
+}
+function deleteAccount(){if(confirm('Supprimer votre compte ? Action irréversible.')){toast('Compte supprimé',false);setTimeout(()=>window.location.href='/',2000)}}
+</script>
+</body>
+</html>

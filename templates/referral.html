@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Parrainage</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;--danger:#FF4444}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
+.layout{display:flex;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--black);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;text-decoration:none}
+.logo-text span{color:var(--blue)}
+.close-sb{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-group{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 20px 5px}
+.nav-link{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.45);font-size:0.86rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .2s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.15);border-left-color:var(--blue)}
+.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
+.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06)}
+.user-row{display:flex;align-items:center;gap:10px}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.88rem;flex-shrink:0}
+.user-name{font-size:0.83rem;font-weight:600;color:white}
+.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3)}
+.logout-link{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.25);font-size:0.78rem;padding:10px 20px 14px;text-decoration:none;border-top:1px solid rgba(255,255,255,0.04);transition:color .2s}
+.logout-link:hover{color:#ff7070}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150}
+.overlay.show{display:block}
+.main{margin-left:250px;flex:1}
+.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.burger{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
+.burger-line{width:22px;height:2px;background:var(--text);border-radius:2px;display:block}
+.page-title{font-size:1rem;font-weight:700}
+.content{padding:28px}
+.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
+.card-head{padding:16px 22px;border-bottom:1px solid #F0F2F7;display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:0.9rem;font-weight:700}
+.card-body{padding:22px}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.84rem;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:#1430e0}
+.btn-gold{background:var(--gold);color:var(--black)}
+.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
+.btn-sm{padding:6px 14px;font-size:0.76rem}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:white;padding:12px 20px;border-radius:11px;font-size:0.85rem;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+#toast.show{transform:translateY(0);opacity:1}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.stat-card{background:white;border-radius:14px;padding:20px;border:1px solid #E8EAF0}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.7rem;letter-spacing:-0.02em;margin-bottom:3px}
+.stat-lbl{font-size:0.78rem;color:var(--muted)}
+.stat-icon{font-size:1.4rem;margin-bottom:10px}
+.ref-hero{background:linear-gradient(135deg,var(--blue),#0A1FCC);border-radius:16px;padding:30px;color:white;margin-bottom:20px;position:relative;overflow:hidden}
+.ref-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.06)}
+.ref-hero::after{content:'';position:absolute;bottom:-20px;left:30%;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.04)}
+.ref-link-box{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:11px;padding:12px 16px;margin-top:16px}
+.ref-link-val{font-family:monospace;font-size:0.88rem;color:white;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref-copy-btn{background:var(--gold);color:var(--black);border:none;border-radius:8px;padding:8px 16px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;white-space:nowrap;transition:all .2s}
+.ref-copy-btn:hover{background:#e6a200}
+.levels-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.level-card{border-radius:12px;padding:18px;text-align:center;border:2px solid}
+.level-1{border-color:var(--gold);background:#FFFBEF}
+.level-2{border-color:var(--blue);background:#EEF2FF}
+.level-3{border-color:var(--green);background:#EDFAF4}
+.level-icon{font-size:1.8rem;margin-bottom:8px}
+.level-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;margin-bottom:4px}
+.level-pct{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem}
+.level-desc{font-size:0.72rem;color:var(--muted);margin-top:4px}
+.ref-table{width:100%;border-collapse:collapse;font-size:0.83rem}
+.ref-table th{padding:9px 14px;text-align:left;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;background:#FAFBFF;border-bottom:1px solid #F0F2F7}
+.ref-table td{padding:12px 14px;border-bottom:1px solid #F8F9FB}
+.ref-table tr:last-child td{border-bottom:none}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:0.7rem;font-weight:700}
+.b-success{background:#D4F5E9;color:#0A7A50}
+.b-pending{background:#FFF3CC;color:#856404}
+.share-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.share-btn{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:0.83rem;font-weight:600;transition:all .2s;text-decoration:none;color:var(--text)}
+.share-btn:hover{border-color:var(--blue);background:#EEF2FF}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .burger{display:flex}
+  .close-sb{display:block}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .levels-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeSB()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+    <button class="close-sb" onclick="closeSB()">✕</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group">Principal</div>
+    <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon">💳</span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon">🔗</span> Liens de paiement</a>
+    <div class="nav-group">Développeur</div>
+    <a class="nav-link" href="/api-keys"><span class="icon">🔑</span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon">🪝</span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon">🧪</span> Sandbox</a>
+    <div class="nav-group">Compte</div>
+    <a class="nav-link" href="/profile"><span class="icon">👤</span> Profil</a>
+    <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
+    <a class="nav-link active" href="/referral"><span class="icon">🎁</span> Parrainage</a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="user-row">
+      <div class="user-av" id="user-av">U</div>
+      <div><div class="user-name" id="user-name">Utilisateur</div><div class="user-email" id="user-email">—</div></div>
+    </div>
+  </div>
+  <a class="logout-link" href="/login">🚪 Déconnexion</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="burger" onclick="openSB()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+      <div class="page-title">🎁 Parrainage</div>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- Hero -->
+    <div class="ref-hero">
+      <div style="position:relative;z-index:1">
+        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:8px">Programme de parrainage</div>
+        <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:8px">Gagnez en parrainant 🎉</h2>
+        <p style="color:rgba(255,255,255,0.65);font-size:0.9rem;max-width:500px">Partagez votre lien et gagnez une commission sur chaque transaction de vos filleuls sur 3 niveaux.</p>
+        <div class="ref-link-box">
+          <div class="ref-link-val" id="ref-link">https://flinpay.com/register?ref=FP00001</div>
+          <button class="ref-copy-btn" onclick="copyRefLink()">📋 Copier</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-val" id="ref-count">0</div>
+        <div class="stat-lbl">Filleuls actifs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-val" id="ref-earnings">0 XOF</div>
+        <div class="stat-lbl">Commissions gagnées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-val" id="ref-pending">0 XOF</div>
+        <div class="stat-lbl">En attente de paiement</div>
+      </div>
+    </div>
+
+    <!-- Niveaux -->
+    <div class="card">
+      <div class="card-head"><div class="card-title">Structure des commissions</div></div>
+      <div class="card-body">
+        <div class="levels-grid">
+          <div class="level-card level-1">
+            <div class="level-icon">🥇</div>
+            <div class="level-name">Niveau 1</div>
+            <div class="level-pct" style="color:var(--gold)">5%</div>
+            <div class="level-desc">Sur chaque transaction de vos filleuls directs</div>
+          </div>
+          <div class="level-card level-2">
+            <div class="level-icon">🥈</div>
+            <div class="level-name">Niveau 2</div>
+            <div class="level-pct" style="color:var(--blue)">2%</div>
+            <div class="level-desc">Sur les transactions des filleuls de vos filleuls</div>
+          </div>
+          <div class="level-card level-3">
+            <div class="level-icon">🥉</div>
+            <div class="level-name">Niveau 3</div>
+            <div class="level-pct" style="color:var(--green)">1%</div>
+            <div class="level-desc">Sur le 3ème niveau de votre réseau</div>
+          </div>
+        </div>
+        <div style="background:#EEF2FF;border-radius:10px;padding:14px 18px;font-size:0.83rem;color:var(--blue)">
+          💡 Exemple : votre filleul encaisse 100 000 XOF → vous gagnez <strong>5 000 XOF</strong> automatiquement.
+        </div>
+      </div>
+    </div>
+
+    <!-- Partage -->
+    <div class="card">
+      <div class="card-head"><div class="card-title">Partager votre lien</div></div>
+      <div class="card-body">
+        <div class="share-btns">
+          <a class="share-btn" onclick="shareWhatsApp()">💬 WhatsApp</a>
+          <a class="share-btn" onclick="shareTelegram()">✈️ Telegram</a>
+          <a class="share-btn" onclick="shareEmail()">📧 Email</a>
+          <a class="share-btn" onclick="copyRefLink()">🔗 Copier le lien</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filleuls -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Mes filleuls</div>
+        <span style="font-size:0.76rem;color:var(--muted)" id="ref-total"></span>
+      </div>
+      <div id="ref-list">
+        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
+          <div style="font-size:2.5rem;margin-bottom:10px">👥</div>
+          <div style="font-size:0.86rem">Aucun filleul pour l'instant.<br>Partagez votre lien pour commencer !</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historique commissions -->
+    <div class="card">
+      <div class="card-head"><div class="card-title">Historique des commissions</div></div>
+      <div style="overflow-x:auto">
+        <table class="ref-table" id="commission-table">
+          <thead><tr><th>Date</th><th>Filleul</th><th>Niveau</th><th>Transaction</th><th>Commission</th><th>Statut</th></tr></thead>
+          <tbody id="commission-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Aucune commission pour l'instant</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'#00C48C':'#FF4444';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+const refLink='https://flinpay.vercel.app/register?ref=FP00001';
+document.getElementById('ref-link').textContent=refLink;
+function copyRefLink(){navigator.clipboard.writeText(refLink).then(()=>toast('Lien copié !'))}
+function shareWhatsApp(){window.open('https://wa.me/?text='+encodeURIComponent('🚀 Rejoins Flinpay et commence à accepter les paiements mobile money en Afrique ! '+refLink))}
+function shareTelegram(){window.open('https://t.me/share/url?url='+encodeURIComponent(refLink)+'&text='+encodeURIComponent('🚀 Rejoins Flinpay — Agrégateur de paiement africain'))}
+function shareEmail(){window.open('mailto:?subject=Rejoins Flinpay&body='+encodeURIComponent('Bonjour,\n\nJe t\'invite à rejoindre Flinpay, la plateforme de paiement mobile pour l\'Afrique.\n\n'+refLink))}
+</script>
+</body>
+</html>
