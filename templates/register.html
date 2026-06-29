@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Créer un compte</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--muted:#8A8FA8}
+body{
+  font-family:'Inter',sans-serif;
+  background:#0D0D0D;min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:40px 20px;position:relative;overflow:hidden
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.18) 0%,transparent 70%);
+  pointer-events:none
+}
+body::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 40% 40% at 90% 100%,rgba(0,196,140,0.08) 0%,transparent 60%);
+  pointer-events:none
+}
+.box{
+  background:#141420;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:24px;padding:48px 44px;
+  width:100%;max-width:480px;
+  position:relative;z-index:1;
+  box-shadow:0 32px 64px rgba(0,0,0,0.4)
+}
+.logo-wrap{text-align:center;margin-bottom:6px}
+.logo{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:2rem;color:white
+}
+.logo span{color:var(--blue)}
+.subtitle{
+  text-align:center;color:rgba(255,255,255,0.3);
+  font-size:0.82rem;margin-bottom:36px;
+  letter-spacing:0.04em
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:14px}
+.field.full{grid-column:1/-1}
+label{
+  display:block;font-size:0.72rem;font-weight:600;
+  color:rgba(255,255,255,0.35);letter-spacing:0.1em;
+  text-transform:uppercase;margin-bottom:7px
+}
+input,select{
+  width:100%;padding:12px 15px;
+  background:rgba(255,255,255,0.05);
+  border:1.5px solid rgba(255,255,255,0.1);
+  border-radius:10px;color:white;
+  font-size:0.9rem;font-family:'Inter',sans-serif;
+  outline:none;transition:border-color .2s
+}
+input:focus,select:focus{border-color:var(--blue)}
+input::placeholder{color:rgba(255,255,255,0.2)}
+select option{background:#1a1a2e;color:white}
+.password-wrap{position:relative}
+.password-wrap input{padding-right:44px}
+.eye-btn{
+  position:absolute;right:13px;top:50%;
+  transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  color:rgba(255,255,255,0.3);font-size:1rem;
+  transition:color .2s
+}
+.eye-btn:hover{color:white}
+.strength-bar{
+  height:3px;border-radius:2px;
+  background:rgba(255,255,255,0.08);
+  margin-top:6px;overflow:hidden
+}
+.strength-fill{
+  height:100%;border-radius:2px;
+  transition:all .3s;width:0%
+}
+.strength-label{
+  font-size:0.7rem;color:rgba(255,255,255,0.3);
+  margin-top:4px
+}
+.terms{
+  display:flex;align-items:flex-start;gap:10px;
+  margin:16px 0;
+}
+.terms input[type=checkbox]{
+  width:16px;height:16px;flex-shrink:0;
+  margin-top:2px;accent-color:var(--blue)
+}
+.terms label{
+  font-size:0.82rem;color:rgba(255,255,255,0.4);
+  text-transform:none;letter-spacing:0;font-weight:400
+}
+.terms a{color:var(--blue);text-decoration:none}
+.btn-register{
+  width:100%;padding:14px;
+  background:var(--blue);color:white;
+  border:none;border-radius:10px;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:0.95rem;
+  cursor:pointer;transition:all .2s;
+  letter-spacing:0.02em;margin-top:4px
+}
+.btn-register:hover{background:#1430e0;transform:translateY(-1px)}
+.btn-register:disabled{opacity:0.5;pointer-events:none}
+.divider{
+  text-align:center;color:rgba(255,255,255,0.15);
+  font-size:0.8rem;margin:20px 0;
+  display:flex;align-items:center;gap:12px
+}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;
+  background:rgba(255,255,255,0.08)
+}
+.login-link{
+  text-align:center;font-size:0.85rem;
+  color:rgba(255,255,255,0.3)
+}
+.login-link a{color:var(--blue);text-decoration:none;font-weight:600}
+.login-link a:hover{text-decoration:underline}
+.error-msg{
+  background:rgba(255,68,68,0.1);
+  border:1px solid rgba(255,68,68,0.3);
+  color:#ff7070;border-radius:8px;
+  padding:10px 14px;font-size:0.83rem;
+  margin-bottom:14px;display:none
+}
+.success-msg{
+  background:rgba(0,196,140,0.1);
+  border:1px solid rgba(0,196,140,0.3);
+  color:#00C48C;border-radius:8px;
+  padding:10px 14px;font-size:0.83rem;
+  margin-bottom:14px;display:none;text-align:center
+}
+.back{
+  text-align:center;margin-top:20px;
+  font-size:0.8rem
+}
+.back a{color:rgba(255,255,255,0.3);text-decoration:none}
+.back a:hover{color:white}
+.plan-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(26,60,255,0.15);
+  border:1px solid rgba(26,60,255,0.25);
+  color:#7B9FFF;border-radius:6px;
+  padding:5px 12px;font-size:0.78rem;font-weight:600;
+  margin-bottom:20px
+}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo-wrap">
+    <div class="logo">Flin<span>pay</span></div>
+  </div>
+  <div class="subtitle">Créez votre compte gratuitement</div>
+
+  <div class="plan-badge">🚀 Plan Starter — Gratuit</div>
+
+  <div id="error-msg" class="error-msg"></div>
+  <div id="success-msg" class="success-msg"></div>
+
+  <div class="form-row">
+    <div class="field">
+      <label>Prénom</label>
+      <input type="text" id="firstname" placeholder="Kouamé">
+    </div>
+    <div class="field">
+      <label>Nom</label>
+      <input type="text" id="lastname" placeholder="Diallo">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Email professionnel</label>
+    <input type="email" id="email" placeholder="vous@entreprise.com">
+  </div>
+
+  <div class="field">
+    <label>Nom de l'entreprise</label>
+    <input type="text" id="company" placeholder="Mon Entreprise SARL">
+  </div>
+
+  <div class="field">
+    <label>Pays</label>
+    <select id="country">
+      <option value="">— Sélectionnez votre pays —</option>
+      <option value="CM">🇨🇲 Cameroun</option>
+      <option value="BJ">🇧🇯 Bénin</option>
+      <option value="ML">🇲🇱 Mali</option>
+      <option value="TG">🇹🇬 Togo</option>
+      <option value="BF">🇧🇫 Burkina Faso</option>
+      <option value="TD">🇹🇩 Tchad</option>
+      <option value="CD">🇨🇩 RDC</option>
+      <option value="SN">🇸🇳 Sénégal</option>
+      <option value="CI">🇨🇮 Côte d'Ivoire</option>
+      <option value="NE">🇳🇪 Niger</option>
+      <option value="NG">🇳🇬 Nigeria</option>
+      <option value="GA">🇬🇦 Gabon</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Téléphone</label>
+    <input type="tel" id="phone" placeholder="+237 6XX XXX XXX">
+  </div>
+
+  <div class="field">
+    <label>Mot de passe</label>
+    <div class="password-wrap">
+      <input type="password" id="password" placeholder="Min. 8 caractères"
+        oninput="checkStrength(this.value)">
+      <button class="eye-btn" onclick="togglePass('password')" type="button">👁</button>
+    </div>
+    <div class="strength-bar">
+      <div class="strength-fill" id="strength-fill"></div>
+    </div>
+    <div class="strength-label" id="strength-label"></div>
+  </div>
+
+  <div class="field">
+    <label>Confirmer le mot de passe</label>
+    <div class="password-wrap">
+      <input type="password" id="password2" placeholder="Répétez le mot de passe">
+      <button class="eye-btn" onclick="togglePass('password2')" type="button">👁</button>
+    </div>
+  </div>
+
+  <div class="terms">
+    <input type="checkbox" id="terms-check">
+    <label for="terms-check">
+      J'accepte les <a href="#">conditions d'utilisation</a> et la
+      <a href="#">politique de confidentialité</a> de Flinpay
+    </label>
+  </div>
+
+  <button class="btn-register" id="btn-register" onclick="doRegister()">
+    Créer mon compte →
+  </button>
+
+  <div class="divider">ou</div>
+  <div class="login-link">
+    Déjà un compte ? <a href="/login">Se connecter</a>
+  </div>
+</div>
+<div class="back"><a href="/">← Retour à l'accueil</a></div>
+
+<script>
+function togglePass(id) {
+  const input = document.getElementById(id);
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function checkStrength(val) {
+  const fill = document.getElementById('strength-fill');
+  const label = document.getElementById('strength-label');
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    {pct:'25%', color:'#FF4444', text:'Faible'},
+    {pct:'50%', color:'#FF8C00', text:'Moyen'},
+    {pct:'75%', color:'#FFB400', text:'Bon'},
+    {pct:'100%', color:'#00C48C', text:'Excellent'},
+  ];
+  if (score === 0) {fill.style.width='0%'; label.textContent=''; return;}
+  const lvl = levels[score-1];
+  fill.style.width = lvl.pct;
+  fill.style.background = lvl.color;
+  label.textContent = lvl.text;
+  label.style.color = lvl.color;
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+  document.getElementById('success-msg').style.display = 'none';
+}
+
+function showSuccess(msg) {
+  const el = document.getElementById('success-msg');
+  el.textContent = '✅ ' + msg;
+  el.style.display = 'block';
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+async function doRegister() {
+  const firstname = document.getElementById('firstname').value.trim();
+  const lastname  = document.getElementById('lastname').value.trim();
+  const email     = document.getElementById('email').value.trim();
+  const company   = document.getElementById('company').value.trim();
+  const country   = document.getElementById('country').value;
+  const phone     = document.getElementById('phone').value.trim();
+  const password  = document.getElementById('password').value;
+  const password2 = document.getElementById('password2').value;
+  const terms     = document.getElementById('terms-check').checked;
+
+  if (!firstname || !lastname || !email || !country || !phone || !password) {
+    showError('Veuillez remplir tous les champs obligatoires.'); return;
+  }
+  if (!email.includes('@')) {
+    showError('Adresse email invalide.'); return;
+  }
+  if (password.length < 8) {
+    showError('Le mot de passe doit contenir au moins 8 caractères.'); return;
+  }
+  if (password !== password2) {
+    showError('Les mots de passe ne correspondent pas.'); return;
+  }
+  if (!terms) {
+    showError('Veuillez accepter les conditions d\'utilisation.'); return;
+  }
+
+  const btn = document.getElementById('btn-register');
+  btn.textContent = 'Création en cours...';
+  btn.disabled = true;
+  document.getElementById('error-msg').style.display = 'none';
+
+  try {
+    const r = await fetch('/api/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({firstname, lastname, email, company, country, phone, password})
+    });
+    const data = await r.json();
+    if (data.ok) {
+      showSuccess('Compte créé ! Redirection vers le dashboard...');
+      setTimeout(() => window.location.href = '/dashboard', 2000);
+    } else {
+      showError(data.error || 'Erreur lors de la création du compte.');
+    }
+  } catch(e) {
+    showError('Erreur de connexion. Réessayez.');
+  }
+
+  btn.textContent = 'Créer mon compte →';
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>

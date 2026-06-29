@@ -322,3 +322,59 @@ def server_error(e):
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=5000)
+
+
+# ── NOUVELLES ROUTES ──────────────────────────────
+@app.route('/register')
+def register():
+    return render_template('register.html')
+
+@app.route('/login')
+def login_page():
+    return render_template('login.html')
+
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    import re
+    data = request.get_json()
+    required = ['firstname','lastname','email','country','phone','password']
+    for field in required:
+        if not data.get(field):
+            return jsonify({'ok': False, 'error': f'Champ manquant: {field}'}), 400
+
+    email = data['email'].strip().lower()
+    if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+        return jsonify({'ok': False, 'error': 'Email invalide'}), 400
+
+    if len(data['password']) < 8:
+        return jsonify({'ok': False, 'error': 'Mot de passe trop court'}), 400
+
+    # Vérifier si email existe déjà
+    existing = sb_get('users', f'email=eq.{email}')
+    if existing:
+        return jsonify({'ok': False, 'error': 'Cet email est déjà utilisé'}), 409
+
+    # Hasher le mot de passe
+    hashed = bcrypt.hashpw(
+        data['password'].encode('utf-8'),
+        bcrypt.gensalt()
+    ).decode('utf-8')
+
+    # Créer l'utilisateur
+    user = sb_post('users', {
+        'firstname': data['firstname'].strip(),
+        'lastname': data['lastname'].strip(),
+        'email': email,
+        'company': data.get('company','').strip(),
+        'country': data['country'],
+        'phone': data['phone'].strip(),
+        'password_hash': hashed,
+        'plan': 'starter',
+        'is_active': True,
+        'created_at': datetime.utcnow().isoformat()
+    })
+
+    if not user:
+        return jsonify({'ok': False, 'error': 'Erreur serveur, réessayez'}), 500
+
+    return jsonify({'ok': True, 'message': 'Compte créé avec succès'})
