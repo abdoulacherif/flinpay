@@ -1,4 +1,5 @@
 import os
+import re
 import jwt
 import bcrypt
 import requests
@@ -335,7 +336,6 @@ def login_page():
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
-    import re
     data = request.get_json()
     required = ['firstname','lastname','email','country','phone','password']
     for field in required:
@@ -382,3 +382,7 @@ def api_register():
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
