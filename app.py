@@ -200,7 +200,9 @@ def login_page():
 
 @user_required
 def dashboard():
-    return render_template('dashboard.html')
+    users = sb_get('users', f"id=eq.{request.user_id}")
+    user = users[0] if users else {}
+    return render_template('dashboard.html', user=user)
 
 @app.route('/docs')
 def docs():

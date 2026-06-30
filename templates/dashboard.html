@@ -443,10 +443,10 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 
   <div class="sidebar-user">
     <div class="user-row">
-      <div class="user-av" id="user-av">U</div>
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
       <div>
-        <div class="user-name" id="user-name">Utilisateur</div>
-        <div class="user-email" id="user-email">—</div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
       </div>
     </div>
   </div>
