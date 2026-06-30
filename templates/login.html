@@ -120,14 +120,14 @@ async function doLogin() {
   err.style.display = 'none';
 
   try {
-    const r = await fetch('/admin/login', {
+    const r = await fetch('/api/login', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({username, password})
     });
     const data = await r.json();
     if (data.ok) {
-      window.location.href = '/admin';
+      window.location.href = '/dashboard';
     } else {
       showError(data.error || 'Identifiants incorrects');
     }

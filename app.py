@@ -96,6 +96,88 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
+
+# ── AUTH UTILISATEUR ──────────────────────────────
+def generate_user_token(user_id, email):
+    payload = {
+        'sub': str(user_id),
+        'email': email,
+        'type': 'user',
+        'iat': datetime.utcnow(),
+        'exp': datetime.utcnow() + timedelta(days=7)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+
+def user_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.cookies.get('fp_user_token')
+        if not token:
+            return redirect(url_for('login_page'))
+        payload = verify_token(token)
+        if not payload or payload.get('type') != 'user':
+            return redirect(url_for('login_page'))
+        request.user_id = payload.get('sub')
+        request.user_email = payload.get('email')
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({'ok': False, 'error': 'Email et mot de passe requis'}), 400
+
+    email = data['email'].strip().lower()
+    password = data['password']
+
+    users = sb_get('users', f'email=eq.{email}')
+    if not users:
+        return jsonify({'ok': False, 'error': 'Identifiants incorrects'}), 401
+
+    user = users[0]
+    if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+        return jsonify({'ok': False, 'error': 'Identifiants incorrects'}), 401
+
+    if not user.get('is_active', True):
+        return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
+
+    token = generate_user_token(user['id'], user['email'])
+    resp = make_response(jsonify({'ok': True, 'user': {
+        'firstname': user['firstname'],
+        'lastname': user['lastname'],
+        'email': user['email'],
+        'company': user.get('company',''),
+        'phone': user.get('phone',''),
+        'country': user.get('country',''),
+        'plan': user.get('plan','starter')
+    }}))
+    resp.set_cookie('fp_user_token', token, httponly=True, samesite='Lax', max_age=7*24*3600)
+    return resp
+
+@app.route('/api/logout')
+def api_logout():
+    resp = make_response(redirect(url_for('login_page')))
+    resp.delete_cookie('fp_user_token')
+    return resp
+
+@app.route('/api/me')
+@user_required
+def api_me():
+    users = sb_get('users', f"id=eq.{request.user_id}")
+    if not users:
+        return jsonify({'ok': False}), 404
+    user = users[0]
+    return jsonify({'ok': True, 'user': {
+        'firstname': user['firstname'],
+        'lastname': user['lastname'],
+        'email': user['email'],
+        'company': user.get('company',''),
+        'phone': user.get('phone',''),
+        'country': user.get('country',''),
+        'plan': user.get('plan','starter')
+    }})
+
 # ── ROUTES PUBLIQUES ──────────────────────────────
 @app.route('/')
 def index():
@@ -115,6 +197,8 @@ def login_page():
     return render_template('login.html')
 
 @app.route('/dashboard')
+
+@user_required
 def dashboard():
     return render_template('dashboard.html')
 
@@ -286,38 +370,56 @@ def server_error(e):
 
 
 @app.route('/transactions')
+
+@user_required
 def transactions():
     return render_template('transactions.html')
 
 @app.route('/payouts')
+
+@user_required
 def payouts():
     return render_template('payouts.html')
 
 @app.route('/api-keys')
+
+@user_required
 def api_keys_page():
     return render_template('api_keys.html')
 
 @app.route('/webhooks')
+
+@user_required
 def webhooks_page():
     return render_template('webhooks.html')
 
 @app.route('/sandbox')
+
+@user_required
 def sandbox():
     return render_template('sandbox.html')
 
 @app.route('/profile')
+
+@user_required
 def profile():
     return render_template('profile.html')
 
 @app.route('/billing')
+
+@user_required
 def billing():
     return render_template('billing.html')
 
 @app.route('/payment-links')
+
+@user_required
 def payment_links():
     return render_template('payment_links.html')
 
 @app.route('/referral')
+
+@user_required
 def referral():
     return render_template('referral.html')
 
