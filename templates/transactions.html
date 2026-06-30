@@ -3,343 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flinpay — Dashboard</title>
+<title>Flinpay — Transactions</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;
-  --black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;
-  --sidebar:240px
-}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;--danger:#FF4444}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
-h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
-
-/* SIDEBAR */
-.sidebar{
-  position:fixed;top:0;left:0;bottom:0;
-  width:var(--sidebar);background:var(--black);
-  display:flex;flex-direction:column;z-index:100
-}
-.sidebar-logo{
-  padding:24px 20px 20px;
-  border-bottom:1px solid rgba(255,255,255,0.06)
-}
-.sidebar-logo a{
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:1.4rem;
-  color:white;text-decoration:none
-}
-.sidebar-logo a span{color:var(--blue)}
-.sidebar-plan{
-  display:inline-block;margin-top:6px;
-  font-size:0.65rem;font-weight:700;
-  letter-spacing:0.1em;text-transform:uppercase;
-  background:rgba(26,60,255,0.2);color:#7B9FFF;
-  padding:3px 10px;border-radius:4px
-}
-.sidebar-nav{flex:1;padding:14px 0;overflow-y:auto}
-.nav-section{
-  font-size:0.65rem;font-weight:700;
-  letter-spacing:0.12em;text-transform:uppercase;
-  color:rgba(255,255,255,0.2);
-  padding:14px 20px 6px
-}
-.nav-item{
-  display:flex;align-items:center;gap:12px;
-  padding:11px 20px;color:rgba(255,255,255,0.45);
-  font-size:0.875rem;font-weight:500;
-  cursor:pointer;transition:all .2s;
-  border-left:3px solid transparent;
-  text-decoration:none
-}
-.nav-item:hover{color:white;background:rgba(255,255,255,0.04)}
-.nav-item.active{
-  color:white;background:rgba(26,60,255,0.15);
-  border-left-color:var(--blue)
-}
-.nav-item .icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
-.nav-badge{
-  margin-left:auto;background:var(--blue);color:white;
-  font-size:0.65rem;font-weight:700;
-  padding:2px 7px;border-radius:10px
-}
-.sidebar-user{
-  padding:16px 20px;
-  border-top:1px solid rgba(255,255,255,0.06)
-}
-.user-info{display:flex;align-items:center;gap:10px}
-.user-av{
-  width:36px;height:36px;border-radius:50%;
-  background:var(--blue);color:white;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:0.9rem;flex-shrink:0
-}
-.user-name{font-size:0.85rem;font-weight:600;color:white}
-.user-email{font-size:0.72rem;color:rgba(255,255,255,0.3);margin-top:1px}
-.logout-btn{
-  display:flex;align-items:center;gap:8px;
-  color:rgba(255,255,255,0.25);font-size:0.78rem;
-  padding:10px 20px;text-decoration:none;
-  transition:color .2s;border-top:1px solid rgba(255,255,255,0.04)
-}
-.logout-btn:hover{color:rgba(255,255,255,0.6)}
-
-/* MAIN */
-.main{margin-left:var(--sidebar);min-height:100vh}
-
-/* TOPBAR */
-.topbar{
-  background:white;border-bottom:1px solid #E8EAF0;
-  padding:0 32px;height:64px;
-  display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:50
-}
-.topbar-title{font-size:1.1rem;font-weight:700;letter-spacing:-0.01em}
-.topbar-right{display:flex;align-items:center;gap:16px}
-.notif-btn{
-  width:38px;height:38px;border-radius:10px;
-  background:var(--bg);border:1px solid #E8EAF0;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:1rem;position:relative
-}
-.notif-dot{
-  position:absolute;top:7px;right:7px;
-  width:7px;height:7px;border-radius:50%;
-  background:var(--blue)
-}
-.env-badge{
-  display:flex;align-items:center;gap:6px;
-  background:var(--bg);border:1px solid #E8EAF0;
-  border-radius:8px;padding:6px 12px;
-  font-size:0.78rem;font-weight:600;cursor:pointer
-}
-.env-dot{width:7px;height:7px;border-radius:50%}
-
-/* CONTENT */
-.content{padding:32px}
-
-/* STATS CARDS */
-.stats-row{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:18px;margin-bottom:28px
-}
-.stat-card{
-  background:white;border-radius:16px;
-  padding:22px;border:1px solid #E8EAF0;
-  transition:all .2s
-}
-.stat-card:hover{box-shadow:0 8px 24px rgba(0,0,0,0.07);transform:translateY(-2px)}
-.stat-card-top{
-  display:flex;justify-content:space-between;
-  align-items:flex-start;margin-bottom:16px
-}
-.stat-card-icon{
-  width:42px;height:42px;border-radius:11px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem
-}
-.stat-trend{
-  font-size:0.72rem;font-weight:600;
-  padding:3px 8px;border-radius:6px
-}
-.trend-up{background:#D4F5E9;color:#0A7A50}
-.trend-down{background:#F5D4D4;color:#7A0A0A}
-.stat-value{
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:1.8rem;
-  letter-spacing:-0.02em;margin-bottom:4px
-}
-.stat-label{font-size:0.8rem;color:var(--muted)}
-
-/* GRID 2 COL */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
-.grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:28px}
-
-/* CARD */
-.card{
-  background:white;border-radius:16px;
-  border:1px solid #E8EAF0;overflow:hidden
-}
-.card-header{
-  padding:20px 24px;border-bottom:1px solid #F0F2F7;
-  display:flex;justify-content:space-between;align-items:center
-}
-.card-title{font-size:0.95rem;font-weight:700}
-.card-action{
-  font-size:0.78rem;color:var(--blue);
-  font-weight:600;text-decoration:none;cursor:pointer
-}
-.card-body{padding:24px}
-
-/* TABLE */
-.tx-table{width:100%;border-collapse:collapse;font-size:0.85rem}
-.tx-table th{
-  padding:10px 16px;text-align:left;
-  font-size:0.72rem;font-weight:700;
-  color:var(--muted);text-transform:uppercase;
-  letter-spacing:0.08em;
-  background:#FAFBFF;border-bottom:1px solid #F0F2F7
-}
-.tx-table td{
-  padding:13px 16px;border-bottom:1px solid #F8F9FB;
-  vertical-align:middle
-}
-.tx-table tr:last-child td{border-bottom:none}
-.tx-table tr:hover td{background:#FAFBFF}
-.badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:4px 10px;border-radius:20px;
-  font-size:0.72rem;font-weight:700
-}
-.badge-success{background:#D4F5E9;color:#0A7A50}
-.badge-pending{background:#FFF3CC;color:#856404}
-.badge-failed{background:#F5D4D4;color:#7A0A0A}
-.tx-amount{font-family:'Space Grotesk',sans-serif;font-weight:700}
-.tx-id{font-family:monospace;font-size:0.78rem;color:var(--muted)}
-
-/* API KEY */
-.api-key-box{
-  background:#0D0D0D;border-radius:12px;
-  padding:18px 20px;display:flex;
-  align-items:center;justify-content:space-between;gap:12px
-}
-.api-key-val{
-  font-family:monospace;font-size:0.85rem;
-  color:#00E5FF;flex:1;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap
-}
-.copy-btn{
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.12);
-  color:white;border-radius:8px;
-  padding:7px 14px;font-size:0.78rem;
-  font-weight:600;cursor:pointer;
-  font-family:'Space Grotesk',sans-serif;
-  transition:all .2s;white-space:nowrap
-}
-.copy-btn:hover{background:rgba(255,255,255,0.15)}
-
-/* QUICK ACTIONS */
-.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.action-btn{
-  display:flex;flex-direction:column;align-items:center;
-  gap:8px;padding:18px 12px;border-radius:12px;
-  border:1.5px solid #E8EAF0;background:white;
-  cursor:pointer;transition:all .2s;text-decoration:none
-}
-.action-btn:hover{border-color:var(--blue);background:#F0F4FF;transform:translateY(-2px)}
-.action-icon{font-size:1.5rem}
-.action-label{
-  font-size:0.78rem;font-weight:600;
-  color:var(--text);text-align:center
-}
-
-/* CHART PLACEHOLDER */
-.chart-placeholder{
-  height:180px;background:var(--bg);
-  border-radius:10px;display:flex;
-  align-items:flex-end;justify-content:space-between;
-  padding:16px;gap:6px
-}
-.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
-.bar{
-  width:100%;border-radius:4px 4px 0 0;
-  background:var(--blue);opacity:0.15;
-  transition:all .3s
-}
-.bar.active{opacity:1}
-.bar-label{font-size:0.65rem;color:var(--muted)}
-
-/* PLAN CARD */
-.plan-card{
-  background:linear-gradient(135deg,var(--blue),#0A1FCC);
-  border-radius:16px;padding:24px;color:white;
-  position:relative;overflow:hidden
-}
-.plan-card::before{
-  content:'';position:absolute;
-  top:-30px;right:-30px;
-  width:120px;height:120px;border-radius:50%;
-  background:rgba(255,255,255,0.06)
-}
-.plan-name-badge{
-  font-size:0.7rem;font-weight:700;
-  letter-spacing:0.12em;text-transform:uppercase;
-  background:rgba(255,255,255,0.15);
-  padding:4px 12px;border-radius:4px;
-  display:inline-block;margin-bottom:16px
-}
-.plan-limit{margin:14px 0}
-.plan-limit-label{font-size:0.78rem;color:rgba(255,255,255,0.6);margin-bottom:6px}
-.progress-bar{
-  height:6px;background:rgba(255,255,255,0.15);
-  border-radius:3px;overflow:hidden
-}
-.progress-fill{
-  height:100%;background:var(--gold);
-  border-radius:3px;transition:width .5s
-}
-.plan-upgrade{
-  display:inline-block;margin-top:18px;
-  background:var(--gold);color:var(--black);
-  padding:9px 18px;border-radius:8px;
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:700;font-size:0.82rem;
-  text-decoration:none;transition:all .2s
-}
-.plan-upgrade:hover{background:#e6a200}
-
-/* WEBHOOK */
-.webhook-box{
-  display:flex;align-items:center;gap:10px;
-  background:var(--bg);border-radius:10px;
-  padding:12px 16px;margin-bottom:12px
-}
-.webhook-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.webhook-url{
-  font-family:monospace;font-size:0.8rem;
-  color:var(--text);flex:1;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
-}
-.webhook-edit{
-  font-size:0.75rem;color:var(--blue);
-  font-weight:600;cursor:pointer;white-space:nowrap
-}
-
-/* EMPTY STATE */
-.empty-state{
-  text-align:center;padding:40px 20px;
-  color:var(--muted)
-}
-.empty-icon{font-size:2.5rem;margin-bottom:12px}
-.empty-text{font-size:0.88rem;line-height:1.6}
-
-/* MOBILE */
-@media(max-width:900px){
-  .sidebar{transform:translateX(-100%)}
-  .main{margin-left:0}
-  .stats-row{grid-template-columns:1fr 1fr}
-  .grid-2,.grid-3-1{grid-template-columns:1fr}
-}
-@media(max-width:520px){
-  .stats-row{grid-template-columns:1fr}
-  .content{padding:20px}
-}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--black);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;text-decoration:none}
+.logo-text span{color:var(--blue)}
+.close-sb{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-group{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 20px 5px}
+.nav-link{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.45);font-size:0.86rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .2s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.15);border-left-color:var(--blue)}
+.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
+.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06)}
+.user-row{display:flex;align-items:center;gap:10px}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.88rem}
+.user-name{font-size:0.83rem;font-weight:600;color:white}
+.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3)}
+.logout-link{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.25);font-size:0.78rem;padding:10px 20px 14px;text-decoration:none;border-top:1px solid rgba(255,255,255,0.04)}
+.logout-link:hover{color:#ff7070}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150}
+.overlay.show{display:block}
+.main{margin-left:250px;min-height:100vh}
+.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.burger{display:none;background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:5px}
+.burger-line{width:22px;height:2px;background:var(--text);border-radius:2px;display:block}
+.page-title{font-size:1rem;font-weight:700}
+.content{padding:28px}
+.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
+.card-head{padding:16px 22px;border-bottom:1px solid #F0F2F7;display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:0.9rem;font-weight:700}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.84rem;padding:9px 18px;border-radius:9px;border:none;cursor:pointer}
+.btn-primary{background:var(--blue);color:white}
+.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
+.btn-sm{padding:6px 14px;font-size:0.76rem}
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filter-input{padding:9px 14px;border:1.5px solid #E0E2EC;border-radius:9px;font-size:0.85rem;background:white}
+.filter-select{padding:9px 14px;border:1.5px solid #E0E2EC;border-radius:9px;font-size:0.85rem;background:white}
+.tbl{width:100%;border-collapse:collapse;font-size:0.83rem}
+.tbl th{padding:9px 14px;text-align:left;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;background:#FAFBFF;border-bottom:1px solid #F0F2F7}
+.tbl td{padding:12px 14px;border-bottom:1px solid #F8F9FB}
+.badge{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:0.7rem;font-weight:700}
+.b-success{background:#D4F5E9;color:#0A7A50}
+.b-pending{background:#FFF3CC;color:#856404}
+.b-failed{background:#F5D4D4;color:#7A0A0A}
+.tx-id{font-family:monospace;font-size:0.76rem;color:var(--muted)}
+.tx-amt{font-family:'Space Grotesk',sans-serif;font-weight:700}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.burger{display:flex}.close-sb{display:block}.content{padding:16px}}
 </style>
 </head>
 <body>
-
-<!-- SIDEBAR -->
-<aside class="sidebar">
+<div class="overlay" id="overlay" onclick="closeSB()"></div>
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <a href="/">Flin<span>pay</span></a>
-    <div class="sidebar-plan">Plan Starter</div>
+    <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+    <button class="close-sb" onclick="closeSB()">✕</button>
   </div>
-
   <nav class="sidebar-nav">
-<div class="nav-group">Principal</div>
+    <div class="nav-group">Principal</div>
     <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
     <a class="nav-link active" href="/transactions"><span class="icon">💳</span> Transactions</a>
     <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
@@ -353,252 +82,107 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
     <a class="nav-link" href="/referral"><span class="icon">🎁</span> Parrainage</a>
   </nav>
-
   <div class="sidebar-user">
-    <div class="user-info">
-      <div class="user-av" id="user-av">K</div>
-      <div>
-        <div class="user-name" id="user-name">Kouamé D.</div>
-        <div class="user-email" id="user-email">kouame@shop.ci</div>
-      </div>
+    <div class="user-row">
+      <div class="user-av">U</div>
+      <div><div class="user-name">Utilisateur</div><div class="user-email">—</div></div>
     </div>
   </div>
-  <a class="logout-btn" href="/login">
-    🚪 Déconnexion
-  </a>
+  <a class="logout-link" href="/login">🚪 Déconnexion</a>
 </aside>
-
-<!-- MAIN -->
 <div class="main">
-
-  <!-- TOPBAR -->
   <div class="topbar">
-    <div class="topbar-title">Vue d'ensemble</div>
-    <div class="topbar-right">
-      <div class="env-badge">
-        <div class="env-dot" style="background:var(--gold)"></div>
-        Sandbox
-      </div>
-      <div class="notif-btn">
-        🔔
-        <div class="notif-dot"></div>
-      </div>
+    <div class="topbar-left">
+      <button class="burger" onclick="openSB()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+      <div class="page-title">💳 Transactions</div>
     </div>
   </div>
-
-  <!-- CONTENT -->
   <div class="content">
-
-    <!-- STATS -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-icon" style="background:#EEF2FF">💳</div>
-          <span class="stat-trend trend-up">+12%</span>
-        </div>
-        <div class="stat-value">0</div>
-        <div class="stat-label">Transactions ce mois</div>
+    <div class="filter-bar">
+      <input class="filter-input" type="text" id="tx-search" placeholder="Rechercher..." oninput="filterTx()">
+      <select class="filter-select" id="tx-status" onchange="filterTx()">
+        <option value="">Tous les statuts</option>
+        <option value="paid">Payé</option>
+        <option value="pending">En attente</option>
+        <option value="failed">Échoué</option>
+      </select>
+      <select class="filter-select" id="tx-country" onchange="filterTx()">
+        <option value="">Tous les pays</option>
+        <option value="CI">Côte d'Ivoire</option>
+        <option value="CM">Cameroun</option>
+        <option value="SN">Sénégal</option>
+        <option value="BJ">Bénin</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="exportTx()">Exporter CSV</button>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Transactions <span id="tx-total" style="color:var(--muted);font-weight:400"></span></div>
+        <button class="btn btn-primary btn-sm" onclick="loadTransactions()">Actualiser</button>
       </div>
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-icon" style="background:#EDFAF4">💰</div>
-          <span class="stat-trend trend-up">+8%</span>
-        </div>
-        <div class="stat-value">0 XOF</div>
-        <div class="stat-label">Volume encaissé</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-icon" style="background:#FFF8E6">⚡</div>
-          <span class="stat-trend trend-up">99%</span>
-        </div>
-        <div class="stat-value">0ms</div>
-        <div class="stat-label">Temps de réponse moyen</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-icon" style="background:#EDFAF4">✅</div>
-          <span class="stat-trend trend-down">0%</span>
-        </div>
-        <div class="stat-value">0%</div>
-        <div class="stat-label">Taux de succès</div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="tx-table">
+          <thead><tr><th>ID</th><th>Client</th><th>Montant</th><th>Statut</th><th>Opérateur</th><th>Date</th></tr></thead>
+          <tbody id="tx-tbody">
+            <tr><td colspan="6"><div class="empty">Aucune transaction</div></td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
-
-    <!-- CHART + PLAN -->
-    <div class="grid-3-1">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Volume des transactions</div>
-          <div style="display:flex;gap:8px">
-            <span style="font-size:0.75rem;color:var(--muted);cursor:pointer">7j</span>
-            <span style="font-size:0.75rem;color:var(--blue);font-weight:700;cursor:pointer">30j</span>
-            <span style="font-size:0.75rem;color:var(--muted);cursor:pointer">90j</span>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="chart-placeholder" id="chart">
-          </div>
-        </div>
-      </div>
-
-      <div class="plan-card">
-        <div class="plan-name-badge">🚀 Starter</div>
-        <div style="font-size:1.5rem;font-weight:800;font-family:'Space Grotesk',sans-serif">
-          Plan actuel
-        </div>
-        <div class="plan-limit">
-          <div class="plan-limit-label">Transactions utilisées</div>
-          <div style="font-size:1.4rem;font-weight:800;margin-bottom:8px">0 / 100</div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width:0%"></div>
-          </div>
-        </div>
-        <a href="#" class="plan-upgrade">⬆ Passer au Pro</a>
-      </div>
-    </div>
-
-    <!-- TRANSACTIONS + ACTIONS -->
-    <div class="grid-3-1">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Dernières transactions</div>
-          <a class="card-action" href="#">Voir tout →</a>
-        </div>
-        <div class="empty-state">
-          <div class="empty-icon">💳</div>
-          <div class="empty-text">
-            Aucune transaction pour l'instant.<br>
-            Intégrez l'API pour commencer à encaisser.
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:20px">
-
-        <!-- Quick actions -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Actions rapides</div>
-          </div>
-          <div class="card-body">
-            <div class="actions-grid">
-              <a class="action-btn" href="#">
-                <span class="action-icon">🔗</span>
-                <span class="action-label">Créer un lien</span>
-              </a>
-              <a class="action-btn" href="#">
-                <span class="action-icon">📤</span>
-                <span class="action-label">Envoyer</span>
-              </a>
-              <a class="action-btn" href="/docs">
-                <span class="action-icon">📖</span>
-                <span class="action-label">Docs API</span>
-              </a>
-              <a class="action-btn" href="#">
-                <span class="action-icon">🧪</span>
-                <span class="action-label">Tester</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- API KEY + WEBHOOK -->
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🔑 Clé API</div>
-          <span class="card-action" onclick="regenerateKey()">Régénérer</span>
-        </div>
-        <div class="card-body">
-          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">
-            Utilisez cette clé pour authentifier vos requêtes API.
-          </div>
-          <div class="api-key-box">
-            <div class="api-key-val" id="api-key-val">
-              fp_live_••••••••••••••••••••••••••••••••
-            </div>
-            <button class="copy-btn" onclick="toggleKey()">👁 Afficher</a>
-            <button class="copy-btn" onclick="copyKey()">📋 Copier</a>
-          </div>
-          <div style="margin-top:12px;padding:10px 14px;background:#FFF8E6;border-radius:8px;font-size:0.78rem;color:#856404">
-            ⚠️ Ne partagez jamais votre clé API. Changez-la si elle est compromise.
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🪝 Webhooks</div>
-          <span class="card-action" onclick="addWebhook()">+ Ajouter</span>
-        </div>
-        <div class="card-body">
-          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:16px">
-            Recevez des notifications automatiques pour chaque événement.
-          </div>
-          <div class="webhook-box">
-            <div class="webhook-status" style="background:#E0E2EC"></div>
-            <div class="webhook-url">Aucun webhook configuré</div>
-          </div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:8px">
-            Événements : <code style="background:var(--bg);padding:2px 6px;border-radius:4px">payment.success</code>
-            <code style="background:var(--bg);padding:2px 6px;border-radius:4px;margin-left:4px">payment.failed</code>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
-
 <script>
-// Chart bars
-const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-const values = [20,45,30,60,80,55,70,40,90,65,75,85];
-const chart = document.getElementById('chart');
-const max = Math.max(...values);
-chart.innerHTML = values.map((v,i) => `
-  <div class="bar-wrap">
-    <div class="bar${i===11?' active':''}"
-      style="height:${(v/max)*140}px;
-      background:${i===11?'var(--blue)':'var(--blue)'}">
-    </div>
-    <div class="bar-label">${months[i]}</div>
-  </div>
-`).join('');
+function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 
-// API Key
-let keyVisible = false;
-const fakeKey = 'fp_live_k9mN3pQxR7vL2wYzJ5tH8sA4bC6dE1fG';
-
-function toggleKey() {
-  keyVisible = !keyVisible;
-  const el = document.getElementById('api-key-val');
-  el.textContent = keyVisible ? fakeKey : 'fp_live_••••••••••••••••••••••••••••••••';
-  document.querySelector('.copy-btn').textContent = keyVisible ? '🙈 Masquer' : '👁 Afficher';
+var allTx=[];
+function loadTransactions(){
+  allTx=[
+    {id:'fp_tx_abc123',client:'Kouamé D.',amount:15000,status:'paid',operator:'Orange Money',country:'CI',date:'2025-06-29 10:23'},
+    {id:'fp_tx_def456',client:'Aminata S.',amount:8500,status:'pending',operator:'Wave',country:'SN',date:'2025-06-29 09:15'},
+    {id:'fp_tx_ghi789',client:'Ibrahim T.',amount:25000,status:'paid',operator:'MTN MoMo',country:'CM',date:'2025-06-28 16:44'},
+    {id:'fp_tx_jkl012',client:'Fatou B.',amount:5000,status:'failed',operator:'Moov Money',country:'BJ',date:'2025-06-28 14:30'}
+  ];
+  renderTx(allTx);
 }
-
-function copyKey() {
-  navigator.clipboard.writeText(fakeKey).then(() => {
-    const btn = document.querySelectorAll('.copy-btn')[1];
-    btn.textContent = '✅ Copié !';
-    setTimeout(() => btn.textContent = '📋 Copier', 2000);
-  });
-}
-
-function regenerateKey() {
-  if (confirm('Régénérer la clé API ? L\'ancienne sera invalide immédiatement.')) {
-    alert('Fonctionnalité disponible après connexion.');
+function renderTx(txs){
+  var tbody=document.getElementById('tx-tbody');
+  document.getElementById('tx-total').textContent='('+txs.length+')';
+  if(!txs.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty">Aucune transaction</div></td></tr>';return}
+  var html='';
+  for(var i=0;i<txs.length;i++){
+    var tx=txs[i];
+    var badge=tx.status==='paid'?'b-success':(tx.status==='pending'?'b-pending':'b-failed');
+    var label=tx.status==='paid'?'Payé':(tx.status==='pending'?'Attente':'Échoué');
+    html+='<tr><td><span class="tx-id">'+tx.id.substr(0,12)+'...</span></td><td>'+tx.client+'</td><td><span class="tx-amt">'+tx.amount.toLocaleString()+' XOF</span></td><td><span class="badge '+badge+'">'+label+'</span></td><td>'+tx.operator+'</td><td style="font-size:0.76rem;color:var(--muted)">'+tx.date+'</td></tr>';
   }
+  tbody.innerHTML=html;
 }
-
-function addWebhook() {
-  const url = prompt('URL de votre webhook :');
-  if (url) alert('Webhook enregistré : ' + url);
+function filterTx(){
+  var search=document.getElementById('tx-search').value.toLowerCase();
+  var status=document.getElementById('tx-status').value;
+  var country=document.getElementById('tx-country').value;
+  var filtered=allTx.filter(function(tx){
+    var matchSearch=!search||tx.client.toLowerCase().indexOf(search)!==-1||tx.id.indexOf(search)!==-1;
+    var matchStatus=!status||tx.status===status;
+    var matchCountry=!country||tx.country===country;
+    return matchSearch&&matchStatus&&matchCountry;
+  });
+  renderTx(filtered);
 }
+function exportTx(){
+  var rows=['ID,Client,Montant,Statut,Operateur,Date'];
+  for(var i=0;i<allTx.length;i++){
+    var t=allTx[i];
+    rows.push(t.id+','+t.client+','+t.amount+','+t.status+','+t.operator+','+t.date);
+  }
+  var csv=rows.join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='transactions_flinpay.csv';
+  a.click();
+}
+loadTransactions();
 </script>
 </body>
 </html>
