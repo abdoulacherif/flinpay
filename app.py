@@ -284,5 +284,42 @@ def not_found(e):
 def server_error(e):
     return jsonify({'error': str(e)}), 500
 
+
+@app.route('/transactions')
+def transactions():
+    return render_template('transactions.html')
+
+@app.route('/payouts')
+def payouts():
+    return render_template('payouts.html')
+
+@app.route('/api-keys')
+def api_keys_page():
+    return render_template('api_keys.html')
+
+@app.route('/webhooks')
+def webhooks_page():
+    return render_template('webhooks.html')
+
+@app.route('/sandbox')
+def sandbox():
+    return render_template('sandbox.html')
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
+@app.route('/billing')
+def billing():
+    return render_template('billing.html')
+
+@app.route('/payment-links')
+def payment_links():
+    return render_template('payment_links.html')
+
+@app.route('/referral')
+def referral():
+    return render_template('referral.html')
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

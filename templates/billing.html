@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;
+  --black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;
+  --sidebar:240px
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;
+  width:var(--sidebar);background:var(--black);
+  display:flex;flex-direction:column;z-index:100
+}
+.sidebar-logo{
+  padding:24px 20px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.06)
+}
+.sidebar-logo a{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:1.4rem;
+  color:white;text-decoration:none
+}
+.sidebar-logo a span{color:var(--blue)}
+.sidebar-plan{
+  display:inline-block;margin-top:6px;
+  font-size:0.65rem;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  background:rgba(26,60,255,0.2);color:#7B9FFF;
+  padding:3px 10px;border-radius:4px
+}
+.sidebar-nav{flex:1;padding:14px 0;overflow-y:auto}
+.nav-section{
+  font-size:0.65rem;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(255,255,255,0.2);
+  padding:14px 20px 6px
+}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 20px;color:rgba(255,255,255,0.45);
+  font-size:0.875rem;font-weight:500;
+  cursor:pointer;transition:all .2s;
+  border-left:3px solid transparent;
+  text-decoration:none
+}
+.nav-item:hover{color:white;background:rgba(255,255,255,0.04)}
+.nav-item.active{
+  color:white;background:rgba(26,60,255,0.15);
+  border-left-color:var(--blue)
+}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{
+  margin-left:auto;background:var(--blue);color:white;
+  font-size:0.65rem;font-weight:700;
+  padding:2px 7px;border-radius:10px
+}
+.sidebar-user{
+  padding:16px 20px;
+  border-top:1px solid rgba(255,255,255,0.06)
+}
+.user-info{display:flex;align-items:center;gap:10px}
+.user-av{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--blue);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:0.9rem;flex-shrink:0
+}
+.user-name{font-size:0.85rem;font-weight:600;color:white}
+.user-email{font-size:0.72rem;color:rgba(255,255,255,0.3);margin-top:1px}
+.logout-btn{
+  display:flex;align-items:center;gap:8px;
+  color:rgba(255,255,255,0.25);font-size:0.78rem;
+  padding:10px 20px;text-decoration:none;
+  transition:color .2s;border-top:1px solid rgba(255,255,255,0.04)
+}
+.logout-btn:hover{color:rgba(255,255,255,0.6)}
+
+/* MAIN */
+.main{margin-left:var(--sidebar);min-height:100vh}
+
+/* TOPBAR */
+.topbar{
+  background:white;border-bottom:1px solid #E8EAF0;
+  padding:0 32px;height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50
+}
+.topbar-title{font-size:1.1rem;font-weight:700;letter-spacing:-0.01em}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.notif-btn{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--bg);border:1px solid #E8EAF0;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:1rem;position:relative
+}
+.notif-dot{
+  position:absolute;top:7px;right:7px;
+  width:7px;height:7px;border-radius:50%;
+  background:var(--blue)
+}
+.env-badge{
+  display:flex;align-items:center;gap:6px;
+  background:var(--bg);border:1px solid #E8EAF0;
+  border-radius:8px;padding:6px 12px;
+  font-size:0.78rem;font-weight:600;cursor:pointer
+}
+.env-dot{width:7px;height:7px;border-radius:50%}
+
+/* CONTENT */
+.content{padding:32px}
+
+/* STATS CARDS */
+.stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:18px;margin-bottom:28px
+}
+.stat-card{
+  background:white;border-radius:16px;
+  padding:22px;border:1px solid #E8EAF0;
+  transition:all .2s
+}
+.stat-card:hover{box-shadow:0 8px 24px rgba(0,0,0,0.07);transform:translateY(-2px)}
+.stat-card-top{
+  display:flex;justify-content:space-between;
+  align-items:flex-start;margin-bottom:16px
+}
+.stat-card-icon{
+  width:42px;height:42px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem
+}
+.stat-trend{
+  font-size:0.72rem;font-weight:600;
+  padding:3px 8px;border-radius:6px
+}
+.trend-up{background:#D4F5E9;color:#0A7A50}
+.trend-down{background:#F5D4D4;color:#7A0A0A}
+.stat-value{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:800;font-size:1.8rem;
+  letter-spacing:-0.02em;margin-bottom:4px
+}
+.stat-label{font-size:0.8rem;color:var(--muted)}
+
+/* GRID 2 COL */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+.grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:28px}
+
+/* CARD */
+.card{
+  background:white;border-radius:16px;
+  border:1px solid #E8EAF0;overflow:hidden
+}
+.card-header{
+  padding:20px 24px;border-bottom:1px solid #F0F2F7;
+  display:flex;justify-content:space-between;align-items:center
+}
+.card-title{font-size:0.95rem;font-weight:700}
+.card-action{
+  font-size:0.78rem;color:var(--blue);
+  font-weight:600;text-decoration:none;cursor:pointer
+}
+.card-body{padding:24px}
+
+/* TABLE */
+.tx-table{width:100%;border-collapse:collapse;font-size:0.85rem}
+.tx-table th{
+  padding:10px 16px;text-align:left;
+  font-size:0.72rem;font-weight:700;
+  color:var(--muted);text-transform:uppercase;
+  letter-spacing:0.08em;
+  background:#FAFBFF;border-bottom:1px solid #F0F2F7
+}
+.tx-table td{
+  padding:13px 16px;border-bottom:1px solid #F8F9FB;
+  vertical-align:middle
+}
+.tx-table tr:last-child td{border-bottom:none}
+.tx-table tr:hover td{background:#FAFBFF}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  font-size:0.72rem;font-weight:700
+}
+.badge-success{background:#D4F5E9;color:#0A7A50}
+.badge-pending{background:#FFF3CC;color:#856404}
+.badge-failed{background:#F5D4D4;color:#7A0A0A}
+.tx-amount{font-family:'Space Grotesk',sans-serif;font-weight:700}
+.tx-id{font-family:monospace;font-size:0.78rem;color:var(--muted)}
+
+/* API KEY */
+.api-key-box{
+  background:#0D0D0D;border-radius:12px;
+  padding:18px 20px;display:flex;
+  align-items:center;justify-content:space-between;gap:12px
+}
+.api-key-val{
+  font-family:monospace;font-size:0.85rem;
+  color:#00E5FF;flex:1;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap
+}
+.copy-btn{
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.12);
+  color:white;border-radius:8px;
+  padding:7px 14px;font-size:0.78rem;
+  font-weight:600;cursor:pointer;
+  font-family:'Space Grotesk',sans-serif;
+  transition:all .2s;white-space:nowrap
+}
+.copy-btn:hover{background:rgba(255,255,255,0.15)}
+
+/* QUICK ACTIONS */
+.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.action-btn{
+  display:flex;flex-direction:column;align-items:center;
+  gap:8px;padding:18px 12px;border-radius:12px;
+  border:1.5px solid #E8EAF0;background:white;
+  cursor:pointer;transition:all .2s;text-decoration:none
+}
+.action-btn:hover{border-color:var(--blue);background:#F0F4FF;transform:translateY(-2px)}
+.action-icon{font-size:1.5rem}
+.action-label{
+  font-size:0.78rem;font-weight:600;
+  color:var(--text);text-align:center
+}
+
+/* CHART PLACEHOLDER */
+.chart-placeholder{
+  height:180px;background:var(--bg);
+  border-radius:10px;display:flex;
+  align-items:flex-end;justify-content:space-between;
+  padding:16px;gap:6px
+}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.bar{
+  width:100%;border-radius:4px 4px 0 0;
+  background:var(--blue);opacity:0.15;
+  transition:all .3s
+}
+.bar.active{opacity:1}
+.bar-label{font-size:0.65rem;color:var(--muted)}
+
+/* PLAN CARD */
+.plan-card{
+  background:linear-gradient(135deg,var(--blue),#0A1FCC);
+  border-radius:16px;padding:24px;color:white;
+  position:relative;overflow:hidden
+}
+.plan-card::before{
+  content:'';position:absolute;
+  top:-30px;right:-30px;
+  width:120px;height:120px;border-radius:50%;
+  background:rgba(255,255,255,0.06)
+}
+.plan-name-badge{
+  font-size:0.7rem;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  background:rgba(255,255,255,0.15);
+  padding:4px 12px;border-radius:4px;
+  display:inline-block;margin-bottom:16px
+}
+.plan-limit{margin:14px 0}
+.plan-limit-label{font-size:0.78rem;color:rgba(255,255,255,0.6);margin-bottom:6px}
+.progress-bar{
+  height:6px;background:rgba(255,255,255,0.15);
+  border-radius:3px;overflow:hidden
+}
+.progress-fill{
+  height:100%;background:var(--gold);
+  border-radius:3px;transition:width .5s
+}
+.plan-upgrade{
+  display:inline-block;margin-top:18px;
+  background:var(--gold);color:var(--black);
+  padding:9px 18px;border-radius:8px;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:0.82rem;
+  text-decoration:none;transition:all .2s
+}
+.plan-upgrade:hover{background:#e6a200}
+
+/* WEBHOOK */
+.webhook-box{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg);border-radius:10px;
+  padding:12px 16px;margin-bottom:12px
+}
+.webhook-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.webhook-url{
+  font-family:monospace;font-size:0.8rem;
+  color:var(--text);flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.webhook-edit{
+  font-size:0.75rem;color:var(--blue);
+  font-weight:600;cursor:pointer;white-space:nowrap
+}
+
+/* EMPTY STATE */
+.empty-state{
+  text-align:center;padding:40px 20px;
+  color:var(--muted)
+}
+.empty-icon{font-size:2.5rem;margin-bottom:12px}
+.empty-text{font-size:0.88rem;line-height:1.6}
+
+/* MOBILE */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .main{margin-left:0}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .grid-2,.grid-3-1{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+  .stats-row{grid-template-columns:1fr}
+  .content{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <a href="/">Flin<span>pay</span></a>
+    <div class="sidebar-plan">Plan Starter</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <a class="nav-item active" href="/dashboard">
+      <span class="icon">📊</span> Vue d'ensemble
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">💳</span> Transactions
+      <span class="nav-badge">12</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">📤</span> Payouts
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">🔗</span> Liens de paiement
+    </a>
+
+    <div class="nav-section">Développeur</div>
+    <a class="nav-item" href="#">
+      <span class="icon">🔑</span> Clés API
+    </a>
+    <a class="nav-item" href="/docs">
+      <span class="icon">📖</span> Documentation
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">🪝</span> Webhooks
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">🧪</span> Sandbox
+    </a>
+
+    <div class="nav-section">Compte</div>
+    <a class="nav-item" href="#">
+      <span class="icon">⚙️</span> Paramètres
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">💰</span> Facturation
+    </a>
+    <a class="nav-item" href="#">
+      <span class="icon">🆘</span> Support
+    </a>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-info">
+      <div class="user-av" id="user-av">K</div>
+      <div>
+        <div class="user-name" id="user-name">Kouamé D.</div>
+        <div class="user-email" id="user-email">kouame@shop.ci</div>
+      </div>
+    </div>
+  </div>
+  <a class="logout-btn" href="/login">
+    🚪 Déconnexion
+  </a>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title">Vue d'ensemble</div>
+    <div class="topbar-right">
+      <div class="env-badge">
+        <div class="env-dot" style="background:var(--gold)"></div>
+        Sandbox
+      </div>
+      <div class="notif-btn">
+        🔔
+        <div class="notif-dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-card-icon" style="background:#EEF2FF">💳</div>
+          <span class="stat-trend trend-up">+12%</span>
+        </div>
+        <div class="stat-value">0</div>
+        <div class="stat-label">Transactions ce mois</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-card-icon" style="background:#EDFAF4">💰</div>
+          <span class="stat-trend trend-up">+8%</span>
+        </div>
+        <div class="stat-value">0 XOF</div>
+        <div class="stat-label">Volume encaissé</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-card-icon" style="background:#FFF8E6">⚡</div>
+          <span class="stat-trend trend-up">99%</span>
+        </div>
+        <div class="stat-value">0ms</div>
+        <div class="stat-label">Temps de réponse moyen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-card-icon" style="background:#EDFAF4">✅</div>
+          <span class="stat-trend trend-down">0%</span>
+        </div>
+        <div class="stat-value">0%</div>
+        <div class="stat-label">Taux de succès</div>
+      </div>
+    </div>
+
+    <!-- CHART + PLAN -->
+    <div class="grid-3-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Volume des transactions</div>
+          <div style="display:flex;gap:8px">
+            <span style="font-size:0.75rem;color:var(--muted);cursor:pointer">7j</span>
+            <span style="font-size:0.75rem;color:var(--blue);font-weight:700;cursor:pointer">30j</span>
+            <span style="font-size:0.75rem;color:var(--muted);cursor:pointer">90j</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-placeholder" id="chart">
+          </div>
+        </div>
+      </div>
+
+      <div class="plan-card">
+        <div class="plan-name-badge">🚀 Starter</div>
+        <div style="font-size:1.5rem;font-weight:800;font-family:'Space Grotesk',sans-serif">
+          Plan actuel
+        </div>
+        <div class="plan-limit">
+          <div class="plan-limit-label">Transactions utilisées</div>
+          <div style="font-size:1.4rem;font-weight:800;margin-bottom:8px">0 / 100</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+        <a href="#" class="plan-upgrade">⬆ Passer au Pro</a>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS + ACTIONS -->
+    <div class="grid-3-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Dernières transactions</div>
+          <a class="card-action" href="#">Voir tout →</a>
+        </div>
+        <div class="empty-state">
+          <div class="empty-icon">💳</div>
+          <div class="empty-text">
+            Aucune transaction pour l'instant.<br>
+            Intégrez l'API pour commencer à encaisser.
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Quick actions -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Actions rapides</div>
+          </div>
+          <div class="card-body">
+            <div class="actions-grid">
+              <a class="action-btn" href="#">
+                <span class="action-icon">🔗</span>
+                <span class="action-label">Créer un lien</span>
+              </a>
+              <a class="action-btn" href="#">
+                <span class="action-icon">📤</span>
+                <span class="action-label">Envoyer</span>
+              </a>
+              <a class="action-btn" href="/docs">
+                <span class="action-icon">📖</span>
+                <span class="action-label">Docs API</span>
+              </a>
+              <a class="action-btn" href="#">
+                <span class="action-icon">🧪</span>
+                <span class="action-label">Tester</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- API KEY + WEBHOOK -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔑 Clé API</div>
+          <span class="card-action" onclick="regenerateKey()">Régénérer</span>
+        </div>
+        <div class="card-body">
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">
+            Utilisez cette clé pour authentifier vos requêtes API.
+          </div>
+          <div class="api-key-box">
+            <div class="api-key-val" id="api-key-val">
+              fp_live_••••••••••••••••••••••••••••••••
+            </div>
+            <button class="copy-btn" onclick="toggleKey()">👁 Afficher</a>
+            <button class="copy-btn" onclick="copyKey()">📋 Copier</a>
+          </div>
+          <div style="margin-top:12px;padding:10px 14px;background:#FFF8E6;border-radius:8px;font-size:0.78rem;color:#856404">
+            ⚠️ Ne partagez jamais votre clé API. Changez-la si elle est compromise.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🪝 Webhooks</div>
+          <span class="card-action" onclick="addWebhook()">+ Ajouter</span>
+        </div>
+        <div class="card-body">
+          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:16px">
+            Recevez des notifications automatiques pour chaque événement.
+          </div>
+          <div class="webhook-box">
+            <div class="webhook-status" style="background:#E0E2EC"></div>
+            <div class="webhook-url">Aucun webhook configuré</div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:8px">
+            Événements : <code style="background:var(--bg);padding:2px 6px;border-radius:4px">payment.success</code>
+            <code style="background:var(--bg);padding:2px 6px;border-radius:4px;margin-left:4px">payment.failed</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Chart bars
+const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+const values = [20,45,30,60,80,55,70,40,90,65,75,85];
+const chart = document.getElementById('chart');
+const max = Math.max(...values);
+chart.innerHTML = values.map((v,i) => `
+  <div class="bar-wrap">
+    <div class="bar${i===11?' active':''}"
+      style="height:${(v/max)*140}px;
+      background:${i===11?'var(--blue)':'var(--blue)'}">
+    </div>
+    <div class="bar-label">${months[i]}</div>
+  </div>
+`).join('');
+
+// API Key
+let keyVisible = false;
+const fakeKey = 'fp_live_k9mN3pQxR7vL2wYzJ5tH8sA4bC6dE1fG';
+
+function toggleKey() {
+  keyVisible = !keyVisible;
+  const el = document.getElementById('api-key-val');
+  el.textContent = keyVisible ? fakeKey : 'fp_live_••••••••••••••••••••••••••••••••';
+  document.querySelector('.copy-btn').textContent = keyVisible ? '🙈 Masquer' : '👁 Afficher';
+}
+
+function copyKey() {
+  navigator.clipboard.writeText(fakeKey).then(() => {
+    const btn = document.querySelectorAll('.copy-btn')[1];
+    btn.textContent = '✅ Copié !';
+    setTimeout(() => btn.textContent = '📋 Copier', 2000);
+  });
+}
+
+function regenerateKey() {
+  if (confirm('Régénérer la clé API ? L\'ancienne sera invalide immédiatement.')) {
+    alert('Fonctionnalité disponible après connexion.');
+  }
+}
+
+function addWebhook() {
+  const url = prompt('URL de votre webhook :');
+  if (url) alert('Webhook enregistré : ' + url);
+}
+</script>
+</body>
+</html>
