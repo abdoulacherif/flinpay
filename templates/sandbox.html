@@ -339,45 +339,19 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   </div>
 
   <nav class="sidebar-nav">
-    <div class="nav-section">Principal</div>
-    <a class="nav-item active" href="/dashboard">
-      <span class="icon">📊</span> Vue d'ensemble
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">💳</span> Transactions
-      <span class="nav-badge">12</span>
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">📤</span> Payouts
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">🔗</span> Liens de paiement
-    </a>
-
-    <div class="nav-section">Développeur</div>
-    <a class="nav-item" href="#">
-      <span class="icon">🔑</span> Clés API
-    </a>
-    <a class="nav-item" href="/docs">
-      <span class="icon">📖</span> Documentation
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">🪝</span> Webhooks
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">🧪</span> Sandbox
-    </a>
-
-    <div class="nav-section">Compte</div>
-    <a class="nav-item" href="#">
-      <span class="icon">⚙️</span> Paramètres
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">💰</span> Facturation
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">🆘</span> Support
-    </a>
+<div class="nav-group">Principal</div>
+    <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon">💳</span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon">🔗</span> Liens de paiement</a>
+    <div class="nav-group">Développeur</div>
+    <a class="nav-link" href="/api-keys"><span class="icon">🔑</span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon">🪝</span> Webhooks</a>
+    <a class="nav-link active" href="/sandbox"><span class="icon">🧪</span> Sandbox</a>
+    <div class="nav-group">Compte</div>
+    <a class="nav-link" href="/profile"><span class="icon">👤</span> Profil</a>
+    <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon">🎁</span> Parrainage</a>
   </nav>
 
   <div class="sidebar-user">
