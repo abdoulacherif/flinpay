@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Webhooks</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;--danger:#FF4444}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--black);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;text-decoration:none}
+.logo-text span{color:var(--blue)}
+.close-sb{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-group{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 20px 5px}
+.nav-link{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.45);font-size:0.86rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .2s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.15);border-left-color:var(--blue)}
+.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
+.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06)}
+.user-row{display:flex;align-items:center;gap:10px}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.88rem}
+.user-name{font-size:0.83rem;font-weight:600;color:white}
+.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3)}
+.logout-link{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.25);font-size:0.78rem;padding:10px 20px 14px;text-decoration:none;border-top:1px solid rgba(255,255,255,0.04)}
+.logout-link:hover{color:#ff7070}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150}
+.overlay.show{display:block}
+.main{margin-left:250px;min-height:100vh}
+.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.burger{display:none;background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:5px}
+.burger-line{width:22px;height:2px;background:var(--text);border-radius:2px;display:block}
+.page-title{font-size:1rem;font-weight:700}
+.content{padding:28px}
+.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
+.card-head{padding:16px 22px;border-bottom:1px solid #F0F2F7;display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:0.9rem;font-weight:700}
+.card-body{padding:22px}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.84rem;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--blue);color:white}
+.btn-danger{background:var(--danger);color:white}
+.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
+.btn-sm{padding:6px 14px;font-size:0.76rem}
+.form-input{padding:10px 14px;border:1.5px solid #E0E2EC;border-radius:9px;font-size:0.88rem;width:100%}
+.webhook-card{background:white;border-radius:12px;border:1px solid #E8EAF0;padding:18px 20px;margin-bottom:12px}
+.wh-url{font-family:monospace;font-size:0.85rem;font-weight:600}
+.wh-desc{font-size:0.76rem;color:var(--muted);margin-top:4px}
+.event-tag{background:var(--bg);border-radius:6px;padding:3px 8px;font-size:0.72rem;font-family:monospace;margin-right:4px}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:white;border-radius:18px;padding:30px;width:100%;max-width:480px;margin:20px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:6px;display:block}
+.checkbox-item{display:flex;align-items:center;gap:10px;font-size:0.85rem;margin-bottom:6px}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:white;padding:12px 20px;border-radius:11px;font-size:0.85rem;transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+#toast.show{transform:translateY(0);opacity:1}
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.burger{display:flex}.close-sb{display:block}.content{padding:16px}}
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeSB()"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+    <button class="close-sb" onclick="closeSB()">✕</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group">Principal</div>
+    <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon">💳</span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon">🔗</span> Liens de paiement</a>
+    <div class="nav-group">Développeur</div>
+    <a class="nav-link" href="/api-keys"><span class="icon">🔑</span> Clés API</a>
+    <a class="nav-link active" href="/webhooks"><span class="icon">🪝</span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon">🧪</span> Sandbox</a>
+    <div class="nav-group">Compte</div>
+    <a class="nav-link" href="/profile"><span class="icon">👤</span> Profil</a>
+    <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon">🎁</span> Parrainage</a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="user-row">
+      <div class="user-av">U</div>
+      <div><div class="user-name">Utilisateur</div><div class="user-email">—</div></div>
+    </div>
+  </div>
+  <a class="logout-link" href="/login">🚪 Déconnexion</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="burger" onclick="openSB()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+      <div class="page-title">🪝 Webhooks</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openModal()">+ Ajouter un webhook</button>
+  </div>
+  <div class="content">
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Endpoints configurés</div></div>
+      <div class="card-body" id="wh-list">
+        <div style="text-align:center;padding:30px;color:var(--muted)">
+          <div style="font-size:2.5rem;margin-bottom:10px">🪝</div>
+          <div style="font-size:0.86rem">Aucun webhook configuré.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">📋 Événements disponibles</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="padding:14px;background:var(--bg);border-radius:10px">
+            <code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem;display:block;margin-bottom:6px">payment.success</code>
+            <div style="font-size:0.76rem;color:var(--muted)">Paiement confirmé</div>
+          </div>
+          <div style="padding:14px;background:var(--bg);border-radius:10px">
+            <code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem;display:block;margin-bottom:6px">payment.failed</code>
+            <div style="font-size:0.76rem;color:var(--muted)">Paiement échoué</div>
+          </div>
+          <div style="padding:14px;background:var(--bg);border-radius:10px">
+            <code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem;display:block;margin-bottom:6px">payment.pending</code>
+            <div style="font-size:0.76rem;color:var(--muted)">Paiement en attente</div>
+          </div>
+          <div style="padding:14px;background:var(--bg);border-radius:10px">
+            <code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem;display:block;margin-bottom:6px">payout.success</code>
+            <div style="font-size:0.76rem;color:var(--muted)">Payout envoyé</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">📜 Logs récents</div></div>
+      <div id="wh-logs">
+        <div style="text-align:center;padding:24px;color:var(--muted);font-size:0.85rem">Aucun log disponible</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3>🪝 Nouveau webhook</h3>
+    <div class="form-group">
+      <label class="form-label">URL endpoint *</label>
+      <input class="form-input" id="wh-url" type="url" placeholder="https://monsite.com/webhook">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input class="form-input" id="wh-desc" type="text" placeholder="Webhook production">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Événements à écouter</label>
+      <label class="checkbox-item"><input type="checkbox" name="events" value="payment.success" checked> payment.success</label>
+      <label class="checkbox-item"><input type="checkbox" name="events" value="payment.failed" checked> payment.failed</label>
+      <label class="checkbox-item"><input type="checkbox" name="events" value="payment.pending"> payment.pending</label>
+      <label class="checkbox-item"><input type="checkbox" name="events" value="payout.success"> payout.success</label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveWebhook()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+function toast(msg,ok){ok=ok===undefined?true:ok;var t=document.getElementById('toast');t.textContent=(ok?'OK ':'X ')+msg;t.style.borderLeftColor=ok?'#00C48C':'#FF4444';t.classList.add('show');setTimeout(function(){t.classList.remove('show')},3000)}
+function openModal(){document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===document.getElementById('modal'))closeModal()});
+
+var webhooks=[];
+function saveWebhook(){
+  var url=document.getElementById('wh-url').value.trim();
+  var desc=document.getElementById('wh-desc').value.trim();
+  if(!url||url.indexOf('http')!==0){toast('URL valide requise',false);return}
+  var checks=document.querySelectorAll('input[name="events"]:checked');
+  var events=[];
+  for(var i=0;i<checks.length;i++){events.push(checks[i].value)}
+  if(!events.length){toast('Selectionnez un evenement',false);return}
+  webhooks.unshift({url:url,desc:desc,events:events});
+  renderWebhooks();
+  closeModal();
+  document.getElementById('wh-url').value='';
+  document.getElementById('wh-desc').value='';
+  toast('Webhook ajoute !');
+}
+function renderWebhooks(){
+  var el=document.getElementById('wh-list');
+  if(!webhooks.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:2.5rem;margin-bottom:10px">🪝</div><div style="font-size:0.86rem">Aucun webhook configure.</div></div>';return}
+  var html='';
+  for(var i=0;i<webhooks.length;i++){
+    var w=webhooks[i];
+    var tags='';
+    for(var j=0;j<w.events.length;j++){tags+='<span class="event-tag">'+w.events[j]+'</span>'}
+    html+='<div class="webhook-card"><div class="wh-url">'+w.url+'</div>';
+    if(w.desc){html+='<div class="wh-desc">'+w.desc+'</div>'}
+    html+='<div style="margin-top:10px">'+tags+'</div>';
+    html+='<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="testWH('+i+')">Tester</button><button class="btn btn-danger btn-sm" onclick="deleteWH('+i+')">Supprimer</button></div></div>';
+  }
+  el.innerHTML=html;
+}
+function testWH(i){toast('Test envoye a '+webhooks[i].url)}
+function deleteWH(i){if(confirm('Supprimer ce webhook ?')){webhooks.splice(i,1);renderWebhooks();toast('Webhook supprime')}}
+</script>
+</body>
+</html>
