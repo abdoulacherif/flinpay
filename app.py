@@ -178,6 +178,69 @@ def api_me():
         'plan': user.get('plan','starter')
     }})
 
+
+# ── API TRANSACTIONS ──────────────────────────────
+@app.route('/api/transactions', methods=['GET'])
+@user_required
+def api_get_transactions():
+    txs = sb_get('transactions', f"user_id=eq.{request.user_id}&order=created_at.desc&limit=100")
+    return jsonify({'ok': True, 'transactions': txs})
+
+@app.route('/api/pay', methods=['POST'])
+def api_pay():
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        return jsonify({'ok': False, 'error': 'Clé API requise'}), 401
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'ok': False, 'error': 'Données manquantes'}), 400
+
+    required = ['amount', 'phone', 'client_name', 'order_id']
+    for field in required:
+        if not data.get(field):
+            return jsonify({'ok': False, 'error': f'Champ manquant: {field}'}), 400
+
+    import uuid
+    token = 'fp_tx_' + uuid.uuid4().hex[:20]
+
+    tx = sb_post('transactions', {
+        'token': token,
+        'order_id': data['order_id'],
+        'amount': data['amount'],
+        'client_name': data['client_name'],
+        'client_phone': data['phone'],
+        'country': data.get('country', ''),
+        'status': 'pending',
+        'environment': 'sandbox',
+        'created_at': datetime.utcnow().isoformat()
+    })
+
+    if not tx:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la création de la transaction'}), 500
+
+    return jsonify({
+        'ok': True,
+        'token': token,
+        'order_id': data['order_id'],
+        'amount': data['amount'],
+        'status': 'pending',
+        'payment_url': f'https://flinpay.vercel.app/pay/{token}'
+    })
+
+@app.route('/api/transactions/export', methods=['GET'])
+@user_required
+def api_export_transactions():
+    txs = sb_get('transactions', f"user_id=eq.{request.user_id}&order=created_at.desc")
+    import io, csv
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['ID', 'Client', 'Montant', 'Statut', 'Pays', 'Date'])
+    for tx in txs:
+        writer.writerow([tx.get('token',''), tx.get('client_name',''), tx.get('amount',''), tx.get('status',''), tx.get('country',''), tx.get('created_at','')])
+    from flask import Response
+    return Response(output.getvalue(), mimetype='text/csv', headers={'Content-Disposition': 'attachment; filename=transactions_flinpay.csv'})
+
 # ── ROUTES PUBLIQUES ──────────────────────────────
 @app.route('/')
 def index():
