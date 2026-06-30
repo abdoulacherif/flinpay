@@ -405,35 +405,40 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
-    <button class="nav-link active" onclick="showTab('overview',this)">
+    <a class="nav-link active" href="/dashboard">
       <span class="icon">📊</span> Vue d'ensemble
-    </button>
-    <button class="nav-link" onclick="showTab('transactions',this)">
+    </a>
+    <a class="nav-link" href="/transactions">
       <span class="icon">💳</span> Transactions
-      <span class="nav-badge" id="tx-count">0</span>
-    </button>
-    <button class="nav-link" onclick="showTab('payouts',this)">
+    </a>
+    <a class="nav-link" href="/payouts">
       <span class="icon">📤</span> Payouts
-    </button>
+    </a>
+    <a class="nav-link" href="/payment-links">
+      <span class="icon">🔗</span> Liens de paiement
+    </a>
 
     <div class="nav-group">Développeur</div>
-    <button class="nav-link" onclick="showTab('apikeys',this)">
+    <a class="nav-link" href="/api-keys">
       <span class="icon">🔑</span> Clés API
-    </button>
-    <button class="nav-link" onclick="showTab('webhooks',this)">
+    </a>
+    <a class="nav-link" href="/webhooks">
       <span class="icon">🪝</span> Webhooks
-    </button>
-    <button class="nav-link" onclick="showTab('sandbox',this)">
+    </a>
+    <a class="nav-link" href="/sandbox">
       <span class="icon">🧪</span> Sandbox
-    </button>
+    </a>
 
     <div class="nav-group">Compte</div>
-    <button class="nav-link" onclick="showTab('profile',this)">
+    <a class="nav-link" href="/profile">
       <span class="icon">👤</span> Profil
-    </button>
-    <button class="nav-link" onclick="showTab('billing',this)">
+    </a>
+    <a class="nav-link" href="/billing">
       <span class="icon">💰</span> Facturation
-    </button>
+    </a>
+    <a class="nav-link" href="/referral">
+      <span class="icon">🎁</span> Parrainage
+    </a>
   </nav>
 
   <div class="sidebar-user">
