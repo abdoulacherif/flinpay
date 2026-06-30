@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -9,622 +10,1102 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;
-  --black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;
-  --sidebar:240px
+  --black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;
+  --muted:#8A8FA8;--sidebar:250px;--danger:#FF4444
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 
-/* SIDEBAR */
+/* ── SIDEBAR ── */
 .sidebar{
   position:fixed;top:0;left:0;bottom:0;
   width:var(--sidebar);background:var(--black);
-  display:flex;flex-direction:column;z-index:100
+  display:flex;flex-direction:column;z-index:200;
+  transition:transform .3s ease
 }
 .sidebar-logo{
-  padding:24px 20px 20px;
-  border-bottom:1px solid rgba(255,255,255,0.06)
+  padding:22px 20px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;justify-content:space-between
 }
-.sidebar-logo a{
+.logo-text{
   font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:1.4rem;
-  color:white;text-decoration:none
-}
-.sidebar-logo a span{color:var(--blue)}
-.sidebar-plan{
-  display:inline-block;margin-top:6px;
-  font-size:0.65rem;font-weight:700;
-  letter-spacing:0.1em;text-transform:uppercase;
-  background:rgba(26,60,255,0.2);color:#7B9FFF;
-  padding:3px 10px;border-radius:4px
-}
-.sidebar-nav{flex:1;padding:14px 0;overflow-y:auto}
-.nav-section{
-  font-size:0.65rem;font-weight:700;
-  letter-spacing:0.12em;text-transform:uppercase;
-  color:rgba(255,255,255,0.2);
-  padding:14px 20px 6px
-}
-.nav-item{
-  display:flex;align-items:center;gap:12px;
-  padding:11px 20px;color:rgba(255,255,255,0.45);
-  font-size:0.875rem;font-weight:500;
-  cursor:pointer;transition:all .2s;
-  border-left:3px solid transparent;
+  font-weight:800;font-size:1.4rem;color:white;
   text-decoration:none
 }
-.nav-item:hover{color:white;background:rgba(255,255,255,0.04)}
-.nav-item.active{
+.logo-text span{color:var(--blue)}
+.plan-pill{
+  font-size:0.62rem;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  background:rgba(26,60,255,0.2);color:#7B9FFF;
+  padding:3px 8px;border-radius:4px;margin-top:5px;
+  display:inline-block
+}
+.close-sidebar{
+  display:none;background:none;border:none;
+  color:rgba(255,255,255,0.4);font-size:1.4rem;
+  cursor:pointer;padding:4px
+}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-group{
+  font-size:0.62rem;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(255,255,255,0.2);
+  padding:14px 20px 5px
+}
+.nav-link{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 20px;color:rgba(255,255,255,0.45);
+  font-size:0.86rem;font-weight:500;
+  cursor:pointer;transition:all .2s;
+  border-left:3px solid transparent;
+  text-decoration:none;border-right:none;
+  background:none;width:100%;text-align:left
+}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
+.nav-link.active{
   color:white;background:rgba(26,60,255,0.15);
   border-left-color:var(--blue)
 }
-.nav-item .icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
 .nav-badge{
   margin-left:auto;background:var(--blue);color:white;
-  font-size:0.65rem;font-weight:700;
+  font-size:0.62rem;font-weight:700;
   padding:2px 7px;border-radius:10px
 }
 .sidebar-user{
-  padding:16px 20px;
+  padding:14px 20px;
   border-top:1px solid rgba(255,255,255,0.06)
 }
-.user-info{display:flex;align-items:center;gap:10px}
+.user-row{display:flex;align-items:center;gap:10px}
 .user-av{
-  width:36px;height:36px;border-radius:50%;
+  width:34px;height:34px;border-radius:50%;
   background:var(--blue);color:white;
   display:flex;align-items:center;justify-content:center;
   font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:0.9rem;flex-shrink:0
+  font-weight:800;font-size:0.88rem;flex-shrink:0
 }
-.user-name{font-size:0.85rem;font-weight:600;color:white}
-.user-email{font-size:0.72rem;color:rgba(255,255,255,0.3);margin-top:1px}
-.logout-btn{
+.user-name{font-size:0.83rem;font-weight:600;color:white}
+.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:1px}
+.logout-link{
   display:flex;align-items:center;gap:8px;
   color:rgba(255,255,255,0.25);font-size:0.78rem;
-  padding:10px 20px;text-decoration:none;
-  transition:color .2s;border-top:1px solid rgba(255,255,255,0.04)
+  padding:10px 20px 14px;text-decoration:none;
+  transition:color .2s;
+  border-top:1px solid rgba(255,255,255,0.04)
 }
-.logout-btn:hover{color:rgba(255,255,255,0.6)}
+.logout-link:hover{color:#ff7070}
 
-/* MAIN */
-.main{margin-left:var(--sidebar);min-height:100vh}
+/* ── OVERLAY ── */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);z-index:150;
+  backdrop-filter:blur(2px)
+}
+.overlay.show{display:block}
 
-/* TOPBAR */
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
 .topbar{
   background:white;border-bottom:1px solid #E8EAF0;
-  padding:0 32px;height:64px;
+  padding:0 28px;height:62px;
   display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:50
+  position:sticky;top:0;z-index:100
 }
-.topbar-title{font-size:1.1rem;font-weight:700;letter-spacing:-0.01em}
-.topbar-right{display:flex;align-items:center;gap:16px}
-.notif-btn{
-  width:38px;height:38px;border-radius:10px;
-  background:var(--bg);border:1px solid #E8EAF0;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:1rem;position:relative
+.topbar-left{display:flex;align-items:center;gap:14px}
+.burger-btn{
+  display:none;background:none;border:none;
+  cursor:pointer;padding:6px;border-radius:8px;
+  flex-direction:column;gap:5px;
+  transition:background .2s
 }
-.notif-dot{
-  position:absolute;top:7px;right:7px;
-  width:7px;height:7px;border-radius:50%;
-  background:var(--blue)
+.burger-btn:hover{background:var(--bg)}
+.burger-line{
+  width:22px;height:2px;background:var(--text);
+  border-radius:2px;display:block;transition:all .3s
 }
-.env-badge{
+.topbar-title{font-size:1rem;font-weight:700;letter-spacing:-0.01em}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.env-toggle{
   display:flex;align-items:center;gap:6px;
   background:var(--bg);border:1px solid #E8EAF0;
   border-radius:8px;padding:6px 12px;
-  font-size:0.78rem;font-weight:600;cursor:pointer
-}
-.env-dot{width:7px;height:7px;border-radius:50%}
-
-/* CONTENT */
-.content{padding:32px}
-
-/* STATS CARDS */
-.stats-row{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:18px;margin-bottom:28px
-}
-.stat-card{
-  background:white;border-radius:16px;
-  padding:22px;border:1px solid #E8EAF0;
+  font-size:0.76rem;font-weight:600;cursor:pointer;
   transition:all .2s
 }
-.stat-card:hover{box-shadow:0 8px 24px rgba(0,0,0,0.07);transform:translateY(-2px)}
-.stat-card-top{
-  display:flex;justify-content:space-between;
-  align-items:flex-start;margin-bottom:16px
-}
-.stat-card-icon{
-  width:42px;height:42px;border-radius:11px;
+.env-dot{width:7px;height:7px;border-radius:50%}
+.notif-btn{
+  width:36px;height:36px;border-radius:9px;
+  background:var(--bg);border:1px solid #E8EAF0;
   display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem
+  cursor:pointer;font-size:0.95rem;position:relative
+}
+.notif-dot{
+  position:absolute;top:7px;right:7px;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--blue)
+}
+
+/* ── TABS ── */
+.tab-content{display:none;flex:1;padding:28px}
+.tab-content.active{display:block}
+
+/* ── STATS ROW ── */
+.stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:16px;margin-bottom:24px
+}
+.stat-card{
+  background:white;border-radius:14px;
+  padding:20px;border:1px solid #E8EAF0;
+  transition:all .2s
+}
+.stat-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.07);transform:translateY(-2px)}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.stat-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:1rem
 }
 .stat-trend{
-  font-size:0.72rem;font-weight:600;
+  font-size:0.7rem;font-weight:700;
   padding:3px 8px;border-radius:6px
 }
-.trend-up{background:#D4F5E9;color:#0A7A50}
-.trend-down{background:#F5D4D4;color:#7A0A0A}
-.stat-value{
+.up{background:#D4F5E9;color:#0A7A50}
+.down{background:#F5D4D4;color:#7A0A0A}
+.neutral{background:#F0F2F7;color:var(--muted)}
+.stat-val{
   font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:1.8rem;
-  letter-spacing:-0.02em;margin-bottom:4px
+  font-weight:800;font-size:1.7rem;
+  letter-spacing:-0.02em;margin-bottom:3px
 }
-.stat-label{font-size:0.8rem;color:var(--muted)}
+.stat-lbl{font-size:0.78rem;color:var(--muted)}
 
-/* GRID 2 COL */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
-.grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:28px}
+/* ── GRID ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
 
-/* CARD */
-.card{
-  background:white;border-radius:16px;
-  border:1px solid #E8EAF0;overflow:hidden
-}
-.card-header{
-  padding:20px 24px;border-bottom:1px solid #F0F2F7;
+/* ── CARD ── */
+.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
+.card-head{
+  padding:16px 22px;border-bottom:1px solid #F0F2F7;
   display:flex;justify-content:space-between;align-items:center
 }
-.card-title{font-size:0.95rem;font-weight:700}
+.card-title{font-size:0.9rem;font-weight:700}
 .card-action{
-  font-size:0.78rem;color:var(--blue);
-  font-weight:600;text-decoration:none;cursor:pointer
+  font-size:0.76rem;color:var(--blue);
+  font-weight:600;cursor:pointer;
+  background:none;border:none;text-decoration:none
 }
-.card-body{padding:24px}
+.card-body{padding:22px}
 
-/* TABLE */
-.tx-table{width:100%;border-collapse:collapse;font-size:0.85rem}
-.tx-table th{
-  padding:10px 16px;text-align:left;
-  font-size:0.72rem;font-weight:700;
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:0.83rem}
+.tbl th{
+  padding:9px 14px;text-align:left;
+  font-size:0.7rem;font-weight:700;
   color:var(--muted);text-transform:uppercase;
-  letter-spacing:0.08em;
-  background:#FAFBFF;border-bottom:1px solid #F0F2F7
+  letter-spacing:0.08em;background:#FAFBFF;
+  border-bottom:1px solid #F0F2F7
 }
-.tx-table td{
-  padding:13px 16px;border-bottom:1px solid #F8F9FB;
-  vertical-align:middle
-}
-.tx-table tr:last-child td{border-bottom:none}
-.tx-table tr:hover td{background:#FAFBFF}
+.tbl td{padding:12px 14px;border-bottom:1px solid #F8F9FB;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#FAFBFF}
 .badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:4px 10px;border-radius:20px;
-  font-size:0.72rem;font-weight:700
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:20px;
+  font-size:0.7rem;font-weight:700
 }
-.badge-success{background:#D4F5E9;color:#0A7A50}
-.badge-pending{background:#FFF3CC;color:#856404}
-.badge-failed{background:#F5D4D4;color:#7A0A0A}
-.tx-amount{font-family:'Space Grotesk',sans-serif;font-weight:700}
-.tx-id{font-family:monospace;font-size:0.78rem;color:var(--muted)}
+.b-success{background:#D4F5E9;color:#0A7A50}
+.b-pending{background:#FFF3CC;color:#856404}
+.b-failed{background:#F5D4D4;color:#7A0A0A}
+.tx-id{font-family:monospace;font-size:0.76rem;color:var(--muted)}
+.tx-amt{font-family:'Space Grotesk',sans-serif;font-weight:700}
 
-/* API KEY */
-.api-key-box{
-  background:#0D0D0D;border-radius:12px;
-  padding:18px 20px;display:flex;
-  align-items:center;justify-content:space-between;gap:12px
+/* ── FILTER BAR ── */
+.filter-bar{
+  display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap
 }
-.api-key-val{
-  font-family:monospace;font-size:0.85rem;
+.filter-input{
+  padding:9px 14px;border:1.5px solid #E0E2EC;
+  border-radius:9px;font-size:0.85rem;
+  font-family:'Inter',sans-serif;outline:none;
+  transition:border-color .2s;background:white
+}
+.filter-input:focus{border-color:var(--blue)}
+.filter-select{
+  padding:9px 14px;border:1.5px solid #E0E2EC;
+  border-radius:9px;font-size:0.85rem;
+  font-family:'Inter',sans-serif;outline:none;
+  background:white;cursor:pointer
+}
+.btn{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:0.84rem;
+  padding:9px 18px;border-radius:9px;
+  border:none;cursor:pointer;transition:all .2s
+}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:#1430e0}
+.btn-danger{background:var(--danger);color:white}
+.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
+.btn-gold{background:var(--gold);color:var(--black)}
+.btn-sm{padding:6px 12px;font-size:0.76rem}
+
+/* ── API KEY ── */
+.key-box{
+  background:#0D0D0D;border-radius:11px;
+  padding:16px 18px;display:flex;
+  align-items:center;gap:10px;margin-bottom:14px
+}
+.key-val{
+  font-family:monospace;font-size:0.82rem;
   color:#00E5FF;flex:1;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap
 }
-.copy-btn{
+.key-btn{
   background:rgba(255,255,255,0.08);
   border:1px solid rgba(255,255,255,0.12);
-  color:white;border-radius:8px;
-  padding:7px 14px;font-size:0.78rem;
+  color:white;border-radius:7px;
+  padding:6px 12px;font-size:0.75rem;
   font-weight:600;cursor:pointer;
   font-family:'Space Grotesk',sans-serif;
   transition:all .2s;white-space:nowrap
 }
-.copy-btn:hover{background:rgba(255,255,255,0.15)}
-
-/* QUICK ACTIONS */
-.actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.action-btn{
-  display:flex;flex-direction:column;align-items:center;
-  gap:8px;padding:18px 12px;border-radius:12px;
-  border:1.5px solid #E8EAF0;background:white;
-  cursor:pointer;transition:all .2s;text-decoration:none
-}
-.action-btn:hover{border-color:var(--blue);background:#F0F4FF;transform:translateY(-2px)}
-.action-icon{font-size:1.5rem}
-.action-label{
-  font-size:0.78rem;font-weight:600;
-  color:var(--text);text-align:center
+.key-btn:hover{background:rgba(255,255,255,0.16)}
+.warn-box{
+  background:#FFF8E6;border-radius:9px;
+  padding:10px 14px;font-size:0.76rem;color:#856404;
+  margin-top:10px
 }
 
-/* CHART PLACEHOLDER */
-.chart-placeholder{
-  height:180px;background:var(--bg);
-  border-radius:10px;display:flex;
-  align-items:flex-end;justify-content:space-between;
-  padding:16px;gap:6px
-}
-.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
-.bar{
-  width:100%;border-radius:4px 4px 0 0;
-  background:var(--blue);opacity:0.15;
-  transition:all .3s
-}
-.bar.active{opacity:1}
-.bar-label{font-size:0.65rem;color:var(--muted)}
-
-/* PLAN CARD */
-.plan-card{
-  background:linear-gradient(135deg,var(--blue),#0A1FCC);
-  border-radius:16px;padding:24px;color:white;
-  position:relative;overflow:hidden
-}
-.plan-card::before{
-  content:'';position:absolute;
-  top:-30px;right:-30px;
-  width:120px;height:120px;border-radius:50%;
-  background:rgba(255,255,255,0.06)
-}
-.plan-name-badge{
-  font-size:0.7rem;font-weight:700;
-  letter-spacing:0.12em;text-transform:uppercase;
-  background:rgba(255,255,255,0.15);
-  padding:4px 12px;border-radius:4px;
-  display:inline-block;margin-bottom:16px
-}
-.plan-limit{margin:14px 0}
-.plan-limit-label{font-size:0.78rem;color:rgba(255,255,255,0.6);margin-bottom:6px}
-.progress-bar{
-  height:6px;background:rgba(255,255,255,0.15);
-  border-radius:3px;overflow:hidden
-}
-.progress-fill{
-  height:100%;background:var(--gold);
-  border-radius:3px;transition:width .5s
-}
-.plan-upgrade{
-  display:inline-block;margin-top:18px;
-  background:var(--gold);color:var(--black);
-  padding:9px 18px;border-radius:8px;
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:700;font-size:0.82rem;
-  text-decoration:none;transition:all .2s
-}
-.plan-upgrade:hover{background:#e6a200}
-
-/* WEBHOOK */
-.webhook-box{
-  display:flex;align-items:center;gap:10px;
+/* ── WEBHOOK ── */
+.webhook-item{
+  display:flex;align-items:center;gap:12px;
   background:var(--bg);border-radius:10px;
-  padding:12px 16px;margin-bottom:12px
+  padding:12px 16px;margin-bottom:10px;
+  border:1px solid #E8EAF0
 }
-.webhook-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.webhook-url{
+.wh-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.wh-url{
   font-family:monospace;font-size:0.8rem;
   color:var(--text);flex:1;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap
 }
-.webhook-edit{
-  font-size:0.75rem;color:var(--blue);
-  font-weight:600;cursor:pointer;white-space:nowrap
-}
+.wh-actions{display:flex;gap:6px}
 
-/* EMPTY STATE */
-.empty-state{
-  text-align:center;padding:40px 20px;
-  color:var(--muted)
+/* ── PROFILE ── */
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-label{
+  font-size:0.72rem;font-weight:600;
+  color:var(--muted);text-transform:uppercase;letter-spacing:0.08em
 }
-.empty-icon{font-size:2.5rem;margin-bottom:12px}
-.empty-text{font-size:0.88rem;line-height:1.6}
+.form-input{
+  padding:10px 14px;border:1.5px solid #E0E2EC;
+  border-radius:9px;font-size:0.88rem;
+  font-family:'Inter',sans-serif;outline:none;
+  transition:border-color .2s
+}
+.form-input:focus{border-color:var(--blue)}
 
-/* MOBILE */
+/* ── PLAN CARD ── */
+.plan-hero{
+  background:linear-gradient(135deg,var(--blue),#0A1FCC);
+  border-radius:14px;padding:22px;color:white;
+  position:relative;overflow:hidden;margin-bottom:18px
+}
+.plan-hero::before{
+  content:'';position:absolute;
+  top:-20px;right:-20px;width:100px;height:100px;
+  border-radius:50%;background:rgba(255,255,255,0.06)
+}
+.plan-badge-pill{
+  display:inline-block;
+  background:rgba(255,255,255,0.15);
+  font-size:0.68rem;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  padding:3px 10px;border-radius:4px;margin-bottom:12px
+}
+.plan-progress{height:6px;background:rgba(255,255,255,0.15);border-radius:3px;margin:10px 0 6px}
+.plan-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:2.5rem;margin-bottom:10px}
+.empty-text{font-size:0.86rem;line-height:1.6}
+
+/* ── MODAL ── */
+.modal-bg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);z-index:500;
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(4px)
+}
+.modal-bg.show{display:flex}
+.modal{
+  background:white;border-radius:18px;
+  padding:32px;width:100%;max-width:440px;
+  margin:20px;box-shadow:0 24px 48px rgba(0,0,0,0.15)
+}
+.modal h3{
+  font-size:1.1rem;font-weight:800;
+  margin-bottom:20px
+}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--black);color:white;
+  padding:12px 20px;border-radius:11px;
+  font-size:0.85rem;font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,0.2);
+  transform:translateY(80px);opacity:0;
+  transition:all .3s;z-index:9999;
+  border-left:4px solid var(--green)
+}
+#toast.show{transform:translateY(0);opacity:1}
+
+/* ── RESPONSIVE ── */
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
   .main{margin-left:0}
+  .burger-btn{display:flex}
+  .close-sidebar{display:block}
   .stats-row{grid-template-columns:1fr 1fr}
   .grid-2,.grid-3-1{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:1fr}
 }
 @media(max-width:520px){
-  .stats-row{grid-template-columns:1fr}
-  .content{padding:20px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .tab-content{padding:16px}
+  .topbar{padding:0 16px}
+  .tbl th:nth-child(4),.tbl td:nth-child(4){display:none}
 }
 </style>
 </head>
 <body>
 
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
 <!-- SIDEBAR -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <a href="/">Flin<span>pay</span></a>
-    <div class="sidebar-plan">Plan Starter</div>
+    <div>
+      <a href="/" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill" style="background:rgba(26,60,255,0.2);color:#7B9FFF;font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-top:5px;display:inline-block">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
   </div>
 
   <nav class="sidebar-nav">
-    <div class="nav-section">Principal</div>
-    <a class="nav-item active" href="/dashboard">
+    <div class="nav-group">Principal</div>
+    <button class="nav-link active" onclick="showTab('overview',this)">
       <span class="icon">📊</span> Vue d'ensemble
-    </a>
-    <a class="nav-item" href="#">
+    </button>
+    <button class="nav-link" onclick="showTab('transactions',this)">
       <span class="icon">💳</span> Transactions
-      <span class="nav-badge">12</span>
-    </a>
-    <a class="nav-item" href="#">
+      <span class="nav-badge" id="tx-count">0</span>
+    </button>
+    <button class="nav-link" onclick="showTab('payouts',this)">
       <span class="icon">📤</span> Payouts
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">🔗</span> Liens de paiement
-    </a>
+    </button>
 
-    <div class="nav-section">Développeur</div>
-    <a class="nav-item" href="#">
+    <div class="nav-group">Développeur</div>
+    <button class="nav-link" onclick="showTab('apikeys',this)">
       <span class="icon">🔑</span> Clés API
-    </a>
-    <a class="nav-item" href="/docs">
-      <span class="icon">📖</span> Documentation
-    </a>
-    <a class="nav-item" href="#">
+    </button>
+    <button class="nav-link" onclick="showTab('webhooks',this)">
       <span class="icon">🪝</span> Webhooks
-    </a>
-    <a class="nav-item" href="#">
+    </button>
+    <button class="nav-link" onclick="showTab('sandbox',this)">
       <span class="icon">🧪</span> Sandbox
-    </a>
+    </button>
 
-    <div class="nav-section">Compte</div>
-    <a class="nav-item" href="#">
-      <span class="icon">⚙️</span> Paramètres
-    </a>
-    <a class="nav-item" href="#">
+    <div class="nav-group">Compte</div>
+    <button class="nav-link" onclick="showTab('profile',this)">
+      <span class="icon">👤</span> Profil
+    </button>
+    <button class="nav-link" onclick="showTab('billing',this)">
       <span class="icon">💰</span> Facturation
-    </a>
-    <a class="nav-item" href="#">
-      <span class="icon">🆘</span> Support
-    </a>
+    </button>
   </nav>
 
   <div class="sidebar-user">
-    <div class="user-info">
-      <div class="user-av" id="user-av">K</div>
+    <div class="user-row">
+      <div class="user-av" id="user-av">U</div>
       <div>
-        <div class="user-name" id="user-name">Kouamé D.</div>
-        <div class="user-email" id="user-email">kouame@shop.ci</div>
+        <div class="user-name" id="user-name">Utilisateur</div>
+        <div class="user-email" id="user-email">—</div>
       </div>
     </div>
   </div>
-  <a class="logout-btn" href="/login">
-    🚪 Déconnexion
-  </a>
+  <a class="logout-link" href="/login">🚪 Déconnexion</a>
 </aside>
 
 <!-- MAIN -->
 <div class="main">
-
-  <!-- TOPBAR -->
   <div class="topbar">
-    <div class="topbar-title">Vue d'ensemble</div>
+    <div class="topbar-left">
+      <button class="burger-btn" id="burger" onclick="openSidebar()">
+        <span class="burger-line"></span>
+        <span class="burger-line"></span>
+        <span class="burger-line"></span>
+      </button>
+      <div class="topbar-title" id="page-title">Vue d'ensemble</div>
+    </div>
     <div class="topbar-right">
-      <div class="env-badge">
-        <div class="env-dot" style="background:var(--gold)"></div>
-        Sandbox
+      <div class="env-toggle" onclick="toggleEnv()">
+        <div class="env-dot" id="env-dot" style="background:var(--gold)"></div>
+        <span id="env-label">Sandbox</span>
       </div>
-      <div class="notif-btn">
-        🔔
-        <div class="notif-dot"></div>
+      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+    </div>
+  </div>
+
+  <!-- TAB: OVERVIEW -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon" style="background:#EEF2FF">💳</div>
+          <span class="stat-trend neutral" id="ov-tx-trend">—</span>
+        </div>
+        <div class="stat-val" id="ov-tx-count">0</div>
+        <div class="stat-lbl">Transactions ce mois</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon" style="background:#EDFAF4">💰</div>
+          <span class="stat-trend neutral" id="ov-vol-trend">—</span>
+        </div>
+        <div class="stat-val" id="ov-volume">0</div>
+        <div class="stat-lbl">Volume encaissé (XOF)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon" style="background:#EDFAF4">✅</div>
+          <span class="stat-trend neutral">—</span>
+        </div>
+        <div class="stat-val" id="ov-success">0%</div>
+        <div class="stat-lbl">Taux de succès</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-icon" style="background:#FFF8E6">⚡</div>
+          <span class="stat-trend up">99.9%</span>
+        </div>
+        <div class="stat-val">~1.2s</div>
+        <div class="stat-lbl">Temps de réponse</div>
+      </div>
+    </div>
+
+    <div class="grid-3-1">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Dernières transactions</div>
+          <button class="card-action" onclick="showTab('transactions', null)">Voir tout →</button>
+        </div>
+        <div id="ov-tx-list">
+          <div class="empty">
+            <div class="empty-icon">💳</div>
+            <div class="empty-text">Aucune transaction.<br>Intégrez l'API pour commencer.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="plan-hero">
+          <div class="plan-badge-pill">🚀 Plan Starter</div>
+          <div style="font-size:1.3rem;font-weight:800">Plan actuel</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);margin-top:4px">Transactions utilisées</div>
+          <div style="font-size:1.6rem;font-weight:800;margin-top:4px" id="plan-usage">0 / 100</div>
+          <div class="plan-progress"><div class="plan-fill" id="plan-bar" style="width:0%"></div></div>
+          <a href="#" class="btn btn-gold btn-sm" style="display:inline-block;margin-top:14px;text-decoration:none">⬆ Passer au Pro</a>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title">Actions rapides</div></div>
+          <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <button onclick="showTab('apikeys',null)" style="padding:14px 10px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.borderColor='#1A3CFF'" onmouseout="this.style.borderColor='#E8EAF0'">
+              🔑<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Clés API</span>
+            </button>
+            <button onclick="showTab('webhooks',null)" style="padding:14px 10px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.borderColor='#1A3CFF'" onmouseout="this.style.borderColor='#E8EAF0'">
+              🪝<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Webhooks</span>
+            </button>
+            <button onclick="showTab('sandbox',null)" style="padding:14px 10px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.borderColor='#1A3CFF'" onmouseout="this.style.borderColor='#E8EAF0'">
+              🧪<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Sandbox</span>
+            </button>
+            <button onclick="showTab('profile',null)" style="padding:14px 10px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.borderColor='#1A3CFF'" onmouseout="this.style.borderColor='#E8EAF0'">
+              👤<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Profil</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- CONTENT -->
-  <div class="content">
+  <!-- TAB: TRANSACTIONS -->
+  <div class="tab-content" id="tab-transactions">
+    <div class="filter-bar">
+      <input class="filter-input" type="text" id="tx-search" placeholder="🔍 Rechercher..." oninput="filterTx()">
+      <select class="filter-select" id="tx-status" onchange="filterTx()">
+        <option value="">Tous les statuts</option>
+        <option value="paid">✅ Payé</option>
+        <option value="pending">⏳ En attente</option>
+        <option value="failed">❌ Échoué</option>
+      </select>
+      <select class="filter-select" id="tx-country" onchange="filterTx()">
+        <option value="">Tous les pays</option>
+        <option value="CI">🇨🇮 Côte d'Ivoire</option>
+        <option value="CM">🇨🇲 Cameroun</option>
+        <option value="SN">🇸🇳 Sénégal</option>
+        <option value="BJ">🇧🇯 Bénin</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="exportTx()">📥 Exporter CSV</button>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Transactions <span id="tx-total" style="color:var(--muted);font-weight:400"></span></div>
+        <button class="btn btn-primary btn-sm" onclick="loadTransactions()">🔄 Actualiser</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="tx-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Client</th>
+              <th>Montant</th>
+              <th>Statut</th>
+              <th>Opérateur</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="tx-tbody">
+            <tr><td colspan="6"><div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <!-- STATS -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-icon" style="background:#EEF2FF">💳</div>
-          <span class="stat-trend trend-up">+12%</span>
-        </div>
-        <div class="stat-value">0</div>
-        <div class="stat-label">Transactions ce mois</div>
+  <!-- TAB: PAYOUTS -->
+  <div class="tab-content" id="tab-payouts">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Payouts</div>
+        <button class="btn btn-primary btn-sm" onclick="openPayoutModal()">+ Nouveau payout</button>
       </div>
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-icon" style="background:#EDFAF4">💰</div>
-          <span class="stat-trend trend-up">+8%</span>
-        </div>
-        <div class="stat-value">0 XOF</div>
-        <div class="stat-label">Volume encaissé</div>
+      <div class="empty">
+        <div class="empty-icon">📤</div>
+        <div class="empty-text">Aucun payout effectué.<br>Envoyez de l'argent vers un numéro mobile money.</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-icon" style="background:#FFF8E6">⚡</div>
-          <span class="stat-trend trend-up">99%</span>
-        </div>
-        <div class="stat-value">0ms</div>
-        <div class="stat-label">Temps de réponse moyen</div>
+    </div>
+  </div>
+
+  <!-- TAB: API KEYS -->
+  <div class="tab-content" id="tab-apikeys">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">🔑 Clés API</div>
+        <button class="card-action" onclick="regenerateKey()">Régénérer</button>
       </div>
-      <div class="stat-card">
-        <div class="stat-card-top">
-          <div class="stat-card-icon" style="background:#EDFAF4">✅</div>
-          <span class="stat-trend trend-down">0%</span>
+      <div class="card-body">
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:14px">Utilisez cette clé dans le header <code style="background:var(--bg);padding:2px 6px;border-radius:4px">Authorization: Bearer YOUR_KEY</code></div>
+        <div style="margin-bottom:8px;font-size:0.76rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Clé de production</div>
+        <div class="key-box">
+          <div class="key-val" id="prod-key">fp_live_••••••••••••••••••••••••••••••••</div>
+          <button class="key-btn" onclick="toggleKey('prod')">👁</button>
+          <button class="key-btn" onclick="copyKey('prod')">📋</button>
         </div>
-        <div class="stat-value">0%</div>
-        <div class="stat-label">Taux de succès</div>
+        <div style="margin-bottom:8px;margin-top:16px;font-size:0.76rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Clé sandbox</div>
+        <div class="key-box">
+          <div class="key-val" id="sand-key">fp_test_••••••••••••••••••••••••••••••••</div>
+          <button class="key-btn" onclick="toggleKey('sand')">👁</button>
+          <button class="key-btn" onclick="copyKey('sand')">📋</button>
+        </div>
+        <div class="warn-box">⚠️ Ne partagez jamais vos clés API. Régénérez-les immédiatement si compromises.</div>
       </div>
     </div>
 
-    <!-- CHART + PLAN -->
-    <div class="grid-3-1">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Volume des transactions</div>
-          <div style="display:flex;gap:8px">
-            <span style="font-size:0.75rem;color:var(--muted);cursor:pointer">7j</span>
-            <span style="font-size:0.75rem;color:var(--blue);font-weight:700;cursor:pointer">30j</span>
-            <span style="font-size:0.75rem;color:var(--muted);cursor:pointer">90j</span>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="chart-placeholder" id="chart">
-          </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">IP autorisées</div><button class="card-action" onclick="addIP()">+ Ajouter</button></div>
+      <div class="card-body">
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:14px">Restreignez l'accès à votre clé API à certaines adresses IP.</div>
+        <div id="ip-list">
+          <div class="empty"><div class="empty-text">Aucune restriction IP. Toutes les IPs sont autorisées.</div></div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <div class="plan-card">
-        <div class="plan-name-badge">🚀 Starter</div>
-        <div style="font-size:1.5rem;font-weight:800;font-family:'Space Grotesk',sans-serif">
-          Plan actuel
+  <!-- TAB: WEBHOOKS -->
+  <div class="tab-content" id="tab-webhooks">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">🪝 Endpoints Webhook</div>
+        <button class="btn btn-primary btn-sm" onclick="openWebhookModal()">+ Ajouter</button>
+      </div>
+      <div class="card-body">
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">Flinpay enverra une requête POST à vos URLs à chaque événement de paiement.</div>
+        <div id="webhook-list">
+          <div class="empty"><div class="empty-icon">🪝</div><div class="empty-text">Aucun webhook configuré.</div></div>
         </div>
-        <div class="plan-limit">
-          <div class="plan-limit-label">Transactions utilisées</div>
-          <div style="font-size:1.4rem;font-weight:800;margin-bottom:8px">0 / 100</div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width:0%"></div>
-          </div>
-        </div>
-        <a href="#" class="plan-upgrade">⬆ Passer au Pro</a>
       </div>
     </div>
 
-    <!-- TRANSACTIONS + ACTIONS -->
-    <div class="grid-3-1">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Dernières transactions</div>
-          <a class="card-action" href="#">Voir tout →</a>
-        </div>
-        <div class="empty-state">
-          <div class="empty-icon">💳</div>
-          <div class="empty-text">
-            Aucune transaction pour l'instant.<br>
-            Intégrez l'API pour commencer à encaisser.
+    <div class="card">
+      <div class="card-head"><div class="card-title">Événements disponibles</div></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:9px">
+            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem">payment.success</code><div style="font-size:0.76rem;color:var(--muted);margin-top:4px">Paiement confirmé</div></div>
+            <span class="badge b-success">Actif</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:9px">
+            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem">payment.failed</code><div style="font-size:0.76rem;color:var(--muted);margin-top:4px">Paiement échoué</div></div>
+            <span class="badge b-success">Actif</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:9px">
+            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem">payout.success</code><div style="font-size:0.76rem;color:var(--muted);margin-top:4px">Payout envoyé</div></div>
+            <span class="badge b-success">Actif</span>
           </div>
         </div>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:20px">
-
-        <!-- Quick actions -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Actions rapides</div>
-          </div>
-          <div class="card-body">
-            <div class="actions-grid">
-              <a class="action-btn" href="#">
-                <span class="action-icon">🔗</span>
-                <span class="action-label">Créer un lien</span>
-              </a>
-              <a class="action-btn" href="#">
-                <span class="action-icon">📤</span>
-                <span class="action-label">Envoyer</span>
-              </a>
-              <a class="action-btn" href="/docs">
-                <span class="action-icon">📖</span>
-                <span class="action-label">Docs API</span>
-              </a>
-              <a class="action-btn" href="#">
-                <span class="action-icon">🧪</span>
-                <span class="action-label">Tester</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
+  </div>
 
-    <!-- API KEY + WEBHOOK -->
+  <!-- TAB: SANDBOX -->
+  <div class="tab-content" id="tab-sandbox">
+    <div class="card">
+      <div class="card-head"><div class="card-title">🧪 Tester un paiement</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="form-group">
+            <div class="form-label">Montant</div>
+            <input class="form-input" type="number" id="sb-amount" placeholder="1000" value="500">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Téléphone</div>
+            <input class="form-input" type="text" id="sb-phone" placeholder="0700000000">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Nom client</div>
+            <input class="form-input" type="text" id="sb-name" placeholder="Kouamé Diallo">
+          </div>
+          <div class="form-group">
+            <div class="form-label">ID commande</div>
+            <input class="form-input" type="text" id="sb-order" placeholder="ORD-001">
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:16px;width:100%" onclick="testPayment()">⚡ Lancer le test</button>
+        <div id="sb-result" style="margin-top:14px;display:none;background:#0D0D0D;border-radius:10px;padding:16px;font-family:monospace;font-size:0.82rem;color:#00E5FF;white-space:pre-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: PROFILE -->
+  <div class="tab-content" id="tab-profile">
     <div class="grid-2">
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">🔑 Clé API</div>
-          <span class="card-action" onclick="regenerateKey()">Régénérer</span>
-        </div>
+        <div class="card-head"><div class="card-title">👤 Informations personnelles</div></div>
         <div class="card-body">
-          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">
-            Utilisez cette clé pour authentifier vos requêtes API.
-          </div>
-          <div class="api-key-box">
-            <div class="api-key-val" id="api-key-val">
-              fp_live_••••••••••••••••••••••••••••••••
+          <div class="profile-grid">
+            <div class="form-group">
+              <div class="form-label">Prénom</div>
+              <input class="form-input" id="p-firstname" type="text">
             </div>
-            <button class="copy-btn" onclick="toggleKey()">👁 Afficher</a>
-            <button class="copy-btn" onclick="copyKey()">📋 Copier</a>
+            <div class="form-group">
+              <div class="form-label">Nom</div>
+              <input class="form-input" id="p-lastname" type="text">
+            </div>
+            <div class="form-group full">
+              <div class="form-label">Email</div>
+              <input class="form-input" id="p-email" type="email">
+            </div>
+            <div class="form-group full">
+              <div class="form-label">Entreprise</div>
+              <input class="form-input" id="p-company" type="text">
+            </div>
+            <div class="form-group">
+              <div class="form-label">Téléphone</div>
+              <input class="form-input" id="p-phone" type="tel">
+            </div>
+            <div class="form-group">
+              <div class="form-label">Pays</div>
+              <input class="form-input" id="p-country" type="text" readonly>
+            </div>
           </div>
-          <div style="margin-top:12px;padding:10px 14px;background:#FFF8E6;border-radius:8px;font-size:0.78rem;color:#856404">
-            ⚠️ Ne partagez jamais votre clé API. Changez-la si elle est compromise.
-          </div>
+          <button class="btn btn-primary" style="margin-top:18px" onclick="saveProfile()">💾 Enregistrer</button>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🪝 Webhooks</div>
-          <span class="card-action" onclick="addWebhook()">+ Ajouter</span>
+      <div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">🔒 Changer le mot de passe</div></div>
+          <div class="card-body">
+            <div class="form-group" style="margin-bottom:12px">
+              <div class="form-label">Mot de passe actuel</div>
+              <input class="form-input" id="p-oldpass" type="password" placeholder="••••••••">
+            </div>
+            <div class="form-group" style="margin-bottom:12px">
+              <div class="form-label">Nouveau mot de passe</div>
+              <input class="form-input" id="p-newpass" type="password" placeholder="••••••••">
+            </div>
+            <div class="form-group" style="margin-bottom:16px">
+              <div class="form-label">Confirmer</div>
+              <input class="form-input" id="p-newpass2" type="password" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" onclick="changePassword()">🔒 Mettre à jour</button>
+          </div>
         </div>
-        <div class="card-body">
-          <div style="font-size:0.8rem;color:var(--muted);margin-bottom:16px">
-            Recevez des notifications automatiques pour chaque événement.
-          </div>
-          <div class="webhook-box">
-            <div class="webhook-status" style="background:#E0E2EC"></div>
-            <div class="webhook-url">Aucun webhook configuré</div>
-          </div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:8px">
-            Événements : <code style="background:var(--bg);padding:2px 6px;border-radius:4px">payment.success</code>
-            <code style="background:var(--bg);padding:2px 6px;border-radius:4px;margin-left:4px">payment.failed</code>
+
+        <div class="card" style="margin-top:18px">
+          <div class="card-head"><div class="card-title">⚠️ Zone dangereuse</div></div>
+          <div class="card-body">
+            <div style="font-size:0.83rem;color:var(--muted);margin-bottom:14px">La suppression de votre compte est irréversible.</div>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete()">🗑 Supprimer mon compte</button>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
+  <!-- TAB: BILLING -->
+  <div class="tab-content" id="tab-billing">
+    <div class="plan-hero">
+      <div class="plan-badge-pill">Plan actuel</div>
+      <div style="font-size:1.8rem;font-weight:800">Starter</div>
+      <div style="color:rgba(255,255,255,0.6);margin-top:4px">Gratuit — 100 transactions/mois</div>
+      <a href="#" class="btn btn-gold" style="display:inline-block;margin-top:16px;text-decoration:none">⬆ Passer au Pro — 15 000 FCFA/mois</a>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Historique de facturation</div></div>
+      <div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Aucune facture sur le plan gratuit.</div></div>
+    </div>
   </div>
 </div>
 
-<script>
-// Chart bars
-const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-const values = [20,45,30,60,80,55,70,40,90,65,75,85];
-const chart = document.getElementById('chart');
-const max = Math.max(...values);
-chart.innerHTML = values.map((v,i) => `
-  <div class="bar-wrap">
-    <div class="bar${i===11?' active':''}"
-      style="height:${(v/max)*140}px;
-      background:${i===11?'var(--blue)':'var(--blue)'}">
+<!-- MODAL WEBHOOK -->
+<div class="modal-bg" id="webhook-modal">
+  <div class="modal">
+    <h3>🪝 Ajouter un webhook</h3>
+    <div class="form-group" style="margin-bottom:14px">
+      <div class="form-label">URL endpoint</div>
+      <input class="form-input" id="wh-url-input" type="url" placeholder="https://monsite.com/webhook" style="width:100%">
     </div>
-    <div class="bar-label">${months[i]}</div>
+    <div class="form-group">
+      <div class="form-label">Description (optionnel)</div>
+      <input class="form-input" id="wh-desc-input" type="text" placeholder="Webhook production" style="width:100%">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('webhook-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveWebhook()">Enregistrer</button>
+    </div>
   </div>
-`).join('');
+</div>
 
-// API Key
-let keyVisible = false;
-const fakeKey = 'fp_live_k9mN3pQxR7vL2wYzJ5tH8sA4bC6dE1fG';
+<!-- MODAL PAYOUT -->
+<div class="modal-bg" id="payout-modal">
+  <div class="modal">
+    <h3>📤 Nouveau payout</h3>
+    <div class="form-group" style="margin-bottom:14px">
+      <div class="form-label">Numéro mobile money</div>
+      <input class="form-input" id="po-phone" type="tel" placeholder="+225 0700000000" style="width:100%">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <div class="form-label">Montant (XOF)</div>
+      <input class="form-input" id="po-amount" type="number" placeholder="5000" style="width:100%">
+    </div>
+    <div class="form-group">
+      <div class="form-label">Opérateur</div>
+      <select class="form-input" id="po-operator" style="width:100%">
+        <option value="orange-money-ci">🟠 Orange Money CI</option>
+        <option value="mtn-ci">🟡 MTN MoMo CI</option>
+        <option value="wave-ci">🔵 Wave CI</option>
+        <option value="moov-ci">🟢 Moov Money CI</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('payout-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="sendPayout()">Envoyer</button>
+    </div>
+  </div>
+</div>
 
-function toggleKey() {
-  keyVisible = !keyVisible;
-  const el = document.getElementById('api-key-val');
-  el.textContent = keyVisible ? fakeKey : 'fp_live_••••••••••••••••••••••••••••••••';
-  document.querySelector('.copy-btn').textContent = keyVisible ? '🙈 Masquer' : '👁 Afficher';
+<div id="toast"></div>
+
+<script>
+// ── SIDEBAR ──────────────────────────────────────
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  document.body.style.overflow='';
 }
 
-function copyKey() {
-  navigator.clipboard.writeText(fakeKey).then(() => {
-    const btn = document.querySelectorAll('.copy-btn')[1];
-    btn.textContent = '✅ Copié !';
-    setTimeout(() => btn.textContent = '📋 Copier', 2000);
-  });
+// ── TABS ─────────────────────────────────────────
+const tabTitles = {
+  overview:'Vue d\'ensemble', transactions:'Transactions',
+  payouts:'Payouts', apikeys:'Clés API',
+  webhooks:'Webhooks', sandbox:'Sandbox',
+  profile:'Profil', billing:'Facturation'
+};
+function showTab(name, btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  else {
+    document.querySelectorAll('.nav-link').forEach(n=>{
+      if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+name+"'")) n.classList.add('active');
+    });
+  }
+  document.getElementById('page-title').textContent = tabTitles[name]||name;
+  closeSidebar();
 }
 
-function regenerateKey() {
-  if (confirm('Régénérer la clé API ? L\'ancienne sera invalide immédiatement.')) {
-    alert('Fonctionnalité disponible après connexion.');
+// ── TOAST ────────────────────────────────────────
+function toast(msg, ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=(ok?'✅ ':'❌ ')+msg;
+  t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── ENV TOGGLE ───────────────────────────────────
+let isSandbox=true;
+function toggleEnv(){
+  isSandbox=!isSandbox;
+  document.getElementById('env-dot').style.background=isSandbox?'var(--gold)':'var(--green)';
+  document.getElementById('env-label').textContent=isSandbox?'Sandbox':'Production';
+  toast(isSandbox?'Mode Sandbox activé':'Mode Production activé');
+}
+
+// ── API KEYS ─────────────────────────────────────
+const keys={
+  prod:{val:'fp_live_k9mN3pQxR7vL2wYzJ5tH8sA4bC6dE1fG',visible:false},
+  sand:{val:'fp_test_s2xT7mK4nP9qR1vL8wZ3yA6bC5dE0fH',visible:false}
+};
+function toggleKey(type){
+  keys[type].visible=!keys[type].visible;
+  const el=document.getElementById(type+'-key');
+  el.textContent=keys[type].visible?keys[type].val:'fp_'+(type==='prod'?'live':'test')+'_••••••••••••••••••••••••••••••••';
+}
+function copyKey(type){
+  navigator.clipboard.writeText(keys[type].val).then(()=>toast('Clé copiée !'));
+}
+function regenerateKey(){
+  if(confirm('Régénérer la clé de production ? L\'ancienne sera immédiatement invalide.')){
+    toast('Clé régénérée avec succès');
+  }
+}
+function addIP(){
+  const ip=prompt('Entrez une adresse IP à autoriser :');
+  if(ip){
+    const list=document.getElementById('ip-list');
+    list.innerHTML='';
+    const item=document.createElement('div');
+    item.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:9px;margin-bottom:8px;font-family:monospace;font-size:0.85rem';
+    item.innerHTML=`${ip} <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem">🗑</button>`;
+    list.appendChild(item);
+    toast('IP ajoutée : '+ip);
   }
 }
 
-function addWebhook() {
-  const url = prompt('URL de votre webhook :');
-  if (url) alert('Webhook enregistré : ' + url);
+// ── WEBHOOKS ─────────────────────────────────────
+let webhooks=[];
+function openWebhookModal(){document.getElementById('webhook-modal').classList.add('show')}
+function saveWebhook(){
+  const url=document.getElementById('wh-url-input').value;
+  const desc=document.getElementById('wh-desc-input').value;
+  if(!url){toast('URL requise',false);return;}
+  webhooks.push({url,desc,active:true});
+  renderWebhooks();
+  closeModal('webhook-modal');
+  document.getElementById('wh-url-input').value='';
+  document.getElementById('wh-desc-input').value='';
+  toast('Webhook ajouté !');
 }
+function renderWebhooks(){
+  const list=document.getElementById('webhook-list');
+  if(!webhooks.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">🪝</div><div class="empty-text">Aucun webhook configuré.</div></div>';
+    return;
+  }
+  list.innerHTML=webhooks.map((w,i)=>`
+    <div class="webhook-item">
+      <div class="wh-status" style="background:${w.active?'var(--green)':'var(--muted)'}"></div>
+      <div>
+        <div class="wh-url">${w.url}</div>
+        ${w.desc?`<div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${w.desc}</div>`:''}
+      </div>
+      <div class="wh-actions">
+        <button class="btn btn-outline btn-sm" onclick="testWebhook(${i})">Tester</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteWebhook(${i})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+function testWebhook(i){toast('Test envoyé à '+webhooks[i].url)}
+function deleteWebhook(i){webhooks.splice(i,1);renderWebhooks();toast('Webhook supprimé')}
+
+// ── SANDBOX ──────────────────────────────────────
+function testPayment(){
+  const amount=document.getElementById('sb-amount').value;
+  const phone=document.getElementById('sb-phone').value;
+  const name=document.getElementById('sb-name').value;
+  const order=document.getElementById('sb-order').value||'ORD-'+Date.now();
+  if(!amount||!phone){toast('Remplissez les champs requis',false);return;}
+  const result=document.getElementById('sb-result');
+  result.style.display='block';
+  result.textContent='⏳ Envoi en cours...';
+  setTimeout(()=>{
+    result.textContent=JSON.stringify({
+      ok:true, token:'fp_'+Math.random().toString(36).substr(2,20),
+      order_id:order, amount:parseInt(amount), phone,
+      client:name, status:'pending',
+      payment_url:'https://pay.moneyfusion.net/test/'+Math.random().toString(36).substr(2,8),
+      created_at:new Date().toISOString()
+    },null,2);
+    toast('Test initié !');
+  },1200);
+}
+
+// ── TRANSACTIONS ─────────────────────────────────
+let allTx=[];
+function loadTransactions(){
+  // Données de démonstration
+  allTx=[
+    {id:'fp_tx_abc123',client:'Kouamé D.',amount:15000,status:'paid',operator:'Orange Money',country:'CI',date:'2025-06-29 10:23'},
+    {id:'fp_tx_def456',client:'Aminata S.',amount:8500,status:'pending',operator:'Wave',country:'SN',date:'2025-06-29 09:15'},
+    {id:'fp_tx_ghi789',client:'Ibrahim T.',amount:25000,status:'paid',operator:'MTN MoMo',country:'CM',date:'2025-06-28 16:44'},
+    {id:'fp_tx_jkl012',client:'Fatou B.',amount:5000,status:'failed',operator:'Moov Money',country:'BJ',date:'2025-06-28 14:30'},
+  ];
+  document.getElementById('tx-count').textContent=allTx.length;
+  renderTx(allTx);
+  updateOverviewStats();
+}
+function renderTx(txs){
+  const tbody=document.getElementById('tx-tbody');
+  const total=document.getElementById('tx-total');
+  total.textContent=`(${txs.length})`;
+  if(!txs.length){
+    tbody.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=txs.map(tx=>`
+    <tr>
+      <td><span class="tx-id">${tx.id.substr(0,12)}...</span></td>
+      <td>${tx.client}</td>
+      <td><span class="tx-amt">${tx.amount.toLocaleString()} XOF</span></td>
+      <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">
+        ${tx.status==='paid'?'✅ Payé':tx.status==='pending'?'⏳ Attente':'❌ Échoué'}
+      </span></td>
+      <td>${tx.operator}</td>
+      <td style="font-size:0.76rem;color:var(--muted)">${tx.date}</td>
+    </tr>
+  `).join('');
+}
+function filterTx(){
+  const search=document.getElementById('tx-search').value.toLowerCase();
+  const status=document.getElementById('tx-status').value;
+  const country=document.getElementById('tx-country').value;
+  const filtered=allTx.filter(tx=>{
+    const matchSearch=!search||tx.client.toLowerCase().includes(search)||tx.id.includes(search);
+    const matchStatus=!status||tx.status===status;
+    const matchCountry=!country||tx.country===country;
+    return matchSearch&&matchStatus&&matchCountry;
+  });
+  renderTx(filtered);
+}
+function exportTx(){
+  const csv=['ID,Client,Montant,Statut,Opérateur,Date',...allTx.map(t=>`${t.id},${t.client},${t.amount},${t.status},${t.operator},${t.date}`)].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='transactions_flinpay.csv';
+  a.click();
+  toast('Export CSV téléchargé !');
+}
+function updateOverviewStats(){
+  const paid=allTx.filter(t=>t.status==='paid');
+  const vol=paid.reduce((s,t)=>s+t.amount,0);
+  const rate=allTx.length?Math.round(paid.length/allTx.length*100):0;
+  document.getElementById('ov-tx-count').textContent=allTx.length;
+  document.getElementById('ov-volume').textContent=vol.toLocaleString();
+  document.getElementById('ov-success').textContent=rate+'%';
+  const usage=Math.min(allTx.length,100);
+  document.getElementById('plan-usage').textContent=usage+' / 100';
+  document.getElementById('plan-bar').style.width=usage+'%';
+  const ovList=document.getElementById('ov-tx-list');
+  if(allTx.length){
+    ovList.innerHTML=`<table class="tbl"><thead><tr><th>Client</th><th>Montant</th><th>Statut</th></tr></thead><tbody>
+    ${allTx.slice(0,4).map(tx=>`<tr>
+      <td>${tx.client}</td>
+      <td class="tx-amt">${tx.amount.toLocaleString()} XOF</td>
+      <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">${tx.status==='paid'?'✅':'tx.status==="pending"'?'⏳':'❌'} ${tx.status}</span></td>
+    </tr>`).join('')}
+    </tbody></table>`;
+  }
+}
+
+// ── PROFILE ──────────────────────────────────────
+function loadProfile(){
+  const user=JSON.parse(localStorage.getItem('fp_user')||'{}');
+  document.getElementById('p-firstname').value=user.firstname||'';
+  document.getElementById('p-lastname').value=user.lastname||'';
+  document.getElementById('p-email').value=user.email||'';
+  document.getElementById('p-company').value=user.company||'';
+  document.getElementById('p-phone').value=user.phone||'';
+  document.getElementById('p-country').value=user.country||'';
+  document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
+  document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
+  document.getElementById('user-email').textContent=user.email||'';
+}
+function saveProfile(){toast('Profil mis à jour !')}
+function changePassword(){
+  const np=document.getElementById('p-newpass').value;
+  const np2=document.getElementById('p-newpass2').value;
+  if(np!==np2){toast('Les mots de passe ne correspondent pas',false);return;}
+  if(np.length<8){toast('Mot de passe trop court',false);return;}
+  toast('Mot de passe mis à jour !');
+}
+function confirmDelete(){
+  if(confirm('Supprimer votre compte ? Cette action est irréversible.')){
+    toast('Compte supprimé',false);
+    setTimeout(()=>window.location.href='/',2000);
+  }
+}
+
+// ── PAYOUT ───────────────────────────────────────
+function openPayoutModal(){document.getElementById('payout-modal').classList.add('show')}
+function sendPayout(){
+  const phone=document.getElementById('po-phone').value;
+  const amount=document.getElementById('po-amount').value;
+  if(!phone||!amount){toast('Remplissez tous les champs',false);return;}
+  closeModal('payout-modal');
+  toast('Payout de '+parseInt(amount).toLocaleString()+' XOF envoyé !');
+}
+
+// ── MODAL ────────────────────────────────────────
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')});
+});
+
+// ── INIT ─────────────────────────────────────────
+loadProfile();
+loadTransactions();
 </script>
 </body>
 </html>
