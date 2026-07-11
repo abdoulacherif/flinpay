@@ -54,10 +54,12 @@ def sb_post(table, data):
     try:
         r = requests.post(f'{SUPABASE_URL}/rest/v1/{table}', headers=SUPA_HEADERS, json=data, timeout=10)
         print(f'[sb_post] {table} status={r.status_code} body={r.text[:300]}')
-        return r.json() if r.ok else None
+        if r.ok:
+            return r.json()
+        return {'_error': True, '_status': r.status_code, '_detail': r.text[:300]}
     except Exception as e:
         print(f'[sb_post] error: {e}')
-        return None
+        return {'_error': True, '_status': 0, '_detail': str(e)}
 
 def sb_patch(table, field, value, data):
     try:
@@ -260,7 +262,6 @@ def login_page():
     return render_template('login.html')
 
 @app.route('/dashboard')
-
 @user_required
 def dashboard():
     users = sb_get('users', f"id=eq.{request.user_id}")
@@ -303,8 +304,9 @@ def api_register():
         'is_active': True,
         'created_at': datetime.utcnow().isoformat()
     })
-    if not user:
-        return jsonify({'ok': False, 'error': 'Erreur Supabase'}), 500
+    if not user or (isinstance(user, dict) and user.get('_error')):
+        detail = user.get('_detail') if isinstance(user, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
     return jsonify({'ok': True, 'message': 'Compte créé avec succès'})
 
 # ── ADMIN LOGIN ───────────────────────────────────
@@ -435,55 +437,46 @@ def server_error(e):
 
 
 @app.route('/transactions')
-
 @user_required
 def transactions():
     return render_template('transactions.html')
 
 @app.route('/payouts')
-
 @user_required
 def payouts():
     return render_template('payouts.html')
 
 @app.route('/api-keys')
-
 @user_required
 def api_keys_page():
     return render_template('api_keys.html')
 
 @app.route('/webhooks')
-
 @user_required
 def webhooks_page():
     return render_template('webhooks.html')
 
 @app.route('/sandbox')
-
 @user_required
 def sandbox():
     return render_template('sandbox.html')
 
 @app.route('/profile')
-
 @user_required
 def profile():
     return render_template('profile.html')
 
 @app.route('/billing')
-
 @user_required
 def billing():
     return render_template('billing.html')
 
 @app.route('/payment-links')
-
 @user_required
 def payment_links():
     return render_template('payment_links.html')
 
 @app.route('/referral')
-
 @user_required
 def referral():
     return render_template('referral.html')
