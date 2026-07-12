@@ -572,7 +572,10 @@ def not_found(e):
 
 @app.errorhandler(500)
 def server_error(e):
-    return jsonify({'error': str(e)}), 500
+    import traceback
+    orig = getattr(e, 'original_exception', e)
+    traceback.print_exc()
+    return jsonify({'error': str(orig), 'type': type(orig).__name__}), 500
 
 
 @app.route('/transactions')
