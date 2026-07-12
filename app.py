@@ -15,6 +15,10 @@ app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
+@app.template_filter('split')
+def split_filter(value, sep=','):
+    return (value or '').split(sep)
+
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME')
@@ -400,6 +404,10 @@ def register():
 def login_page():
     return render_template('login.html')
 
+def get_current_user():
+    users = sb_get('users', f"id=eq.{request.user_id}")
+    return users[0] if users else {}
+
 @app.route('/dashboard')
 @user_required
 def dashboard():
@@ -581,47 +589,47 @@ def server_error(e):
 @app.route('/transactions')
 @user_required
 def transactions():
-    return render_template('transactions.html')
+    return render_template('transactions.html', user=get_current_user())
 
 @app.route('/payouts')
 @user_required
 def payouts():
-    return render_template('payouts.html')
+    return render_template('payouts.html', user=get_current_user())
 
 @app.route('/api-keys')
 @user_required
 def api_keys_page():
-    return render_template('api_keys.html')
+    return render_template('api_keys.html', user=get_current_user())
 
 @app.route('/webhooks')
 @user_required
 def webhooks_page():
-    return render_template('webhooks.html')
+    return render_template('webhooks.html', user=get_current_user())
 
 @app.route('/sandbox')
 @user_required
 def sandbox():
-    return render_template('sandbox.html')
+    return render_template('sandbox.html', user=get_current_user())
 
 @app.route('/profile')
 @user_required
 def profile():
-    return render_template('profile.html')
+    return render_template('profile.html', user=get_current_user())
 
 @app.route('/billing')
 @user_required
 def billing():
-    return render_template('billing.html')
+    return render_template('billing.html', user=get_current_user())
 
 @app.route('/payment-links')
 @user_required
 def payment_links():
-    return render_template('payment_links.html')
+    return render_template('payment_links.html', user=get_current_user())
 
 @app.route('/referral')
 @user_required
 def referral():
-    return render_template('referral.html')
+    return render_template('referral.html', user=get_current_user())
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
