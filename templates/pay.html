@@ -1,1 +1,156 @@
-h
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if valid %}Payer {{ link.name }}{% else %}Lien indisponible{% endif %} — Flinpay</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--muted:#8A8FA8}
+body{
+  font-family:'Inter',sans-serif;background:#0D0D0D;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 20px;position:relative;overflow:hidden
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.18) 0%,transparent 70%);
+  pointer-events:none
+}
+.box{
+  background:#141420;border:1px solid rgba(255,255,255,0.08);
+  border-radius:24px;padding:40px 36px;width:100%;max-width:440px;
+  position:relative;z-index:1;box-shadow:0 32px 64px rgba(0,0,0,0.4);text-align:center
+}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.6rem;color:white;margin-bottom:22px}
+.logo span{color:var(--blue)}
+.icon-big{font-size:2.6rem;margin-bottom:14px}
+.amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.4rem;color:white;letter-spacing:-0.02em}
+.desc{color:rgba(255,255,255,0.45);font-size:0.88rem;margin-top:6px;margin-bottom:26px}
+.field{margin-bottom:14px;text-align:left}
+label{display:block;font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:7px}
+input{
+  width:100%;padding:12px 15px;background:rgba(255,255,255,0.05);
+  border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:white;
+  font-size:0.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s
+}
+input:focus{border-color:var(--blue)}
+input::placeholder{color:rgba(255,255,255,0.2)}
+.btn-pay{
+  width:100%;padding:14px;background:var(--blue);color:white;border:none;
+  border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:0.95rem;cursor:pointer;transition:all .2s;margin-top:6px
+}
+.btn-pay:hover{background:#1430e0}
+.btn-pay:disabled{opacity:0.5;pointer-events:none}
+.secure-note{color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:16px}
+.error-msg{
+  background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.3);
+  color:#ff7070;border-radius:8px;padding:10px 14px;font-size:0.83rem;
+  margin-bottom:14px;display:none
+}
+.state-title{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;margin-bottom:8px}
+.state-text{color:rgba(255,255,255,0.45);font-size:0.88rem;line-height:1.6}
+.back{margin-top:22px;font-size:0.8rem}
+.back a{color:rgba(255,255,255,0.3);text-decoration:none}
+.back a:hover{color:white}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">Flin<span>pay</span></div>
+
+  {% if not valid %}
+    <div class="icon-big">
+      {% if reason == 'expire' %}⏰{% elif reason == 'inactif' %}🚫{% elif reason == 'limite' %}🔒{% else %}❓{% endif %}
+    </div>
+    <div class="state-title">
+      {% if reason == 'introuvable' %}Lien introuvable
+      {% elif reason == 'inactif' %}Lien désactivé
+      {% elif reason == 'expire' %}Lien expiré
+      {% elif reason == 'limite' %}Limite atteinte
+      {% else %}Lien indisponible{% endif %}
+    </div>
+    <div class="state-text">
+      {% if reason == 'introuvable' %}Ce lien de paiement n'existe pas ou a été supprimé.
+      {% elif reason == 'inactif' %}Ce lien a été désactivé par le marchand.
+      {% elif reason == 'expire' %}Ce lien de paiement n'est plus valide.
+      {% elif reason == 'limite' %}Ce lien a atteint son nombre maximum d'utilisations.
+      {% else %}Contactez le marchand pour obtenir un nouveau lien.{% endif %}
+    </div>
+  {% else %}
+    <div id="pay-view">
+      <div class="amount">{{ '{:,.0f}'.format(link.amount).replace(',', ' ') }} XOF</div>
+      <div class="desc">{{ link.description or link.name }}</div>
+
+      <div id="error-msg" class="error-msg"></div>
+
+      <div class="field">
+        <label>Nom complet</label>
+        <input type="text" id="pay-name" placeholder="Kouamé Diallo">
+      </div>
+      <div class="field">
+        <label>Numéro mobile money</label>
+        <input type="tel" id="pay-phone" placeholder="+225 0700000000">
+      </div>
+
+      <button class="btn-pay" id="btn-pay" onclick="doPay()">💳 Payer maintenant</button>
+      <div class="secure-note">🔒 Paiement sécurisé via Flinpay</div>
+    </div>
+
+    <div id="success-view" style="display:none">
+      <div class="icon-big">✅</div>
+      <div class="state-title">Paiement initié</div>
+      <div class="state-text">Une demande de paiement a été envoyée sur votre mobile money. Confirmez-la pour finaliser la transaction.</div>
+    </div>
+  {% endif %}
+
+  <div class="back"><a href="/">← Propulsé par Flinpay</a></div>
+</div>
+
+{% if valid %}
+<script>
+async function doPay(){
+  const name=document.getElementById('pay-name').value.trim();
+  const phone=document.getElementById('pay-phone').value.trim();
+  const err=document.getElementById('error-msg');
+  const btn=document.getElementById('btn-pay');
+  err.style.display='none';
+
+  if(!phone){
+    err.textContent='⚠ Le numéro mobile money est requis.';
+    err.style.display='block';
+    return;
+  }
+
+  btn.textContent='Envoi en cours...';
+  btn.disabled=true;
+
+  try{
+    const r=await fetch('/api/pay-link/{{ token }}',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name, phone})
+    });
+    const data=await r.json();
+    if(data.ok){
+      document.getElementById('pay-view').style.display='none';
+      document.getElementById('success-view').style.display='block';
+    }else{
+      err.textContent='⚠ '+(data.error||'Erreur lors du paiement.');
+      err.style.display='block';
+      btn.textContent='💳 Payer maintenant';
+      btn.disabled=false;
+    }
+  }catch(e){
+    err.textContent='⚠ Erreur de connexion. Réessayez.';
+    err.style.display='block';
+    btn.textContent='💳 Payer maintenant';
+    btn.disabled=false;
+  }
+}
+</script>
+{% endif %}
+</body>
+</html>
