@@ -544,7 +544,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
               <th>Client</th>
               <th>Montant</th>
               <th>Statut</th>
-              <th>Opérateur</th>
+              <th>Téléphone</th>
               <th>Date</th>
             </tr>
           </thead>
@@ -688,7 +688,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
             </div>
             <div class="form-group full">
               <div class="form-label">Email</div>
-              <input class="form-input" id="p-email" type="email">
+              <input class="form-input" id="p-email" type="email" readonly>
             </div>
             <div class="form-group full">
               <div class="form-label">Entreprise</div>
@@ -944,36 +944,49 @@ function testPayment(){
   },1200);
 }
 
-// ── TRANSACTIONS ─────────────────────────────────
+// ── TRANSACTIONS (données réelles via /api/transactions) ──
 let allTx=[];
-function loadTransactions(){
-  // Données de démonstration
-  allTx=[
-    {id:'fp_tx_abc123',client:'Kouamé D.',amount:15000,status:'paid',operator:'Orange Money',country:'CI',date:'2025-06-29 10:23'},
-    {id:'fp_tx_def456',client:'Aminata S.',amount:8500,status:'pending',operator:'Wave',country:'SN',date:'2025-06-29 09:15'},
-    {id:'fp_tx_ghi789',client:'Ibrahim T.',amount:25000,status:'paid',operator:'MTN MoMo',country:'CM',date:'2025-06-28 16:44'},
-    {id:'fp_tx_jkl012',client:'Fatou B.',amount:5000,status:'failed',operator:'Moov Money',country:'BJ',date:'2025-06-28 14:30'},
-  ];
-  renderTx(allTx);
-  updateOverviewStats();
+async function loadTransactions(){
+  const tbody=document.getElementById('tx-tbody');
+  tbody.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-text">Chargement...</div></div></td></tr>';
+  try{
+    const r=await fetch('/api/transactions');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok){ toast(data.error||'Erreur de chargement des transactions',false); allTx=[]; renderTx(allTx); updateOverviewStats(); return; }
+    allTx=(data.transactions||[]).map(tx=>({
+      id:tx.token||'',
+      client:tx.client_name||'—',
+      amount:Number(tx.amount)||0,
+      status:tx.status||'pending',
+      phone:tx.client_phone||'—',
+      country:tx.country||'',
+      date:tx.created_at?new Date(tx.created_at).toLocaleString('fr-FR'):''
+    }));
+    renderTx(allTx);
+    updateOverviewStats();
+  }catch(e){
+    toast('Impossible de charger les transactions',false);
+    allTx=[]; renderTx(allTx); updateOverviewStats();
+  }
 }
 function renderTx(txs){
   const tbody=document.getElementById('tx-tbody');
   const total=document.getElementById('tx-total');
   total.textContent=`(${txs.length})`;
   if(!txs.length){
-    tbody.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction</div></div></td></tr>';
+    tbody.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction pour le moment.<br>Intégrez l\'API pour commencer à encaisser.</div></div></td></tr>';
     return;
   }
   tbody.innerHTML=txs.map(tx=>`
     <tr>
-      <td><span class="tx-id">${tx.id.substr(0,12)}...</span></td>
+      <td><span class="tx-id">${tx.id.substr(0,12)}${tx.id.length>12?'...':''}</span></td>
       <td>${tx.client}</td>
       <td><span class="tx-amt">${tx.amount.toLocaleString()} XOF</span></td>
       <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">
         ${tx.status==='paid'?'✅ Payé':tx.status==='pending'?'⏳ Attente':'❌ Échoué'}
       </span></td>
-      <td>${tx.operator}</td>
+      <td>${tx.phone}</td>
       <td style="font-size:0.76rem;color:var(--muted)">${tx.date}</td>
     </tr>
   `).join('');
@@ -991,7 +1004,7 @@ function filterTx(){
   renderTx(filtered);
 }
 function exportTx(){
-  const csv=['ID,Client,Montant,Statut,Opérateur,Date',...allTx.map(t=>`${t.id},${t.client},${t.amount},${t.status},${t.operator},${t.date}`)].join('\n');
+  const csv=['ID,Client,Montant,Statut,Téléphone,Date',...allTx.map(t=>`${t.id},${t.client},${t.amount},${t.status},${t.phone},${t.date}`)].join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='transactions_flinpay.csv';
@@ -1020,31 +1033,86 @@ function updateOverviewStats(){
   }
 }
 
-// ── PROFILE ──────────────────────────────────────
-function loadProfile(){
-  const user=JSON.parse(localStorage.getItem('fp_user')||'{}');
-  document.getElementById('p-firstname').value=user.firstname||'';
-  document.getElementById('p-lastname').value=user.lastname||'';
-  document.getElementById('p-email').value=user.email||'';
-  document.getElementById('p-company').value=user.company||'';
-  document.getElementById('p-phone').value=user.phone||'';
-  document.getElementById('p-country').value=user.country||'';
-  document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
-  document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
-  document.getElementById('user-email').textContent=user.email||'';
+// ── PROFILE (données réelles via /api/me) ─────────
+async function loadProfile(){
+  try{
+    const r=await fetch('/api/me');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok){ toast('Impossible de charger le profil',false); return; }
+    const user=data.user;
+    document.getElementById('p-firstname').value=user.firstname||'';
+    document.getElementById('p-lastname').value=user.lastname||'';
+    document.getElementById('p-email').value=user.email||'';
+    document.getElementById('p-company').value=user.company||'';
+    document.getElementById('p-phone').value=user.phone||'';
+    document.getElementById('p-country').value=user.country||'';
+    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
+    document.getElementById('user-email').textContent=user.email||'';
+  }catch(e){
+    toast('Impossible de charger le profil',false);
+  }
 }
-function saveProfile(){toast('Profil mis à jour !')}
-function changePassword(){
+async function saveProfile(){
+  const payload={
+    firstname:document.getElementById('p-firstname').value.trim(),
+    lastname:document.getElementById('p-lastname').value.trim(),
+    company:document.getElementById('p-company').value.trim(),
+    phone:document.getElementById('p-phone').value.trim()
+  };
+  try{
+    const r=await fetch('/api/profile',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const data=await r.json();
+    if(data.ok){ toast('Profil mis à jour !'); loadProfile(); }
+    else{ toast(data.error||'Erreur lors de la mise à jour',false); }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+}
+async function changePassword(){
+  const oldpass=document.getElementById('p-oldpass').value;
   const np=document.getElementById('p-newpass').value;
   const np2=document.getElementById('p-newpass2').value;
+  if(!oldpass||!np){toast('Remplissez tous les champs',false);return;}
   if(np!==np2){toast('Les mots de passe ne correspondent pas',false);return;}
   if(np.length<8){toast('Mot de passe trop court',false);return;}
-  toast('Mot de passe mis à jour !');
+  try{
+    const r=await fetch('/api/password',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({old_password:oldpass,new_password:np})
+    });
+    const data=await r.json();
+    if(data.ok){
+      toast('Mot de passe mis à jour !');
+      document.getElementById('p-oldpass').value='';
+      document.getElementById('p-newpass').value='';
+      document.getElementById('p-newpass2').value='';
+    }else{
+      toast(data.error||'Erreur lors de la mise à jour',false);
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
 }
-function confirmDelete(){
-  if(confirm('Supprimer votre compte ? Cette action est irréversible.')){
-    toast('Compte supprimé',false);
-    setTimeout(()=>window.location.href='/',2000);
+async function confirmDelete(){
+  if(!confirm('Supprimer votre compte ? Cette action est irréversible.')) return;
+  try{
+    const r=await fetch('/api/account',{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){
+      toast('Compte supprimé',false);
+      setTimeout(()=>window.location.href='/',1500);
+    }else{
+      toast(data.error||'Erreur lors de la suppression',false);
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
   }
 }
 
