@@ -322,61 +322,6 @@ def api_export_transactions():
     from flask import Response
     return Response(output.getvalue(), mimetype='text/csv', headers={'Content-Disposition': 'attachment; filename=transactions_flinpay.csv'})
 
-# ── PAGE PUBLIQUE DE PAIEMENT (lien de paiement) ──
-@app.route('/pay/<token>')
-def pay_page(token):
-    links = sb_get('payment_links', f'token=eq.{token}')
-    if not links:
-        return render_template('404.html'), 404
-    link = links[0]
-    if not link.get('active', True):
-        return render_template('404.html'), 404
-    if link.get('expires_at'):
-        try:
-            if datetime.utcnow().date() > datetime.fromisoformat(link['expires_at']).date():
-                return render_template('404.html'), 404
-        except Exception:
-            pass
-    sb_patch('payment_links', 'token', token, {'views': (link.get('views') or 0) + 1})
-    return render_template('pay.html', link=link)
-
-@app.route('/api/pay-link/<token>', methods=['POST'])
-def api_pay_link(token):
-    data = request.get_json() or {}
-    phone = (data.get('phone') or '').strip()
-    client_name = (data.get('client_name') or '').strip()
-    if not phone or not client_name:
-        return jsonify({'ok': False, 'error': 'Nom et téléphone requis'}), 400
-
-    links = sb_get('payment_links', f'token=eq.{token}')
-    if not links:
-        return jsonify({'ok': False, 'error': 'Lien introuvable'}), 404
-    link = links[0]
-    if not link.get('active', True):
-        return jsonify({'ok': False, 'error': 'Ce lien est désactivé'}), 400
-
-    import uuid
-    tx_token = 'fp_tx_' + uuid.uuid4().hex[:20]
-    tx_payload = {
-        'token': tx_token,
-        'order_id': 'LINK-' + token,
-        'amount': link['amount'],
-        'client_name': client_name,
-        'client_phone': phone,
-        'country': '',
-        'status': 'pending',
-        'environment': 'sandbox',
-        'created_at': datetime.utcnow().isoformat()
-    }
-    if link.get('user_id'):
-        tx_payload['user_id'] = link['user_id']
-    tx = sb_post('transactions', tx_payload)
-    if not tx or (isinstance(tx, dict) and tx.get('_error')):
-        return jsonify({'ok': False, 'error': 'Erreur lors du traitement du paiement'}), 500
-
-    sb_patch('payment_links', 'token', token, {'paid_count': (link.get('paid_count') or 0) + 1})
-    return jsonify({'ok': True, 'transaction_token': tx_token, 'status': 'pending'})
-
 # ── API PAYMENT LINKS ─────────────────────────────
 @app.route('/api/payment-links', methods=['GET'])
 @user_required
