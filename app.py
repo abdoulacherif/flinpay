@@ -181,6 +181,53 @@ def api_me():
     }})
 
 
+@app.route('/api/profile', methods=['PUT'])
+@user_required
+def api_update_profile():
+    data = request.get_json()
+    if not data:
+        return jsonify({'ok': False, 'error': 'Données manquantes'}), 400
+    allowed = {}
+    for field in ['firstname', 'lastname', 'company', 'phone']:
+        if field in data and isinstance(data[field], str):
+            allowed[field] = data[field].strip()
+    if not allowed:
+        return jsonify({'ok': False, 'error': 'Aucun champ à mettre à jour'}), 400
+    ok = sb_patch('users', 'id', request.user_id, allowed)
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour du profil'}), 500
+    return jsonify({'ok': True, 'message': 'Profil mis à jour'})
+
+@app.route('/api/password', methods=['PUT'])
+@user_required
+def api_change_password():
+    data = request.get_json()
+    if not data or not data.get('old_password') or not data.get('new_password'):
+        return jsonify({'ok': False, 'error': 'Champs manquants'}), 400
+    if len(data['new_password']) < 8:
+        return jsonify({'ok': False, 'error': 'Le nouveau mot de passe doit contenir au moins 8 caractères'}), 400
+    users = sb_get('users', f"id=eq.{request.user_id}")
+    if not users:
+        return jsonify({'ok': False, 'error': 'Utilisateur introuvable'}), 404
+    user = users[0]
+    if not bcrypt.checkpw(data['old_password'].encode('utf-8'), user['password_hash'].encode('utf-8')):
+        return jsonify({'ok': False, 'error': 'Mot de passe actuel incorrect'}), 401
+    new_hash = bcrypt.hashpw(data['new_password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    ok = sb_patch('users', 'id', request.user_id, {'password_hash': new_hash})
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour du mot de passe'}), 500
+    return jsonify({'ok': True, 'message': 'Mot de passe mis à jour'})
+
+@app.route('/api/account', methods=['DELETE'])
+@user_required
+def api_delete_account():
+    ok = sb_delete('users', 'id', request.user_id)
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la suppression du compte'}), 500
+    resp = make_response(jsonify({'ok': True}))
+    resp.delete_cookie('fp_user_token')
+    return resp
+
 # ── API TRANSACTIONS ──────────────────────────────
 @app.route('/api/transactions', methods=['GET'])
 @user_required
@@ -193,6 +240,14 @@ def api_pay():
     auth = request.headers.get('Authorization', '')
     if not auth.startswith('Bearer '):
         return jsonify({'ok': False, 'error': 'Clé API requise'}), 401
+    api_key = auth.replace('Bearer ', '', 1).strip()
+
+    # NOTE: la table api_keys n'existe pas encore (à créer avec le "grand backend").
+    # En attendant, on tente de résoudre l'utilisateur propriétaire de la clé ;
+    # si la table est absente, owner reste vide et la transaction est créée sans user_id
+    # (elle n'apparaîtra pas dans /api/transactions tant que ce lien n'est pas en place).
+    owner = sb_get('api_keys', f'key=eq.{api_key}&select=user_id')
+    user_id = owner[0]['user_id'] if owner else None
 
     data = request.get_json()
     if not data:
@@ -206,7 +261,7 @@ def api_pay():
     import uuid
     token = 'fp_tx_' + uuid.uuid4().hex[:20]
 
-    tx = sb_post('transactions', {
+    tx_payload = {
         'token': token,
         'order_id': data['order_id'],
         'amount': data['amount'],
@@ -216,9 +271,13 @@ def api_pay():
         'status': 'pending',
         'environment': 'sandbox',
         'created_at': datetime.utcnow().isoformat()
-    })
+    }
+    if user_id:
+        tx_payload['user_id'] = user_id
 
-    if not tx:
+    tx = sb_post('transactions', tx_payload)
+
+    if not tx or (isinstance(tx, dict) and tx.get('_error')):
         return jsonify({'ok': False, 'error': 'Erreur lors de la création de la transaction'}), 500
 
     return jsonify({
