@@ -320,7 +320,7 @@ def admin_login():
             resp.set_cookie('fp_token', token, httponly=True, samesite='Lax', max_age=8*3600)
             return resp
         return jsonify({'ok': False, 'error': 'Identifiants incorrects'}), 401
-    return render_template('login.html')
+    return render_template('admin_login.html')
 
 @app.route('/admin/logout')
 def admin_logout():
