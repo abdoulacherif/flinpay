@@ -75,6 +75,22 @@ def sb_delete(table, field, value):
     except:
         return False
 
+def sb_patch_multi(table, filters, data):
+    try:
+        qs = '&'.join([f'{k}=eq.{v}' for k, v in filters.items()])
+        r = requests.patch(f'{SUPABASE_URL}/rest/v1/{table}?{qs}', headers=SUPA_HEADERS, json=data, timeout=10)
+        return r.ok
+    except:
+        return False
+
+def sb_delete_multi(table, filters):
+    try:
+        qs = '&'.join([f'{k}=eq.{v}' for k, v in filters.items()])
+        r = requests.delete(f'{SUPABASE_URL}/rest/v1/{table}?{qs}', headers=SUPA_HEADERS, timeout=10)
+        return r.ok
+    except:
+        return False
+
 def get_config():
     data = sb_get('site_config')
     return {item['key']: item['value'] for item in data}
@@ -301,6 +317,70 @@ def api_export_transactions():
         writer.writerow([tx.get('token',''), tx.get('client_name',''), tx.get('amount',''), tx.get('status',''), tx.get('country',''), tx.get('created_at','')])
     from flask import Response
     return Response(output.getvalue(), mimetype='text/csv', headers={'Content-Disposition': 'attachment; filename=transactions_flinpay.csv'})
+
+# ── API PAYMENT LINKS ─────────────────────────────
+@app.route('/api/payment-links', methods=['GET'])
+@user_required
+def api_get_payment_links():
+    links = sb_get('payment_links', f"user_id=eq.{request.user_id}&order=created_at.desc")
+    return jsonify({'ok': True, 'links': links})
+
+@app.route('/api/payment-links', methods=['POST'])
+@user_required
+def api_create_payment_link():
+    data = request.get_json()
+    if not data or not data.get('name') or not data.get('amount'):
+        return jsonify({'ok': False, 'error': 'Nom et montant requis'}), 400
+    try:
+        amount = float(data['amount'])
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+    if amount <= 0:
+        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+
+    import uuid
+    token = 'pay_' + uuid.uuid4().hex[:12]
+
+    payload = {
+        'token': token,
+        'user_id': request.user_id,
+        'name': data['name'].strip(),
+        'amount': amount,
+        'description': (data.get('description') or '').strip(),
+        'usage_limit': data.get('usage_limit') or None,
+        'expires_at': data.get('expires_at') or None,
+        'active': True,
+        'views': 0,
+        'paid_count': 0,
+        'created_at': datetime.utcnow().isoformat()
+    }
+    link = sb_post('payment_links', payload)
+    if not link or (isinstance(link, dict) and link.get('_error')):
+        detail = link.get('_detail') if isinstance(link, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'link': link[0] if isinstance(link, list) else link})
+
+@app.route('/api/payment-links/<token>', methods=['PUT'])
+@user_required
+def api_update_payment_link(token):
+    data = request.get_json() or {}
+    allowed = {}
+    if 'active' in data:
+        allowed['active'] = bool(data['active'])
+    if not allowed:
+        return jsonify({'ok': False, 'error': 'Aucun champ à mettre à jour'}), 400
+    ok = sb_patch_multi('payment_links', {'token': token, 'user_id': request.user_id}, allowed)
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour'}), 500
+    return jsonify({'ok': True})
+
+@app.route('/api/payment-links/<token>', methods=['DELETE'])
+@user_required
+def api_delete_payment_link(token):
+    ok = sb_delete_multi('payment_links', {'token': token, 'user_id': request.user_id})
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la suppression'}), 500
+    return jsonify({'ok': True})
 
 # ── ROUTES PUBLIQUES ──────────────────────────────
 @app.route('/')
