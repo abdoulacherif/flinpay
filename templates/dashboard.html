@@ -5,103 +5,114 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;
-  --black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;
-  --muted:#8A8FA8;--sidebar:250px;--danger:#FF4444
+  --ink:#0B0D17;--ink-soft:#141625;
+  --bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;--muted-soft:#A6AABF;
+  --sidebar:264px;
+  --r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+  --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
+.icon{width:18px;height:18px;flex-shrink:0}
+.icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── SIDEBAR ── */
 .sidebar{
   position:fixed;top:0;left:0;bottom:0;
-  width:var(--sidebar);background:var(--black);
+  width:var(--sidebar);background:var(--ink);
   display:flex;flex-direction:column;z-index:200;
-  transition:transform .3s ease
+  transition:transform .3s cubic-bezier(.4,0,.2,1)
 }
 .sidebar-logo{
-  padding:22px 20px 18px;
-  border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:24px 22px 16px;
+  position:relative;
   display:flex;align-items:center;justify-content:space-between
+}
+.sidebar-logo::after{
+  content:'';position:absolute;left:22px;right:22px;bottom:0;
+  height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)
 }
 .logo-text{
   font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:1.4rem;color:white;
-  text-decoration:none
+  font-weight:800;font-size:1.42rem;color:white;
+  text-decoration:none;letter-spacing:-.01em
 }
-.logo-text span{color:var(--blue)}
-.plan-pill{
-  font-size:0.62rem;font-weight:700;
-  letter-spacing:0.1em;text-transform:uppercase;
-  background:rgba(26,60,255,0.2);color:#7B9FFF;
-  padding:3px 8px;border-radius:4px;margin-top:5px;
-  display:inline-block
+.logo-text span{color:#5B7CFF}
+.plan-badge-pill{
+  background:rgba(26,60,255,0.22);color:#8EA6FF;
+  font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block
 }
 .close-sidebar{
   display:none;background:none;border:none;
-  color:rgba(255,255,255,0.4);font-size:1.4rem;
+  color:rgba(255,255,255,0.4);font-size:1.3rem;
   cursor:pointer;padding:4px
 }
-.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+
+/* corridor strip — signature element */
+.corridor{
+  margin:14px 22px 4px;padding:11px 12px;
+  background:rgba(255,255,255,0.035);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:11px
+}
+.corridor-label{
+  font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between
+}
+.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
+
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
 .nav-group{
-  font-size:0.62rem;font-weight:700;
-  letter-spacing:0.12em;text-transform:uppercase;
-  color:rgba(255,255,255,0.2);
-  padding:14px 20px 5px
+  font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,0.22);padding:16px 22px 6px
 }
 .nav-link{
-  display:flex;align-items:center;gap:11px;
-  padding:10px 20px;color:rgba(255,255,255,0.45);
-  font-size:0.86rem;font-weight:500;
-  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:12px;
+  padding:9px 22px;color:rgba(255,255,255,0.5);
+  font-size:.855rem;font-weight:500;
+  cursor:pointer;transition:all .15s;
   border-left:3px solid transparent;
-  text-decoration:none;border-right:none;
-  background:none;width:100%;text-align:left
+  text-decoration:none;background:none;width:100%;text-align:left
 }
-.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
-.nav-link.active{
-  color:white;background:rgba(26,60,255,0.15);
-  border-left-color:var(--blue)
-}
-.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
-.nav-badge{
-  margin-left:auto;background:var(--blue);color:white;
-  font-size:0.62rem;font-weight:700;
-  padding:2px 7px;border-radius:10px
-}
-.sidebar-user{
-  padding:14px 20px;
-  border-top:1px solid rgba(255,255,255,0.06)
-}
+.nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
+.nav-link:hover .icon{color:rgba(255,255,255,0.7)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
+.nav-link.active .icon{color:#8EA6FF}
+.nav-badge{margin-left:auto;background:var(--blue);color:white;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:10px}
+
+.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
 .user-av{
   width:34px;height:34px;border-radius:50%;
-  background:var(--blue);color:white;
+  background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:0.88rem;flex-shrink:0
+  font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0
 }
-.user-name{font-size:0.83rem;font-weight:600;color:white}
-.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:1px}
+.user-name{font-size:.82rem;font-weight:600;color:white}
+.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
 .logout-link{
-  display:flex;align-items:center;gap:8px;
-  color:rgba(255,255,255,0.25);font-size:0.78rem;
-  padding:10px 20px 14px;text-decoration:none;
-  transition:color .2s;
-  border-top:1px solid rgba(255,255,255,0.04)
+  display:flex;align-items:center;gap:9px;
+  color:rgba(255,255,255,0.32);font-size:.78rem;
+  padding:11px 22px 15px;text-decoration:none;transition:color .15s
 }
-.logout-link:hover{color:#ff7070}
+.logout-link:hover{color:#ff7d7d}
 
 /* ── OVERLAY ── */
-.overlay{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.5);z-index:150;
-  backdrop-filter:blur(2px)
-}
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
 
 /* ── MAIN ── */
@@ -109,263 +120,180 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 
 /* ── TOPBAR ── */
 .topbar{
-  background:white;border-bottom:1px solid #E8EAF0;
-  padding:0 28px;height:62px;
+  background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:0 30px;height:64px;
   display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:100
 }
 .topbar-left{display:flex;align-items:center;gap:14px}
-.burger-btn{
-  display:none;background:none;border:none;
-  cursor:pointer;padding:6px;border-radius:8px;
-  flex-direction:column;gap:5px;
-  transition:background .2s
-}
+.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
 .burger-btn:hover{background:var(--bg)}
-.burger-line{
-  width:22px;height:2px;background:var(--text);
-  border-radius:2px;display:block;transition:all .3s
-}
-.topbar-title{font-size:1rem;font-weight:700;letter-spacing:-0.01em}
+.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em}
 .topbar-right{display:flex;align-items:center;gap:10px}
 .env-toggle{
-  display:flex;align-items:center;gap:6px;
-  background:var(--bg);border:1px solid #E8EAF0;
-  border-radius:8px;padding:6px 12px;
-  font-size:0.76rem;font-weight:600;cursor:pointer;
-  transition:all .2s
+  display:flex;align-items:center;gap:7px;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:9px;padding:7px 13px;
+  font-size:.76rem;font-weight:600;cursor:pointer;transition:all .15s
 }
-.env-dot{width:7px;height:7px;border-radius:50%}
+.env-toggle:hover{border-color:var(--blue)}
+.env-dot{width:7px;height:7px;border-radius:50%;box-shadow:0 0 0 3px currentColor;opacity:.9}
 .notif-btn{
-  width:36px;height:36px;border-radius:9px;
-  background:var(--bg);border:1px solid #E8EAF0;
+  width:37px;height:37px;border-radius:10px;color:var(--muted);
+  background:var(--bg);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:0.95rem;position:relative
+  cursor:pointer;position:relative
 }
-.notif-dot{
-  position:absolute;top:7px;right:7px;
-  width:6px;height:6px;border-radius:50%;
-  background:var(--blue)
-}
+.notif-dot{position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 2px var(--surface)}
 
 /* ── TABS ── */
-.tab-content{display:none;flex:1;padding:28px}
-.tab-content.active{display:block}
+.tab-content{display:none;flex:1;padding:30px}
+.tab-content.active{display:block;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── STATS ROW ── */
-.stats-row{
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:16px;margin-bottom:24px
-}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
 .stat-card{
-  background:white;border-radius:14px;
-  padding:20px;border:1px solid #E8EAF0;
-  transition:all .2s
+  background:var(--surface);border-radius:var(--r-lg);
+  padding:20px 20px 18px;border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);transition:all .2s;position:relative;overflow:hidden
 }
-.stat-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.07);transform:translateY(-2px)}
-.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,var(--blue))}
+.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
 .stat-icon{
-  width:40px;height:40px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;font-size:1rem
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--accent-tint,var(--blue-tint));color:var(--accent,var(--blue))
 }
-.stat-trend{
-  font-size:0.7rem;font-weight:700;
-  padding:3px 8px;border-radius:6px
-}
-.up{background:#D4F5E9;color:#0A7A50}
-.down{background:#F5D4D4;color:#7A0A0A}
-.neutral{background:#F0F2F7;color:var(--muted)}
-.stat-val{
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:1.7rem;
-  letter-spacing:-0.02em;margin-bottom:3px
-}
-.stat-lbl{font-size:0.78rem;color:var(--muted)}
+.stat-trend{font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:6px}
+.up{background:var(--green-tint);color:#0A7A50}
+.down{background:var(--danger-tint);color:#B3271A}
+.neutral{background:var(--border-soft);color:var(--muted)}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.68rem;letter-spacing:-.02em;margin-bottom:3px}
+.stat-lbl{font-size:.78rem;color:var(--muted)}
 
 /* ── GRID ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
 .grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
 
 /* ── CARD ── */
-.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
-.card-head{
-  padding:16px 22px;border-bottom:1px solid #F0F2F7;
-  display:flex;justify-content:space-between;align-items:center
-}
-.card-title{font-size:0.9rem;font-weight:700}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:.9rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
 .card-action{
-  font-size:0.76rem;color:var(--blue);
-  font-weight:600;cursor:pointer;
-  background:none;border:none;text-decoration:none
+  font-size:.78rem;color:var(--blue);font-weight:600;cursor:pointer;
+  background:none;border:none;display:inline-flex;align-items:center;gap:5px
 }
+.card-action:hover{text-decoration:underline}
 .card-body{padding:22px}
 
 /* ── TABLE ── */
-.tbl{width:100%;border-collapse:collapse;font-size:0.83rem}
+.tbl{width:100%;border-collapse:collapse;font-size:.83rem}
 .tbl th{
-  padding:9px 14px;text-align:left;
-  font-size:0.7rem;font-weight:700;
-  color:var(--muted);text-transform:uppercase;
-  letter-spacing:0.08em;background:#FAFBFF;
-  border-bottom:1px solid #F0F2F7
+  padding:10px 14px;text-align:left;font-size:.68rem;font-weight:700;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.07em;
+  background:#FAFBFF;border-bottom:1px solid var(--border-soft)
 }
-.tbl td{padding:12px 14px;border-bottom:1px solid #F8F9FB;vertical-align:middle}
+.tbl td{padding:13px 14px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:#FAFBFF}
-.badge{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:3px 9px;border-radius:20px;
-  font-size:0.7rem;font-weight:700
-}
-.b-success{background:#D4F5E9;color:#0A7A50}
-.b-pending{background:#FFF3CC;color:#856404}
-.b-failed{background:#F5D4D4;color:#7A0A0A}
-.tx-id{font-family:monospace;font-size:0.76rem;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.b-success{background:var(--green-tint);color:#0A7A50}
+.b-pending{background:var(--gold-tint);color:#8A5B00}
+.b-failed{background:var(--danger-tint);color:#B3271A}
+.tx-id{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted)}
 .tx-amt{font-family:'Space Grotesk',sans-serif;font-weight:700}
 
 /* ── FILTER BAR ── */
-.filter-bar{
-  display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap
-}
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .filter-input{
-  padding:9px 14px;border:1.5px solid #E0E2EC;
-  border-radius:9px;font-size:0.85rem;
-  font-family:'Inter',sans-serif;outline:none;
-  transition:border-color .2s;background:white
+  padding:9px 14px 9px 38px;border:1.5px solid var(--border);
+  border-radius:var(--r-sm);font-size:.85rem;font-family:'Inter',sans-serif;
+  outline:none;transition:border-color .15s;background:var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="%23A6AABF" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat 13px center;
+  min-width:180px
 }
 .filter-input:focus{border-color:var(--blue)}
-.filter-select{
-  padding:9px 14px;border:1.5px solid #E0E2EC;
-  border-radius:9px;font-size:0.85rem;
-  font-family:'Inter',sans-serif;outline:none;
-  background:white;cursor:pointer
-}
+.filter-select{padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.85rem;font-family:'Inter',sans-serif;outline:none;background:var(--surface);cursor:pointer}
 .btn{
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:700;font-size:0.84rem;
-  padding:9px 18px;border-radius:9px;
-  border:none;cursor:pointer;transition:all .2s
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;
+  padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;
+  transition:all .15s;display:inline-flex;align-items:center;gap:7px
 }
 .btn-primary{background:var(--blue);color:white}
-.btn-primary:hover{background:#1430e0}
+.btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
-.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
-.btn-gold{background:var(--gold);color:var(--black)}
-.btn-sm{padding:6px 12px;font-size:0.76rem}
+.btn-danger:hover{background:#e03e3e}
+.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline:hover{background:var(--blue-tint)}
+.btn-gold{background:var(--gold);color:var(--ink)}
+.btn-gold:hover{filter:brightness(1.05)}
+.btn-sm{padding:6px 12px;font-size:.76rem}
 
 /* ── API KEY ── */
-.key-box{
-  background:#0D0D0D;border-radius:11px;
-  padding:16px 18px;display:flex;
-  align-items:center;gap:10px;margin-bottom:14px
-}
-.key-val{
-  font-family:monospace;font-size:0.82rem;
-  color:#00E5FF;flex:1;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap
-}
+.key-box{background:var(--ink);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.key-val{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#4FE0FF;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .key-btn{
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.12);
-  color:white;border-radius:7px;
-  padding:6px 12px;font-size:0.75rem;
-  font-weight:600;cursor:pointer;
-  font-family:'Space Grotesk',sans-serif;
-  transition:all .2s;white-space:nowrap
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:white;
+  border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;flex-shrink:0
 }
 .key-btn:hover{background:rgba(255,255,255,0.16)}
-.warn-box{
-  background:#FFF8E6;border-radius:9px;
-  padding:10px 14px;font-size:0.76rem;color:#856404;
-  margin-top:10px
-}
+.warn-box{background:var(--gold-tint);border-radius:9px;padding:10px 14px;font-size:.76rem;color:#8A5B00;margin-top:10px}
 
 /* ── WEBHOOK ── */
-.webhook-item{
-  display:flex;align-items:center;gap:12px;
-  background:var(--bg);border-radius:10px;
-  padding:12px 16px;margin-bottom:10px;
-  border:1px solid #E8EAF0
-}
+.webhook-item{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:11px;padding:12px 16px;margin-bottom:10px;border:1px solid var(--border)}
 .wh-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.wh-url{
-  font-family:monospace;font-size:0.8rem;
-  color:var(--text);flex:1;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
-}
+.wh-url{font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wh-actions{display:flex;gap:6px}
 
 /* ── PROFILE ── */
 .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .form-group{display:flex;flex-direction:column;gap:6px}
 .form-group.full{grid-column:1/-1}
-.form-label{
-  font-size:0.72rem;font-weight:600;
-  color:var(--muted);text-transform:uppercase;letter-spacing:0.08em
-}
-.form-input{
-  padding:10px 14px;border:1.5px solid #E0E2EC;
-  border-radius:9px;font-size:0.88rem;
-  font-family:'Inter',sans-serif;outline:none;
-  transition:border-color .2s
-}
+.form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
 .form-input:focus{border-color:var(--blue)}
+.form-input[readonly]{background:var(--bg);color:var(--muted)}
 
 /* ── PLAN CARD ── */
-.plan-hero{
-  background:linear-gradient(135deg,var(--blue),#0A1FCC);
-  border-radius:14px;padding:22px;color:white;
-  position:relative;overflow:hidden;margin-bottom:18px
-}
-.plan-hero::before{
-  content:'';position:absolute;
-  top:-20px;right:-20px;width:100px;height:100px;
-  border-radius:50%;background:rgba(255,255,255,0.06)
-}
-.plan-badge-pill{
-  display:inline-block;
-  background:rgba(255,255,255,0.15);
-  font-size:0.68rem;font-weight:700;
-  letter-spacing:0.1em;text-transform:uppercase;
-  padding:3px 10px;border-radius:4px;margin-bottom:12px
-}
-.plan-progress{height:6px;background:rgba(255,255,255,0.15);border-radius:3px;margin:10px 0 6px}
+.plan-hero{background:linear-gradient(135deg,var(--blue) 0%,#0A1FCC 60%,#5B2CFF 100%);border-radius:var(--r-lg);padding:24px;color:white;position:relative;overflow:hidden;margin-bottom:18px}
+.plan-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.07)}
+.plan-hero::after{content:'';position:absolute;bottom:-40px;left:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,180,0,0.09)}
+.plan-badge-inline{display:inline-block;background:rgba(255,255,255,0.16);font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 10px;border-radius:5px;margin-bottom:12px;position:relative;z-index:1}
+.plan-progress{height:6px;background:rgba(255,255,255,0.16);border-radius:3px;margin:10px 0 6px;position:relative;z-index:1}
 .plan-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
 
+/* ── QUICK ACTIONS ── */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quick-btn{
+  padding:15px 10px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;transition:all .15s
+}
+.quick-btn:hover{border-color:var(--blue);background:var(--blue-tint)}
+.quick-btn .icon{width:20px;height:20px;color:var(--blue)}
+.quick-btn span{font-size:.72rem;font-weight:600;color:var(--text)}
+
 /* ── EMPTY ── */
-.empty{text-align:center;padding:40px 20px;color:var(--muted)}
-.empty-icon{font-size:2.5rem;margin-bottom:10px}
-.empty-text{font-size:0.86rem;line-height:1.6}
+.empty{text-align:center;padding:42px 20px;color:var(--muted)}
+.empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
+.empty-text{font-size:.85rem;line-height:1.65}
 
 /* ── MODAL ── */
-.modal-bg{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.5);z-index:500;
-  align-items:center;justify-content:center;
-  backdrop-filter:blur(4px)
-}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-bg.show{display:flex}
-.modal{
-  background:white;border-radius:18px;
-  padding:32px;width:100%;max-width:440px;
-  margin:20px;box-shadow:0 24px 48px rgba(0,0,0,0.15)
-}
-.modal h3{
-  font-size:1.1rem;font-weight:800;
-  margin-bottom:20px
-}
-.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.modal{background:var(--surface);border-radius:20px;padding:32px;width:100%;max-width:440px;margin:20px;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.08rem;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:9px}
+.modal-actions{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
 
 /* ── TOAST ── */
 #toast{
-  position:fixed;bottom:24px;right:24px;
-  background:var(--black);color:white;
-  padding:12px 20px;border-radius:11px;
-  font-size:0.85rem;font-weight:500;
-  box-shadow:0 8px 24px rgba(0,0,0,0.2);
-  transform:translateY(80px);opacity:0;
-  transition:all .3s;z-index:9999;
-  border-left:4px solid var(--green)
+  position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;
+  padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;
+  box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;
+  transition:all .3s;z-index:9999;border-left:4px solid var(--green);display:flex;align-items:center;gap:8px
 }
 #toast.show{transform:translateY(0);opacity:1}
 
@@ -385,10 +313,38 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   .tab-content{padding:16px}
   .topbar{padding:0 16px}
   .tbl th:nth-child(4),.tbl td:nth-child(4){display:none}
+  .corridor{margin:12px 16px 4px}
+  .sidebar-logo,.nav-group,.nav-link,.sidebar-user{padding-left:16px;padding-right:16px}
 }
 </style>
 </head>
 <body>
+
+<!-- ICON DEFS (réutilisées via <use>) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="ic-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+    <symbol id="ic-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="ic-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="ic-trend" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+  </defs>
+</svg>
 
 <!-- OVERLAY -->
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
@@ -398,46 +354,53 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   <div class="sidebar-logo">
     <div>
       <a href="/" class="logo-text">Flin<span>pay</span></a>
-      <div class="plan-badge-pill" style="background:rgba(26,60,255,0.2);color:#7B9FFF;font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-top:5px;display:inline-block">🚀 Starter</div>
+      <div class="plan-badge-pill">🚀 Starter</div>
     </div>
     <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+  </div>
+
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>12 pays</b></div>
+    <div class="corridor-flags" title="Côte d'Ivoire, Cameroun, Sénégal, Bénin, Togo, Mali, Niger, Burkina Faso, Tchad, Gabon, Nigeria, RDC">
+      🇨🇮 🇨🇲 🇸🇳 🇧🇯 🇹🇬 🇲🇱 🇳🇪 🇧🇫 🇹🇩 🇬🇦 🇳🇬 🇨🇩
+    </div>
   </div>
 
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
     <a class="nav-link active" href="/dashboard">
-      <span class="icon">📊</span> Vue d'ensemble
+      <span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble
     </a>
     <a class="nav-link" href="/transactions">
-      <span class="icon">💳</span> Transactions
+      <span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions
     </a>
     <a class="nav-link" href="/payouts">
-      <span class="icon">📤</span> Payouts
+      <span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts
     </a>
     <a class="nav-link" href="/payment-links">
-      <span class="icon">🔗</span> Liens de paiement
+      <span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement
     </a>
 
     <div class="nav-group">Développeur</div>
     <a class="nav-link" href="/api-keys">
-      <span class="icon">🔑</span> Clés API
+      <span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API
     </a>
     <a class="nav-link" href="/webhooks">
-      <span class="icon">🪝</span> Webhooks
+      <span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks
     </a>
     <a class="nav-link" href="/sandbox">
-      <span class="icon">🧪</span> Sandbox
+      <span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox
     </a>
 
     <div class="nav-group">Compte</div>
     <a class="nav-link" href="/profile">
-      <span class="icon">👤</span> Profil
+      <span class="icon"><svg><use href="#ic-user"/></svg></span> Profil
     </a>
     <a class="nav-link" href="/billing">
-      <span class="icon">💰</span> Facturation
+      <span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation
     </a>
     <a class="nav-link" href="/referral">
-      <span class="icon">🎁</span> Parrainage
+      <span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage
     </a>
   </nav>
 
@@ -450,7 +413,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
       </div>
     </div>
   </div>
-  <a class="logout-link" href="/login">🚪 Déconnexion</a>
+  <a class="logout-link" href="/login"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
 </aside>
 
 <!-- MAIN -->
@@ -466,43 +429,43 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     </div>
     <div class="topbar-right">
       <div class="env-toggle" onclick="toggleEnv()">
-        <div class="env-dot" id="env-dot" style="background:var(--gold)"></div>
+        <div class="env-dot" id="env-dot" style="color:var(--gold)"></div>
         <span id="env-label">Sandbox</span>
       </div>
-      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+      <div class="notif-btn"><span class="icon"><svg><use href="#ic-bell"/></svg></span><div class="notif-dot"></div></div>
     </div>
   </div>
 
   <!-- TAB: OVERVIEW -->
   <div class="tab-content active" id="tab-overview">
     <div class="stats-row">
-      <div class="stat-card">
+      <div class="stat-card" style="--accent:var(--blue);--accent-tint:var(--blue-tint)">
         <div class="stat-top">
-          <div class="stat-icon" style="background:#EEF2FF">💳</div>
+          <div class="stat-icon"><span class="icon"><svg><use href="#ic-card"/></svg></span></div>
           <span class="stat-trend neutral" id="ov-tx-trend">—</span>
         </div>
         <div class="stat-val" id="ov-tx-count">0</div>
         <div class="stat-lbl">Transactions ce mois</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" style="--accent:var(--green);--accent-tint:var(--green-tint)">
         <div class="stat-top">
-          <div class="stat-icon" style="background:#EDFAF4">💰</div>
+          <div class="stat-icon"><span class="icon"><svg><use href="#ic-wallet"/></svg></span></div>
           <span class="stat-trend neutral" id="ov-vol-trend">—</span>
         </div>
         <div class="stat-val" id="ov-volume">0</div>
         <div class="stat-lbl">Volume encaissé (XOF)</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" style="--accent:var(--green);--accent-tint:var(--green-tint)">
         <div class="stat-top">
-          <div class="stat-icon" style="background:#EDFAF4">✅</div>
+          <div class="stat-icon"><span class="icon"><svg><use href="#ic-check"/></svg></span></div>
           <span class="stat-trend neutral">—</span>
         </div>
         <div class="stat-val" id="ov-success">0%</div>
         <div class="stat-lbl">Taux de succès</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" style="--accent:var(--gold);--accent-tint:var(--gold-tint)">
         <div class="stat-top">
-          <div class="stat-icon" style="background:#FFF8E6">⚡</div>
+          <div class="stat-icon"><span class="icon"><svg><use href="#ic-zap"/></svg></span></div>
           <span class="stat-trend up">99.9%</span>
         </div>
         <div class="stat-val">~1.2s</div>
@@ -526,29 +489,23 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 
       <div>
         <div class="plan-hero">
-          <div class="plan-badge-pill">🚀 Plan Starter</div>
-          <div style="font-size:1.3rem;font-weight:800">Plan actuel</div>
-          <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);margin-top:4px">Transactions utilisées</div>
-          <div style="font-size:1.6rem;font-weight:800;margin-top:4px" id="plan-usage">0 / 100</div>
+          <div class="plan-badge-inline">🚀 Plan Starter</div>
+          <div style="font-size:1.28rem;font-weight:800;position:relative;z-index:1">Plan actuel</div>
+          <div style="font-size:.8rem;color:rgba(255,255,255,.65);margin-top:4px;position:relative;z-index:1">Transactions utilisées</div>
+          <div style="font-size:1.55rem;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:1" id="plan-usage">0 / 100</div>
           <div class="plan-progress"><div class="plan-fill" id="plan-bar" style="width:0%"></div></div>
-          <a href="#" class="btn btn-gold btn-sm" style="display:inline-block;margin-top:14px;text-decoration:none">⬆ Passer au Pro</a>
+          <a href="#" class="btn btn-gold btn-sm" style="margin-top:14px;text-decoration:none;position:relative;z-index:1">⬆ Passer au Pro</a>
         </div>
 
         <div class="card">
           <div class="card-head"><div class="card-title">Actions rapides</div></div>
-          <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <button onclick="showTab('apikeys',null)" style="padding:14px 10px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.borderColor='#1A3CFF'" onmouseout="this.style.borderColor='#E8EAF0'">
-              🔑<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Clés API</span>
-            </button>
-            <button onclick="showTab('webhooks',null)" style="padding:14px 10px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.borderColor='#1A3CFF'" onmouseout="this.style.borderColor='#E8EAF0'">
-              🪝<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Webhooks</span>
-            </button>
-            <button onclick="showTab('sandbox',null)" style="padding:14px 10px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.borderColor='#1A3CFF'" onmouseout="this.style.borderColor='#E8EAF0'">
-              🧪<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Sandbox</span>
-            </button>
-            <button onclick="showTab('profile',null)" style="padding:14px 10px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:1.3rem;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s" onmouseover="this.style.borderColor='#1A3CFF'" onmouseout="this.style.borderColor='#E8EAF0'">
-              👤<span style="font-size:0.72rem;font-weight:600;color:var(--text)">Profil</span>
-            </button>
+          <div class="card-body">
+            <div class="quick-grid">
+              <button class="quick-btn" onclick="showTab('apikeys',null)"><span class="icon"><svg><use href="#ic-key"/></svg></span><span>Clés API</span></button>
+              <button class="quick-btn" onclick="showTab('webhooks',null)"><span class="icon"><svg><use href="#ic-zap"/></svg></span><span>Webhooks</span></button>
+              <button class="quick-btn" onclick="showTab('sandbox',null)"><span class="icon"><svg><use href="#ic-flask"/></svg></span><span>Sandbox</span></button>
+              <button class="quick-btn" onclick="showTab('profile',null)"><span class="icon"><svg><use href="#ic-user"/></svg></span><span>Profil</span></button>
+            </div>
           </div>
         </div>
       </div>
@@ -558,7 +515,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   <!-- TAB: TRANSACTIONS -->
   <div class="tab-content" id="tab-transactions">
     <div class="filter-bar">
-      <input class="filter-input" type="text" id="tx-search" placeholder="🔍 Rechercher..." oninput="filterTx()">
+      <input class="filter-input" type="text" id="tx-search" placeholder="Rechercher..." oninput="filterTx()">
       <select class="filter-select" id="tx-status" onchange="filterTx()">
         <option value="">Tous les statuts</option>
         <option value="paid">✅ Payé</option>
@@ -572,12 +529,12 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
         <option value="SN">🇸🇳 Sénégal</option>
         <option value="BJ">🇧🇯 Bénin</option>
       </select>
-      <button class="btn btn-outline btn-sm" onclick="exportTx()">📥 Exporter CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="exportTx()"><span class="icon"><svg><use href="#ic-download"/></svg></span> Exporter CSV</button>
     </div>
     <div class="card">
       <div class="card-head">
         <div class="card-title">Transactions <span id="tx-total" style="color:var(--muted);font-weight:400"></span></div>
-        <button class="btn btn-primary btn-sm" onclick="loadTransactions()">🔄 Actualiser</button>
+        <button class="btn btn-primary btn-sm" onclick="loadTransactions()"><span class="icon"><svg><use href="#ic-refresh"/></svg></span> Actualiser</button>
       </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="tx-table">
@@ -604,7 +561,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     <div class="card">
       <div class="card-head">
         <div class="card-title">Payouts</div>
-        <button class="btn btn-primary btn-sm" onclick="openPayoutModal()">+ Nouveau payout</button>
+        <button class="btn btn-primary btn-sm" onclick="openPayoutModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Nouveau payout</button>
       </div>
       <div class="empty">
         <div class="empty-icon">📤</div>
@@ -617,31 +574,31 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   <div class="tab-content" id="tab-apikeys">
     <div class="card">
       <div class="card-head">
-        <div class="card-title">🔑 Clés API</div>
-        <button class="card-action" onclick="regenerateKey()">Régénérer</button>
+        <div class="card-title"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</div>
+        <button class="card-action" onclick="regenerateKey()"><span class="icon"><svg><use href="#ic-refresh"/></svg></span> Régénérer</button>
       </div>
       <div class="card-body">
-        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:14px">Utilisez cette clé dans le header <code style="background:var(--bg);padding:2px 6px;border-radius:4px">Authorization: Bearer YOUR_KEY</code></div>
-        <div style="margin-bottom:8px;font-size:0.76rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Clé de production</div>
+        <div style="font-size:.82rem;color:var(--muted);margin-bottom:14px">Utilisez cette clé dans le header <code style="background:var(--bg);padding:2px 6px;border-radius:4px">Authorization: Bearer YOUR_KEY</code></div>
+        <div style="margin-bottom:8px;font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">Clé de production</div>
         <div class="key-box">
           <div class="key-val" id="prod-key">fp_live_••••••••••••••••••••••••••••••••</div>
-          <button class="key-btn" onclick="toggleKey('prod')">👁</button>
-          <button class="key-btn" onclick="copyKey('prod')">📋</button>
+          <button class="key-btn" onclick="toggleKey('prod')"><span class="icon"><svg><use href="#ic-eye"/></svg></span></button>
+          <button class="key-btn" onclick="copyKey('prod')"><span class="icon"><svg><use href="#ic-copy"/></svg></span></button>
         </div>
-        <div style="margin-bottom:8px;margin-top:16px;font-size:0.76rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Clé sandbox</div>
+        <div style="margin-bottom:8px;margin-top:16px;font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">Clé sandbox</div>
         <div class="key-box">
           <div class="key-val" id="sand-key">fp_test_••••••••••••••••••••••••••••••••</div>
-          <button class="key-btn" onclick="toggleKey('sand')">👁</button>
-          <button class="key-btn" onclick="copyKey('sand')">📋</button>
+          <button class="key-btn" onclick="toggleKey('sand')"><span class="icon"><svg><use href="#ic-eye"/></svg></span></button>
+          <button class="key-btn" onclick="copyKey('sand')"><span class="icon"><svg><use href="#ic-copy"/></svg></span></button>
         </div>
         <div class="warn-box">⚠️ Ne partagez jamais vos clés API. Régénérez-les immédiatement si compromises.</div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-head"><div class="card-title">IP autorisées</div><button class="card-action" onclick="addIP()">+ Ajouter</button></div>
+      <div class="card-head"><div class="card-title">IP autorisées</div><button class="card-action" onclick="addIP()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Ajouter</button></div>
       <div class="card-body">
-        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:14px">Restreignez l'accès à votre clé API à certaines adresses IP.</div>
+        <div style="font-size:.82rem;color:var(--muted);margin-bottom:14px">Restreignez l'accès à votre clé API à certaines adresses IP.</div>
         <div id="ip-list">
           <div class="empty"><div class="empty-text">Aucune restriction IP. Toutes les IPs sont autorisées.</div></div>
         </div>
@@ -653,11 +610,11 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   <div class="tab-content" id="tab-webhooks">
     <div class="card">
       <div class="card-head">
-        <div class="card-title">🪝 Endpoints Webhook</div>
-        <button class="btn btn-primary btn-sm" onclick="openWebhookModal()">+ Ajouter</button>
+        <div class="card-title"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Endpoints Webhook</div>
+        <button class="btn btn-primary btn-sm" onclick="openWebhookModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Ajouter</button>
       </div>
       <div class="card-body">
-        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">Flinpay enverra une requête POST à vos URLs à chaque événement de paiement.</div>
+        <div style="font-size:.82rem;color:var(--muted);margin-bottom:16px">Flinpay enverra une requête POST à vos URLs à chaque événement de paiement.</div>
         <div id="webhook-list">
           <div class="empty"><div class="empty-icon">🪝</div><div class="empty-text">Aucun webhook configuré.</div></div>
         </div>
@@ -669,15 +626,15 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
       <div class="card-body">
         <div style="display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:9px">
-            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem">payment.success</code><div style="font-size:0.76rem;color:var(--muted);margin-top:4px">Paiement confirmé</div></div>
+            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:.8rem">payment.success</code><div style="font-size:.76rem;color:var(--muted);margin-top:4px">Paiement confirmé</div></div>
             <span class="badge b-success">Actif</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:9px">
-            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem">payment.failed</code><div style="font-size:0.76rem;color:var(--muted);margin-top:4px">Paiement échoué</div></div>
+            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:.8rem">payment.failed</code><div style="font-size:.76rem;color:var(--muted);margin-top:4px">Paiement échoué</div></div>
             <span class="badge b-success">Actif</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:9px">
-            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem">payout.success</code><div style="font-size:0.76rem;color:var(--muted);margin-top:4px">Payout envoyé</div></div>
+            <div><code style="background:white;padding:3px 8px;border-radius:5px;font-size:.8rem">payout.success</code><div style="font-size:.76rem;color:var(--muted);margin-top:4px">Payout envoyé</div></div>
             <span class="badge b-success">Actif</span>
           </div>
         </div>
@@ -688,7 +645,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   <!-- TAB: SANDBOX -->
   <div class="tab-content" id="tab-sandbox">
     <div class="card">
-      <div class="card-head"><div class="card-title">🧪 Tester un paiement</div></div>
+      <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Tester un paiement</div></div>
       <div class="card-body">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div class="form-group">
@@ -708,8 +665,8 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
             <input class="form-input" type="text" id="sb-order" placeholder="ORD-001">
           </div>
         </div>
-        <button class="btn btn-primary" style="margin-top:16px;width:100%" onclick="testPayment()">⚡ Lancer le test</button>
-        <div id="sb-result" style="margin-top:14px;display:none;background:#0D0D0D;border-radius:10px;padding:16px;font-family:monospace;font-size:0.82rem;color:#00E5FF;white-space:pre-wrap"></div>
+        <button class="btn btn-primary" style="margin-top:16px;width:100%;justify-content:center" onclick="testPayment()"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Lancer le test</button>
+        <div id="sb-result" style="margin-top:14px;display:none;background:var(--ink);border-radius:12px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#4FE0FF;white-space:pre-wrap"></div>
       </div>
     </div>
   </div>
@@ -718,7 +675,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   <div class="tab-content" id="tab-profile">
     <div class="grid-2">
       <div class="card">
-        <div class="card-head"><div class="card-title">👤 Informations personnelles</div></div>
+        <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-user"/></svg></span> Informations personnelles</div></div>
         <div class="card-body">
           <div class="profile-grid">
             <div class="form-group">
@@ -773,8 +730,8 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
         <div class="card" style="margin-top:18px">
           <div class="card-head"><div class="card-title">⚠️ Zone dangereuse</div></div>
           <div class="card-body">
-            <div style="font-size:0.83rem;color:var(--muted);margin-bottom:14px">La suppression de votre compte est irréversible.</div>
-            <button class="btn btn-danger btn-sm" onclick="confirmDelete()">🗑 Supprimer mon compte</button>
+            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px">La suppression de votre compte est irréversible.</div>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete()"><span class="icon"><svg><use href="#ic-trash"/></svg></span> Supprimer mon compte</button>
           </div>
         </div>
       </div>
@@ -784,10 +741,10 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   <!-- TAB: BILLING -->
   <div class="tab-content" id="tab-billing">
     <div class="plan-hero">
-      <div class="plan-badge-pill">Plan actuel</div>
-      <div style="font-size:1.8rem;font-weight:800">Starter</div>
-      <div style="color:rgba(255,255,255,0.6);margin-top:4px">Gratuit — 100 transactions/mois</div>
-      <a href="#" class="btn btn-gold" style="display:inline-block;margin-top:16px;text-decoration:none">⬆ Passer au Pro — 15 000 FCFA/mois</a>
+      <div class="plan-badge-inline">Plan actuel</div>
+      <div style="font-size:1.75rem;font-weight:800;position:relative;z-index:1">Starter</div>
+      <div style="color:rgba(255,255,255,.65);margin-top:4px;position:relative;z-index:1">Gratuit — 100 transactions/mois</div>
+      <a href="#" class="btn btn-gold" style="margin-top:16px;text-decoration:none;position:relative;z-index:1">⬆ Passer au Pro — 15 000 FCFA/mois</a>
     </div>
     <div class="card">
       <div class="card-head"><div class="card-title">Historique de facturation</div></div>
@@ -799,7 +756,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 <!-- MODAL WEBHOOK -->
 <div class="modal-bg" id="webhook-modal">
   <div class="modal">
-    <h3>🪝 Ajouter un webhook</h3>
+    <h3><span class="icon"><svg><use href="#ic-zap"/></svg></span> Ajouter un webhook</h3>
     <div class="form-group" style="margin-bottom:14px">
       <div class="form-label">URL endpoint</div>
       <input class="form-input" id="wh-url-input" type="url" placeholder="https://monsite.com/webhook" style="width:100%">
@@ -818,7 +775,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 <!-- MODAL PAYOUT -->
 <div class="modal-bg" id="payout-modal">
   <div class="modal">
-    <h3>📤 Nouveau payout</h3>
+    <h3><span class="icon"><svg><use href="#ic-send"/></svg></span> Nouveau payout</h3>
     <div class="form-group" style="margin-bottom:14px">
       <div class="form-label">Numéro mobile money</div>
       <input class="form-input" id="po-phone" type="tel" placeholder="+225 0700000000" style="width:100%">
@@ -892,7 +849,7 @@ function toast(msg, ok=true){
 let isSandbox=true;
 function toggleEnv(){
   isSandbox=!isSandbox;
-  document.getElementById('env-dot').style.background=isSandbox?'var(--gold)':'var(--green)';
+  document.getElementById('env-dot').style.color=isSandbox?'var(--gold)':'var(--green)';
   document.getElementById('env-label').textContent=isSandbox?'Sandbox':'Production';
   toast(isSandbox?'Mode Sandbox activé':'Mode Production activé');
 }
@@ -951,13 +908,13 @@ function renderWebhooks(){
   list.innerHTML=webhooks.map((w,i)=>`
     <div class="webhook-item">
       <div class="wh-status" style="background:${w.active?'var(--green)':'var(--muted)'}"></div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="wh-url">${w.url}</div>
         ${w.desc?`<div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${w.desc}</div>`:''}
       </div>
       <div class="wh-actions">
         <button class="btn btn-outline btn-sm" onclick="testWebhook(${i})">Tester</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteWebhook(${i})">🗑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteWebhook(${i})"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
       </div>
     </div>
   `).join('');
@@ -997,7 +954,6 @@ function loadTransactions(){
     {id:'fp_tx_ghi789',client:'Ibrahim T.',amount:25000,status:'paid',operator:'MTN MoMo',country:'CM',date:'2025-06-28 16:44'},
     {id:'fp_tx_jkl012',client:'Fatou B.',amount:5000,status:'failed',operator:'Moov Money',country:'BJ',date:'2025-06-28 14:30'},
   ];
-  document.getElementById('tx-count').textContent=allTx.length;
   renderTx(allTx);
   updateOverviewStats();
 }
@@ -1058,7 +1014,7 @@ function updateOverviewStats(){
     ${allTx.slice(0,4).map(tx=>`<tr>
       <td>${tx.client}</td>
       <td class="tx-amt">${tx.amount.toLocaleString()} XOF</td>
-      <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">${tx.status==='paid'?'✅':'tx.status==="pending"'?'⏳':'❌'} ${tx.status}</span></td>
+      <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">${tx.status==='paid'?'✅':tx.status==='pending'?'⏳':'❌'} ${tx.status}</span></td>
     </tr>`).join('')}
     </tbody></table>`;
   }
