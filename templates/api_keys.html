@@ -1,172 +1,308 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Clés API</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;--danger:#FF4444}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+:root{
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;
+  --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--black);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
-.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
-.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;text-decoration:none}
-.logo-text span{color:var(--blue)}
-.close-sb{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer}
-.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
-.nav-group{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 20px 5px}
-.nav-link{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.45);font-size:0.86rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .2s}
-.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.15);border-left-color:var(--blue)}
-.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
-.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06)}
+.icon{width:18px;height:18px;flex-shrink:0}
+.icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
+.logo-text span{color:#5B7CFF}
+.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
+.corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
+.corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
+.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:9px 22px;color:rgba(255,255,255,0.5);font-size:.855rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
+.nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
+.nav-link:hover .icon{color:rgba(255,255,255,0.7)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
+.nav-link.active .icon{color:#8EA6FF}
+.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.88rem}
-.user-name{font-size:0.83rem;font-weight:600;color:white}
-.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3)}
-.logout-link{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.25);font-size:0.78rem;padding:10px 20px 14px;text-decoration:none;border-top:1px solid rgba(255,255,255,0.04);transition:color .2s}
-.logout-link:hover{color:#ff7070}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150}
+.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-name{font-size:.82rem;font-weight:600;color:white}
+.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
+.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
+.logout-link:hover{color:#ff7d7d}
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
-.main{margin-left:250px;min-height:100vh}
-.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:62px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
-.burger{display:none;background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:5px}
-.burger-line{width:22px;height:2px;background:var(--text);border-radius:2px;display:block}
-.page-title{font-size:1rem;font-weight:700}
-.content{padding:28px}
-.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
-.card-head{padding:16px 22px;border-bottom:1px solid #F0F2F7;display:flex;justify-content:space-between;align-items:center}
-.card-title{font-size:0.9rem;font-weight:700}
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
+.burger-btn:hover{background:var(--bg)}
+.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+
+.page{flex:1;padding:30px;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.card-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:22px}
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.84rem;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;transition:all .2s}
+
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
 .btn-primary{background:var(--blue);color:white}
-.btn-primary:hover{background:#1430e0}
+.btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
-.btn-sm{padding:6px 14px;font-size:0.76rem}
-.key-section{margin-bottom:24px}
-.key-label{font-size:0.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.env-pill{padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:700}
-.pill-live{background:#D4F5E9;color:#0A7A50}
-.pill-test{background:#FFF3CC;color:#856404}
-.key-box{background:#0D0D0D;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:10px}
-.key-val{font-family:monospace;font-size:0.85rem;color:#00E5FF;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.key-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:white;border-radius:7px;padding:7px 13px;font-size:0.76rem;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .2s;white-space:nowrap}
-.key-btn:hover{background:rgba(255,255,255,0.18)}
-.warn{background:#FFF8E6;border-radius:10px;padding:12px 16px;font-size:0.8rem;color:#856404;margin-top:14px}
-.code-block{background:#0D0D0D;border-radius:12px;padding:18px;font-family:monospace;font-size:0.82rem;color:#A8B4FF;overflow-x:auto;line-height:1.7}
+.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-sm{padding:6px 12px;font-size:.76rem}
+
+/* Verrouillage KYC */
+.locked-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:44px 30px;text-align:center;box-shadow:var(--shadow-sm)}
+.locked-icon{width:52px;height:52px;color:var(--gold);margin:0 auto 16px}
+.locked-title{font-size:1.15rem;font-weight:800;margin-bottom:8px}
+.locked-text{font-size:.87rem;color:var(--muted);max-width:420px;margin:0 auto 20px;line-height:1.6}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:.75rem;font-weight:700;margin-bottom:16px}
+.status-pending{background:var(--gold-tint);color:#8A5B00}
+.status-rejected{background:var(--danger-tint);color:#B3271A}
+
+/* Liste des clés */
+.key-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border-soft);flex-wrap:wrap}
+.key-row:last-child{border-bottom:none}
+.key-info{display:flex;flex-direction:column;gap:4px}
+.key-prefix{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--text)}
+.key-meta{font-size:.75rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.env-pill{padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}
+.pill-live{background:var(--green-tint);color:#0A7A50}
+.pill-sandbox{background:var(--gold-tint);color:#8A5B00}
+.empty{text-align:center;padding:30px 20px;color:var(--muted);font-size:.85rem}
+
+/* Modal nouvelle clé */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border-radius:20px;padding:30px;width:100%;max-width:480px;margin:20px;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:18px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
+.form-input,select.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;outline:none}
+.form-input:focus{border-color:var(--blue)}
+.modal-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end}
+
+.new-key-box{background:var(--ink);border-radius:12px;padding:16px 18px;margin-top:6px}
+.new-key-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:#4FE0FF;word-break:break-all;margin-bottom:10px}
+.new-key-warn{font-size:.78rem;color:var(--gold-tint);background:rgba(255,180,0,.12);border-radius:8px;padding:9px 12px;color:#FFD98A}
+
+.code-block{background:var(--ink);border-radius:12px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#A8B4FF;overflow-x:auto;line-height:1.7}
 .code-block .kw{color:#FF79C6}
 .code-block .str{color:#50FA7B}
 .code-block .cm{color:rgba(255,255,255,0.3)}
-.ip-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--bg);border-radius:9px;margin-bottom:8px;font-family:monospace;font-size:0.85rem}
-.form-input{padding:10px 14px;border:1.5px solid #E0E2EC;border-radius:9px;font-size:0.88rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;width:100%}
-.form-input:focus{border-color:var(--blue)}
-#toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:white;padding:12px 20px;border-radius:11px;font-size:0.85rem;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
 #toast.show{transform:translateY(0);opacity:1}
+
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
   .main{margin-left:0}
-  .burger{display:flex}
-  .close-sb{display:block}
-  .content{padding:16px}
+  .burger-btn{display:flex}
+  .close-sidebar{display:block}
+  .page{padding:16px}
 }
 </style>
 </head>
 <body>
-<div class="overlay" id="overlay" onclick="closeSB()"></div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  </defs>
+</svg>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
-    <button class="close-sb" onclick="closeSB()">✕</button>
+    <div>
+      <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
   </div>
+
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>12 pays</b></div>
+    <div class="corridor-flags">🇨🇮 🇨🇲 🇸🇳 🇧🇯 🇹🇬 🇲🇱 🇳🇪 🇧🇫 🇹🇩 🇬🇦 🇳🇬 🇨🇩</div>
+  </div>
+
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
-    <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
-    <a class="nav-link" href="/transactions"><span class="icon">💳</span> Transactions</a>
-    <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
-    <a class="nav-link" href="/payment-links"><span class="icon">🔗</span> Liens de paiement</a>
+    <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
     <div class="nav-group">Développeur</div>
-    <a class="nav-link active" href="/api-keys"><span class="icon">🔑</span> Clés API</a>
-    <a class="nav-link" href="/webhooks"><span class="icon">🪝</span> Webhooks</a>
-    <a class="nav-link" href="/sandbox"><span class="icon">🧪</span> Sandbox</a>
+    <a class="nav-link active" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
     <div class="nav-group">Compte</div>
-    <a class="nav-link" href="/profile"><span class="icon">👤</span> Profil</a>
-    <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
-    <a class="nav-link" href="/referral"><span class="icon">🎁</span> Parrainage</a>
+    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+    <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
+
   <div class="sidebar-user">
     <div class="user-row">
-      <div class="user-av">U</div>
-      <div><div class="user-name">Utilisateur</div><div class="user-email">—</div></div>
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+      <div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
+      </div>
     </div>
   </div>
-  <a class="logout-link" href="/login">🚪 Déconnexion</a>
+  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
 </aside>
 
 <div class="main">
   <div class="topbar">
-    <button class="burger" onclick="openSB()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
-    <div class="page-title">🔑 Clés API</div>
+    <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+    <div class="topbar-title"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</div>
   </div>
-  <div class="content">
 
-    <div class="card">
-      <div class="card-head"><div class="card-title">Vos clés d'accès</div></div>
-      <div class="card-body">
-        <div class="key-section">
-          <div class="key-label">Clé de production <span class="env-pill pill-live">LIVE</span></div>
-          <div class="key-box">
-            <div class="key-val" id="prod-key">fp_live_••••••••••••••••••••••••••••••••</div>
-            <button class="key-btn" onclick="toggleKey('prod')">👁 Voir</button>
-            <button class="key-btn" onclick="copyKey('prod')">📋 Copier</button>
-          </div>
-          <div style="display:flex;gap:10px;margin-top:10px">
-            <button class="btn btn-danger btn-sm" onclick="regenKey('prod')">🔄 Régénérer</button>
-          </div>
-        </div>
-        <div class="key-section">
-          <div class="key-label">Clé sandbox <span class="env-pill pill-test">TEST</span></div>
-          <div class="key-box">
-            <div class="key-val" id="sand-key">fp_test_••••••••••••••••••••••••••••••••</div>
-            <button class="key-btn" onclick="toggleKey('sand')">👁 Voir</button>
-            <button class="key-btn" onclick="copyKey('sand')">📋 Copier</button>
-          </div>
-        </div>
-        <div class="warn">⚠️ Ne partagez jamais vos clés API. En cas de compromission, régénérez-les immédiatement. Les clés régénérées invalident instantanément les anciennes.</div>
+  <div class="page" id="page-content">
+    <div class="empty">Chargement...</div>
+  </div>
+</div>
+
+<!-- MODAL NOUVELLE CLÉ -->
+<div class="modal-bg" id="new-key-modal">
+  <div class="modal">
+    <h3 id="modal-title">🔑 Générer une nouvelle clé</h3>
+    <div id="modal-form">
+      <div class="form-group">
+        <label class="form-label">Environnement</label>
+        <select class="form-input" id="nk-env">
+          <option value="live">Production (live)</option>
+          <option value="sandbox">Sandbox (test)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Étiquette (optionnel)</label>
+        <input class="form-input" id="nk-label" type="text" placeholder="Ex: Serveur principal">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+        <button class="btn btn-primary" id="btn-generate" onclick="generateKey()">Générer</button>
       </div>
     </div>
+    <div id="modal-result" style="display:none">
+      <div class="new-key-box">
+        <div class="new-key-val" id="new-key-val"></div>
+        <button class="btn btn-outline btn-sm" onclick="copyNewKey()"><span class="icon"><svg><use href="#ic-copy"/></svg></span> Copier</button>
+      </div>
+      <div class="new-key-warn" style="margin-top:12px">⚠️ Cette clé ne sera plus jamais affichée. Copiez-la et gardez-la en lieu sûr.</div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="closeModal()">J'ai copié la clé</button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<div id="toast"></div>
+<script>
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+
+let currentKycStatus='unverified';
+let newKeyValue='';
+
+async function init(){
+  try{
+    const r=await fetch('/api/me');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok) return;
+    const user=data.user;
+    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
+    document.getElementById('user-email').textContent=user.email||'';
+    currentKycStatus=user.kyc_status||'unverified';
+    renderPage();
+  }catch(e){}
+}
+
+function renderPage(){
+  const page=document.getElementById('page-content');
+  if(currentKycStatus!=='verified'){
+    let pill='', title='', text='';
+    if(currentKycStatus==='pending'){
+      pill='<div class="status-pill status-pending">⏳ Vérification en cours</div>';
+      title='Vérification en cours de traitement';
+      text="Votre document a été soumis et est en cours de revue. Vous pourrez générer des clés API dès qu'il sera approuvé (24-48h).";
+    }else if(currentKycStatus==='rejected'){
+      pill='<div class="status-pill status-rejected">❌ Document refusé</div>';
+      title='Vérification refusée';
+      text="Votre document a été refusé. Rendez-vous sur la page Vérification pour soumettre un nouveau document.";
+    }else{
+      title='Vérification d\'identité requise';
+      text="Pour des raisons de sécurité, vous devez vérifier votre identité avant de pouvoir générer des clés API et accepter des paiements réels.";
+    }
+    page.innerHTML=`
+      <div class="locked-card">
+        ${pill}
+        <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="locked-title">${title}</div>
+        <div class="locked-text">${text}</div>
+        <a href="/kyc" class="btn btn-primary"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> ${currentKycStatus==='pending' ? 'Voir ma demande' : 'Vérifier mon identité'}</a>
+      </div>`;
+    return;
+  }
+
+  page.innerHTML=`
     <div class="card">
       <div class="card-head">
-        <div class="card-title">🌐 IP autorisées</div>
-        <button class="btn btn-primary btn-sm" onclick="showAddIP()">+ Ajouter une IP</button>
+        <div class="card-title"><span class="icon"><svg><use href="#ic-key"/></svg></span> Vos clés d'accès</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Générer une clé</button>
       </div>
-      <div class="card-body">
-        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">Restreignez l'accès à vos clés API à certaines adresses IP serveur.</div>
-        <div id="ip-add-form" style="display:none;margin-bottom:16px;display:none">
-          <div style="display:flex;gap:10px">
-            <input class="form-input" id="ip-input" type="text" placeholder="Ex: 192.168.1.1 ou 10.0.0.0/24">
-            <button class="btn btn-primary btn-sm" onclick="addIP()" style="white-space:nowrap">Ajouter</button>
-            <button class="btn btn-sm" onclick="hideAddIP()" style="background:#eee;white-space:nowrap">Annuler</button>
-          </div>
-        </div>
-        <div id="ip-list">
-          <div style="text-align:center;padding:20px;color:var(--muted);font-size:0.85rem">Aucune restriction. Toutes les IPs peuvent utiliser votre clé.</div>
-        </div>
+      <div class="card-body" id="keys-list">
+        <div class="empty">Chargement...</div>
       </div>
     </div>
-
     <div class="card">
       <div class="card-head"><div class="card-title">📖 Exemple d'utilisation</div></div>
       <div class="card-body">
-        <div style="display:flex;gap:8px;margin-bottom:12px">
-          <button class="btn btn-sm" onclick="showCode('python')" id="tab-python" style="background:var(--blue);color:white">Python</button>
-          <button class="btn btn-sm" onclick="showCode('js')" id="tab-js" style="background:#eee">JavaScript</button>
-          <button class="btn btn-sm" onclick="showCode('php')" id="tab-php" style="background:#eee">PHP</button>
-        </div>
-        <div id="code-python" class="code-block"><span class="cm"># Python — Initier un paiement Flinpay</span>
+        <div class="code-block"><span class="cm"># Python — Initier un paiement Flinpay</span>
 <span class="kw">import</span> requests
 
 API_KEY = <span class="str">"fp_live_votre_cle_ici"</span>
@@ -184,61 +320,87 @@ response = requests.post(
     }
 )
 print(response.json())</div>
-        <div id="code-js" class="code-block" style="display:none"><span class="cm">// JavaScript — Initier un paiement Flinpay</span>
-<span class="kw">const</span> response = <span class="kw">await</span> fetch(<span class="str">'https://flinpay.vercel.app/api/pay'</span>, {
-  method: <span class="str">'POST'</span>,
-  headers: {
-    <span class="str">'Authorization'</span>: <span class="str">'Bearer fp_live_votre_cle_ici'</span>,
-    <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>
-  },
-  body: JSON.stringify({
-    amount: <span class="str">10000</span>,
-    phone: <span class="str">'0700000000'</span>,
-    client_name: <span class="str">'Kouamé Diallo'</span>,
-    order_id: <span class="str">'ORD-001'</span>,
-    country: <span class="str">'CI'</span>
-  })
-});
-<span class="kw">const</span> data = <span class="kw">await</span> response.json();
-console.log(data);</div>
-        <div id="code-php" class="code-block" style="display:none"><span class="cm">&lt;?php // PHP — Initier un paiement Flinpay</span>
-$ch = curl_init(<span class="str">'https://flinpay.vercel.app/api/pay'</span>);
-curl_setopt($ch, CURLOPT_POST, <span class="kw">true</span>);
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    <span class="str">'Authorization: Bearer fp_live_votre_cle_ici'</span>,
-    <span class="str">'Content-Type: application/json'</span>
-]);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-    <span class="str">'amount'</span> =&gt; <span class="str">10000</span>,
-    <span class="str">'phone'</span> =&gt; <span class="str">'0700000000'</span>,
-    <span class="str">'client_name'</span> =&gt; <span class="str">'Kouamé Diallo'</span>,
-    <span class="str">'order_id'</span> =&gt; <span class="str">'ORD-001'</span>,
-    <span class="str">'country'</span> =&gt; <span class="str">'CI'</span>
-]));
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, <span class="kw">true</span>);
-$response = json_decode(curl_exec($ch));
-print_r($response);</div>
       </div>
-    </div>
+    </div>`;
+  loadKeys();
+}
 
-  </div>
-</div>
-<div id="toast"></div>
-<script>
-function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'#00C48C':'#FF4444';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
-const keys={prod:{val:'fp_live_k9mN3pQxR7vL2wYzJ5tH8sA4bC6dE1fG',vis:false},sand:{val:'fp_test_s2xT7mK4nP9qR1vL8wZ3yA6bC5dE0fH',vis:false}}
-function toggleKey(t){keys[t].vis=!keys[t].vis;document.getElementById(t+'-key').textContent=keys[t].vis?keys[t].val:'fp_'+(t==='prod'?'live':'test')+'_••••••••••••••••••••••••••••••••'}
-function copyKey(t){navigator.clipboard.writeText(keys[t].val).then(()=>toast('Clé copiée !'))}
-function regenKey(t){if(confirm('Régénérer ? L\'ancienne clé sera immédiatement invalide.')){const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';keys[t].val='fp_live_'+Array.from({length:32},()=>chars[Math.floor(Math.random()*chars.length)]).join('');keys[t].vis=true;toggleKey(t);toast('Clé régénérée !')}}
-let ips=[];
-function showAddIP(){document.getElementById('ip-add-form').style.display='block'}
-function hideAddIP(){document.getElementById('ip-add-form').style.display='none';document.getElementById('ip-input').value=''}
-function addIP(){const ip=document.getElementById('ip-input').value.trim();if(!ip){toast('Entrez une IP',false);return}ips.push(ip);renderIPs();hideAddIP();toast('IP ajoutée : '+ip)}
-function renderIPs(){const l=document.getElementById('ip-list');if(!ips.length){l.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:0.85rem">Aucune restriction. Toutes les IPs peuvent utiliser votre clé.</div>';return}l.innerHTML=ips.map((ip,i)=>`<div class="ip-item">${ip}<button onclick="removeIP(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem">🗑</button></div>`).join('')}
-function removeIP(i){ips.splice(i,1);renderIPs();toast('IP supprimée')}
-function showCode(lang){['python','js','php'].forEach(l=>{document.getElementById('code-'+l).style.display=l===lang?'block':'none';document.getElementById('tab-'+l).style.cssText=l===lang?'background:var(--blue);color:white':'background:#eee;color:var(--text)'})}
+async function loadKeys(){
+  const el=document.getElementById('keys-list');
+  if(!el) return;
+  try{
+    const r=await fetch('/api/keys');
+    const data=await r.json();
+    if(!data.ok || !data.keys.length){
+      el.innerHTML='<div class="empty">Aucune clé générée pour le moment.</div>';
+      return;
+    }
+    el.innerHTML=data.keys.map(k=>`
+      <div class="key-row">
+        <div class="key-info">
+          <div class="key-prefix">${k.key_prefix}</div>
+          <div class="key-meta">
+            <span class="env-pill ${k.environment==='live'?'pill-live':'pill-sandbox'}">${k.environment==='live'?'LIVE':'TEST'}</span>
+            ${k.label?`<span>${k.label}</span>`:''}
+            <span>Créée le ${new Date(k.created_at).toLocaleDateString('fr-FR')}</span>
+            ${k.last_used_at?`<span>Dernière utilisation: ${new Date(k.last_used_at).toLocaleDateString('fr-FR')}</span>`:'<span>Jamais utilisée</span>'}
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="revokeKey(${k.id})"><span class="icon"><svg><use href="#ic-trash"/></svg></span> Révoquer</button>
+      </div>
+    `).join('');
+  }catch(e){
+    el.innerHTML='<div class="empty">Erreur de chargement.</div>';
+  }
+}
+
+function openModal(){
+  document.getElementById('modal-title').textContent='🔑 Générer une nouvelle clé';
+  document.getElementById('modal-form').style.display='block';
+  document.getElementById('modal-result').style.display='none';
+  document.getElementById('new-key-modal').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('new-key-modal').classList.remove('show');
+  loadKeys();
+}
+document.getElementById('new-key-modal').addEventListener('click',e=>{if(e.target.id==='new-key-modal')closeModal()});
+
+async function generateKey(){
+  const environment=document.getElementById('nk-env').value;
+  const label=document.getElementById('nk-label').value.trim();
+  const btn=document.getElementById('btn-generate');
+  btn.disabled=true; btn.textContent='Génération...';
+  try{
+    const r=await fetch('/api/keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({environment,label})});
+    const data=await r.json();
+    if(data.ok){
+      newKeyValue=data.key;
+      document.getElementById('new-key-val').textContent=data.key;
+      document.getElementById('modal-form').style.display='none';
+      document.getElementById('modal-result').style.display='block';
+      document.getElementById('modal-title').textContent='✅ Clé générée';
+    }else{
+      toast(data.error||'Erreur lors de la génération',false);
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+  btn.disabled=false; btn.textContent='Générer';
+}
+function copyNewKey(){navigator.clipboard.writeText(newKeyValue).then(()=>toast('Clé copiée !'))}
+
+async function revokeKey(id){
+  if(!confirm('Révoquer cette clé ? Toute intégration qui l\'utilise cessera de fonctionner immédiatement.')) return;
+  try{
+    const r=await fetch('/api/keys/'+id,{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){ toast('Clé révoquée'); loadKeys(); }
+    else{ toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+
+init();
 </script>
 </body>
 </html>
