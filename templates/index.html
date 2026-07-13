@@ -562,8 +562,8 @@ footer{
     </div>
     <div class="step">
       <div class="step-num" style="border-color:var(--gold);color:var(--gold)">2</div>
-      <h4>Obtenez votre clé API</h4>
-      <p>Générez votre clé depuis le dashboard et déclarez votre IP.</p>
+      <h4>Vérifiez votre identité</h4>
+      <p>Une vérification KYC rapide est requise avant de générer une clé API.</p>
     </div>
     <div class="step">
       <div class="step-num" style="border-color:var(--green);color:var(--green)">3</div>
@@ -573,7 +573,7 @@ footer{
     <div class="step">
       <div class="step-num">4</div>
       <h4>Recevez les paiements</h4>
-      <p>Webhook automatique à chaque transaction confirmée.</p>
+      <p>Suivez vos transactions en temps réel depuis le dashboard.</p>
     </div>
   </div>
 </section>
@@ -587,7 +587,6 @@ footer{
   </div>
   <div class="pricing-grid">
     {% for p in plans %}
-    {% set feats = p.features | tojson | safe %}
     <div class="pricing-card {% if p.is_popular %}popular{% endif %}">
       {% if p.is_popular %}<div class="popular-badge">⭐ Populaire</div>{% endif %}
       <div class="plan-name">{{ p.name }}</div>
@@ -691,12 +690,11 @@ footer{
       <ul>
         <li><a href="mailto:{{ cfg.get('contact_email', 'contact@flinpay.com') }}">Contact</a></li>
         <li><a href="#">FAQ</a></li>
-        <li><a href="/admin/login">Admin</a></li>
       </ul>
     </div>
   </div>
   <div class="footer-bottom">
-    <div class="footer-copy">© 2025 Flinpay. Tous droits réservés.</div>
+    <div class="footer-copy">© {{ current_year }} Flinpay. Tous droits réservés.</div>
     <div style="display:flex;gap:20px">
       <a href="#" style="color:rgba(255,255,255,0.3);font-size:0.8rem;text-decoration:none">FR</a>
       <a href="#" style="color:rgba(255,255,255,0.3);font-size:0.8rem;text-decoration:none">EN</a>
