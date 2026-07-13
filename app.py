@@ -17,6 +17,10 @@ app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
+@app.context_processor
+def inject_globals():
+    return {'current_year': datetime.utcnow().year}
+
 @app.template_filter('split')
 def split_filter(value, sep=','):
     return (value or '').split(sep)
@@ -609,7 +613,7 @@ def dashboard():
 
 @app.route('/docs')
 def docs():
-    return render_template('404.html')
+    return render_template('docs.html')
 
 @app.route('/favicon.ico')
 def favicon():
