@@ -2,6 +2,8 @@ import os
 import re
 import jwt
 import bcrypt
+import hashlib
+import secrets
 import requests
 from datetime import datetime, timedelta
 from functools import wraps
@@ -197,7 +199,9 @@ def api_me():
         'company': user.get('company',''),
         'phone': user.get('phone',''),
         'country': user.get('country',''),
-        'plan': user.get('plan','starter')
+        'plan': user.get('plan','starter'),
+        'kyc_status': user.get('kyc_status', 'unverified'),
+        'kyc_rejection_reason': user.get('kyc_rejection_reason')
     }})
 
 
@@ -260,14 +264,16 @@ def api_pay():
     auth = request.headers.get('Authorization', '')
     if not auth.startswith('Bearer '):
         return jsonify({'ok': False, 'error': 'Clé API requise'}), 401
-    api_key = auth.replace('Bearer ', '', 1).strip()
+    provided_key = auth.replace('Bearer ', '', 1).strip()
+    key_hash = hashlib.sha256(provided_key.encode()).hexdigest()
 
-    # NOTE: la table api_keys n'existe pas encore (à créer avec le "grand backend").
-    # En attendant, on tente de résoudre l'utilisateur propriétaire de la clé ;
-    # si la table est absente, owner reste vide et la transaction est créée sans user_id
-    # (elle n'apparaîtra pas dans /api/transactions tant que ce lien n'est pas en place).
-    owner = sb_get('api_keys', f'key=eq.{api_key}&select=user_id')
-    user_id = owner[0]['user_id'] if owner else None
+    matches = sb_get('api_keys', f'key_hash=eq.{key_hash}&active=eq.true')
+    if not matches:
+        return jsonify({'ok': False, 'error': 'Clé API invalide ou révoquée'}), 401
+    key_row = matches[0]
+    user_id = key_row['user_id']
+    environment = key_row.get('environment', 'live')
+    sb_patch('api_keys', 'id', key_row['id'], {'last_used_at': datetime.utcnow().isoformat()})
 
     data = request.get_json()
     if not data:
@@ -289,11 +295,10 @@ def api_pay():
         'client_phone': data['phone'],
         'country': data.get('country', ''),
         'status': 'pending',
-        'environment': 'sandbox',
+        'environment': 'sandbox' if environment == 'sandbox' else 'production',
+        'user_id': user_id,
         'created_at': datetime.utcnow().isoformat()
     }
-    if user_id:
-        tx_payload['user_id'] = user_id
 
     tx = sb_post('transactions', tx_payload)
 
@@ -321,6 +326,139 @@ def api_export_transactions():
         writer.writerow([tx.get('token',''), tx.get('client_name',''), tx.get('amount',''), tx.get('status',''), tx.get('country',''), tx.get('created_at','')])
     from flask import Response
     return Response(output.getvalue(), mimetype='text/csv', headers={'Content-Disposition': 'attachment; filename=transactions_flinpay.csv'})
+
+# ── KYC (vérification d'identité) ─────────────────
+@app.route('/kyc')
+@user_required
+def kyc_page():
+    return render_template('kyc.html', user=get_current_user())
+
+@app.route('/api/kyc/submit', methods=['POST'])
+@user_required
+def api_kyc_submit():
+    full_name = (request.form.get('full_name') or '').strip()
+    id_type = (request.form.get('id_type') or '').strip()
+    id_number = (request.form.get('id_number') or '').strip()
+    file = request.files.get('document')
+
+    if not full_name or not id_type or not id_number or not file or not file.filename:
+        return jsonify({'ok': False, 'error': 'Tous les champs et le document sont requis'}), 400
+
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ('jpg', 'jpeg', 'png', 'pdf'):
+        return jsonify({'ok': False, 'error': 'Format non supporté (jpg, png ou pdf uniquement)'}), 400
+
+    file_bytes = file.read()
+    if len(file_bytes) > 8 * 1024 * 1024:
+        return jsonify({'ok': False, 'error': 'Fichier trop volumineux (8 Mo max)'}), 400
+
+    path = f"{request.user_id}/{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.{ext}"
+    uploaded = sb_storage_upload('kyc-documents', path, file_bytes, file.mimetype or 'application/octet-stream')
+    if not uploaded:
+        return jsonify({'ok': False, 'error': "Erreur lors de l'upload du document. Vérifie que le bucket 'kyc-documents' existe."}), 500
+
+    updated = sb_patch('users', 'id', request.user_id, {
+        'kyc_status': 'pending',
+        'kyc_full_name': full_name,
+        'kyc_id_type': id_type,
+        'kyc_id_number': id_number,
+        'kyc_document_path': path,
+        'kyc_submitted_at': datetime.utcnow().isoformat(),
+        'kyc_rejection_reason': None
+    })
+    if not updated:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour du profil'}), 500
+    return jsonify({'ok': True, 'message': 'Document envoyé. Vérification sous 24-48h.'})
+
+# ── ADMIN : REVUE KYC ─────────────────────────────
+@app.route('/admin/kyc')
+@admin_required
+def admin_kyc_page():
+    pending = sb_get('users', 'kyc_status=eq.pending&order=kyc_submitted_at.asc')
+    return render_template('admin_kyc.html', pending=pending)
+
+@app.route('/api/admin/kyc/<user_id>/document')
+@admin_required
+def api_admin_kyc_document(user_id):
+    users = sb_get('users', f'id=eq.{user_id}')
+    if not users or not users[0].get('kyc_document_path'):
+        return jsonify({'ok': False, 'error': 'Document introuvable'}), 404
+    url = sb_storage_sign('kyc-documents', users[0]['kyc_document_path'])
+    if not url:
+        return jsonify({'ok': False, 'error': 'Erreur de génération du lien'}), 500
+    return jsonify({'ok': True, 'url': url})
+
+@app.route('/api/admin/kyc/<user_id>/approve', methods=['POST'])
+@admin_required
+def api_admin_kyc_approve(user_id):
+    ok = sb_patch('users', 'id', user_id, {
+        'kyc_status': 'verified',
+        'kyc_reviewed_at': datetime.utcnow().isoformat(),
+        'kyc_rejection_reason': None
+    })
+    return jsonify({'ok': ok})
+
+@app.route('/api/admin/kyc/<user_id>/reject', methods=['POST'])
+@admin_required
+def api_admin_kyc_reject(user_id):
+    data = request.get_json() or {}
+    reason = (data.get('reason') or 'Document invalide ou illisible').strip()
+    ok = sb_patch('users', 'id', user_id, {
+        'kyc_status': 'rejected',
+        'kyc_reviewed_at': datetime.utcnow().isoformat(),
+        'kyc_rejection_reason': reason
+    })
+    return jsonify({'ok': ok})
+
+# ── API KEYS (réelles, hashées) ───────────────────
+@app.route('/api/keys', methods=['GET'])
+@user_required
+def api_list_keys():
+    keys = sb_get('api_keys', f"user_id=eq.{request.user_id}&order=created_at.desc")
+    safe = [{
+        'id': k['id'],
+        'key_prefix': k['key_prefix'],
+        'environment': k.get('environment', 'live'),
+        'label': k.get('label') or '',
+        'active': k.get('active', True),
+        'created_at': k.get('created_at'),
+        'last_used_at': k.get('last_used_at')
+    } for k in keys]
+    return jsonify({'ok': True, 'keys': safe})
+
+@app.route('/api/keys', methods=['POST'])
+@user_required
+def api_create_key():
+    user = get_current_user()
+    if user.get('kyc_status') != 'verified':
+        return jsonify({'ok': False, 'error': "Vérifiez votre identité avant de générer une clé API"}), 403
+
+    data = request.get_json() or {}
+    environment = data.get('environment') if data.get('environment') in ('live', 'sandbox') else 'live'
+    label = (data.get('label') or '').strip()[:60]
+
+    full_key, key_hash, display_prefix = generate_api_key(environment)
+    row = sb_post('api_keys', {
+        'user_id': request.user_id,
+        'key_prefix': display_prefix,
+        'key_hash': key_hash,
+        'environment': environment,
+        'label': label,
+        'active': True,
+        'created_at': datetime.utcnow().isoformat()
+    })
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'key': full_key, 'key_prefix': display_prefix, 'environment': environment})
+
+@app.route('/api/keys/<int:key_id>', methods=['DELETE'])
+@user_required
+def api_delete_key(key_id):
+    ok = sb_delete_multi('api_keys', {'id': key_id, 'user_id': request.user_id})
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la révocation'}), 500
+    return jsonify({'ok': True})
 
 # ── API PAYMENT LINKS ─────────────────────────────
 @app.route('/api/payment-links', methods=['GET'])
@@ -403,6 +541,41 @@ def register():
 @app.route('/login')
 def login_page():
     return render_template('login.html')
+
+def sb_storage_upload(bucket, path, file_bytes, content_type):
+    try:
+        url = f'{SUPABASE_URL}/storage/v1/object/{bucket}/{path}'
+        headers = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': f'Bearer {SUPABASE_KEY}',
+            'Content-Type': content_type or 'application/octet-stream',
+            'x-upsert': 'true'
+        }
+        r = requests.post(url, headers=headers, data=file_bytes, timeout=20)
+        return r.ok
+    except Exception as e:
+        print(f'[sb_storage_upload] error: {e}')
+        return False
+
+def sb_storage_sign(bucket, path, expires_in=3600):
+    try:
+        url = f'{SUPABASE_URL}/storage/v1/object/sign/{bucket}/{path}'
+        r = requests.post(url, headers=SUPA_HEADERS, json={'expiresIn': expires_in}, timeout=10)
+        if not r.ok:
+            return None
+        signed_path = r.json().get('signedURL')
+        return f'{SUPABASE_URL}/storage/v1{signed_path}' if signed_path else None
+    except Exception as e:
+        print(f'[sb_storage_sign] error: {e}')
+        return None
+
+def generate_api_key(environment):
+    raw = secrets.token_hex(24)
+    prefix = 'fp_live_' if environment == 'live' else 'fp_test_'
+    full_key = prefix + raw
+    key_hash = hashlib.sha256(full_key.encode()).hexdigest()
+    display_prefix = full_key[:14] + '…'
+    return full_key, key_hash, display_prefix
 
 def get_current_user():
     users = sb_get('users', f"id=eq.{request.user_id}")
