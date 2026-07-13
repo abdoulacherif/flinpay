@@ -114,9 +114,17 @@ def verify_token(token):
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.cookies.get('fp_token')
-        if not token or not verify_token(token):
-            return redirect(url_for('admin_login'))
+        token = request.cookies.get('fp_user_token')
+        if not token:
+            return redirect(url_for('login_page'))
+        payload = verify_token(token)
+        if not payload or payload.get('type') != 'user':
+            return redirect(url_for('login_page'))
+        users = sb_get('users', f"id=eq.{payload.get('sub')}")
+        if not users or not users[0].get('is_admin'):
+            return redirect(url_for('login_page'))
+        request.user_id = payload.get('sub')
+        request.user_email = payload.get('email')
         return f(*args, **kwargs)
     return decorated
 
@@ -693,23 +701,15 @@ def api_pay_link(token):
     sb_patch_multi('payment_links', {'token': token}, {'paid_count': (link.get('paid_count') or 0) + 1})
     return jsonify({'ok': True, 'message': 'Paiement initié, en attente de confirmation.'})
 
-# ── ADMIN LOGIN ───────────────────────────────────
-@app.route('/admin/login', methods=['GET','POST'])
+# ── ADMIN LOGIN (obsolète — redirige vers le login normal) ──
+@app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
-    if request.method == 'POST':
-        data = request.get_json()
-        if data.get('username') == ADMIN_USERNAME and data.get('password') == ADMIN_PASSWORD:
-            token = generate_token(data['username'])
-            resp = make_response(jsonify({'ok': True}))
-            resp.set_cookie('fp_token', token, httponly=True, samesite='Lax', max_age=8*3600)
-            return resp
-        return jsonify({'ok': False, 'error': 'Identifiants incorrects'}), 401
-    return render_template('admin_login.html')
+    return redirect(url_for('login_page'))
 
 @app.route('/admin/logout')
 def admin_logout():
-    resp = make_response(redirect(url_for('admin_login')))
-    resp.delete_cookie('fp_token')
+    resp = make_response(redirect(url_for('login_page')))
+    resp.delete_cookie('fp_user_token')
     return resp
 
 @app.route('/admin')
