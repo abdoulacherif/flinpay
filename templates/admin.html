@@ -71,6 +71,18 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .new-item-box .field-grid{margin-bottom:10px}
 textarea.field-input{min-height:90px;font-family:'JetBrains Mono',monospace;font-size:.78rem;resize:vertical}
 
+.tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.tbl th{padding:8px 10px;text-align:left;font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFBFF;border-bottom:1px solid var(--border-soft);white-space:nowrap}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700}
+.b-success{background:var(--green-tint);color:#0A7A50}
+.b-pending{background:var(--gold-tint);color:#8A5B00}
+.b-failed{background:var(--danger-tint);color:#B3271A}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--muted)}
+.mini-select{padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:.76rem}
+.mini-input{padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:.76rem;width:90px}
+
 .empty{text-align:center;padding:30px;color:var(--muted);font-size:.85rem}
 #toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
 #toast.show{transform:translateY(0);opacity:1}
@@ -95,6 +107,9 @@ textarea.field-input{min-height:90px;font-family:'JetBrains Mono',monospace;font
 
 <div class="tabs">
   <button class="tab-btn active" data-tab="overview" onclick="showTab('overview')">Vue d'ensemble</button>
+  <button class="tab-btn" data-tab="users" onclick="showTab('users')">Utilisateurs</button>
+  <button class="tab-btn" data-tab="alltx" onclick="showTab('alltx')">Transactions</button>
+  <button class="tab-btn" data-tab="payouts" onclick="showTab('payouts')">Payouts</button>
   <button class="tab-btn" data-tab="config" onclick="showTab('config')">Configuration</button>
   <button class="tab-btn" data-tab="stats" onclick="showTab('stats')">Statistiques</button>
   <button class="tab-btn" data-tab="features" onclick="showTab('features')">Fonctionnalités</button>
@@ -117,6 +132,55 @@ textarea.field-input{min-height:90px;font-family:'JetBrains Mono',monospace;font
         <a class="btn btn-primary" href="/admin/kyc">🪪 Revoir les demandes KYC</a>
         <a class="btn btn-outline" href="/dashboard">📊 Voir le dashboard utilisateur</a>
       </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-users">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Utilisateurs</div>
+        <input class="field-input" id="users-search" placeholder="🔍 Rechercher nom/email..." style="max-width:240px" oninput="filterUsers()">
+      </div>
+      <div class="card-body" style="overflow-x:auto" id="users-list"><div class="empty">Chargement...</div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-alltx">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Toutes les transactions</div>
+        <input class="field-input" id="tx-search" placeholder="🔍 Client / ID..." style="max-width:240px" oninput="filterAllTx()">
+      </div>
+      <div class="card-body" style="overflow-x:auto" id="alltx-list"><div class="empty">Chargement...</div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-payouts">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Payouts</div>
+        <button class="btn btn-primary btn-sm" onclick="openPayoutForm()">➕ Nouveau payout</button>
+      </div>
+      <div class="card-body" id="payout-form-box" style="display:none">
+        <div class="new-item-box">
+          <div class="field-grid">
+            <div><label class="field-label">User ID (uuid)</label><input class="field-input" id="po-user-id" placeholder="uuid de l'utilisateur"></div>
+            <div><label class="field-label">Montant</label><input class="field-input" id="po-amount" type="number"></div>
+            <div><label class="field-label">Téléphone</label><input class="field-input" id="po-phone"></div>
+            <div><label class="field-label">Opérateur</label><input class="field-input" id="po-operator" placeholder="Orange Money, Wave..."></div>
+            <div><label class="field-label">Pays</label><input class="field-input" id="po-country" placeholder="CI"></div>
+            <div><label class="field-label">Statut</label>
+              <select class="field-input" id="po-status">
+                <option value="pending">En attente</option>
+                <option value="paid">Payé</option>
+                <option value="failed">Échoué</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="createPayout()">Enregistrer le payout</button>
+        </div>
+      </div>
+      <div class="card-body" style="overflow-x:auto" id="payouts-list"><div class="empty">Chargement...</div></div>
     </div>
   </div>
 
@@ -166,7 +230,7 @@ function showTab(name){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelector(`.tab-btn[data-tab="${name}"]`).classList.add('active');
-  const loaders={config:loadConfig,stats:()=>loadCrud('stats'),features:()=>loadCrud('features'),pricing:()=>loadCrud('pricing'),testimonials:()=>loadCrud('testimonials')};
+  const loaders={config:loadConfig,stats:()=>loadCrud('stats'),features:()=>loadCrud('features'),pricing:()=>loadCrud('pricing'),testimonials:()=>loadCrud('testimonials'),users:loadUsers,alltx:loadAllTx,payouts:loadPayouts};
   if(loaders[name]) loaders[name]();
 }
 
@@ -328,6 +392,210 @@ async function createCrudRaw(name){
 }
 
 loadOverview();
+
+// ── UTILISATEURS ──────────────────────────────────
+let allUsers=[];
+async function loadUsers(){
+  const el=document.getElementById('users-list');
+  el.innerHTML='<div class="empty">Chargement...</div>';
+  try{
+    const r=await fetch('/api/admin/users');
+    const data=await r.json();
+    allUsers=data.items||[];
+    renderUsers(allUsers);
+  }catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
+}
+function renderUsers(list){
+  const el=document.getElementById('users-list');
+  if(!list.length){ el.innerHTML='<div class="empty">Aucun utilisateur.</div>'; return; }
+  el.innerHTML=`<table class="tbl"><thead><tr>
+    <th>Nom</th><th>Email</th><th>Pays</th><th>Plan</th><th>KYC</th><th>Actif</th><th>Admin</th><th></th>
+  </tr></thead><tbody>
+  ${list.map(u=>`
+    <tr>
+      <td>${u.firstname||''} ${u.lastname||''}</td>
+      <td class="mono">${u.email||''}</td>
+      <td>${u.country||''}</td>
+      <td><input class="mini-input" id="u-plan-${u.id}" value="${u.plan||''}"></td>
+      <td><span class="badge ${u.kyc_status==='verified'?'b-success':u.kyc_status==='pending'?'b-pending':'b-failed'}">${u.kyc_status||'unverified'}</span></td>
+      <td><input type="checkbox" id="u-active-${u.id}" ${u.is_active!==false?'checked':''}></td>
+      <td><input type="checkbox" id="u-admin-${u.id}" ${u.is_admin?'checked':''}></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-primary btn-sm" onclick="saveUser('${u.id}')">💾</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">🗑</button>
+      </td>
+    </tr>
+  `).join('')}
+  </tbody></table>`;
+}
+function filterUsers(){
+  const q=document.getElementById('users-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u=>
+    (u.firstname||'').toLowerCase().includes(q) ||
+    (u.lastname||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q)
+  ));
+}
+async function saveUser(id){
+  const payload={
+    plan: document.getElementById('u-plan-'+id).value,
+    is_active: document.getElementById('u-active-'+id).checked,
+    is_admin: document.getElementById('u-admin-'+id).checked
+  };
+  try{
+    const r=await fetch('/api/admin/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await r.json();
+    if(data.ok){ toast('Utilisateur mis à jour'); } else { toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+async function deleteUser(id){
+  if(!confirm('Supprimer définitivement cet utilisateur ?')) return;
+  try{
+    const r=await fetch('/api/admin/users/'+id,{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){ toast('Utilisateur supprimé'); loadUsers(); } else { toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+
+// ── TOUTES LES TRANSACTIONS ───────────────────────
+let allTxAdmin=[];
+async function loadAllTx(){
+  const el=document.getElementById('alltx-list');
+  el.innerHTML='<div class="empty">Chargement...</div>';
+  try{
+    const r=await fetch('/api/admin/transactions');
+    const data=await r.json();
+    allTxAdmin=data.items||[];
+    renderAllTx(allTxAdmin);
+  }catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
+}
+function renderAllTx(list){
+  const el=document.getElementById('alltx-list');
+  if(!list.length){ el.innerHTML='<div class="empty">Aucune transaction.</div>'; return; }
+  el.innerHTML=`<table class="tbl"><thead><tr>
+    <th>ID</th><th>Client</th><th>Téléphone</th><th>Montant</th><th>Statut</th><th>Env.</th><th>Date</th><th></th>
+  </tr></thead><tbody>
+  ${list.map(tx=>`
+    <tr>
+      <td class="mono">${(tx.token||'').substring(0,10)}...</td>
+      <td>${tx.client_name||''}</td>
+      <td>${tx.client_phone||''}</td>
+      <td>${Number(tx.amount||0).toLocaleString()} XOF</td>
+      <td>
+        <select class="mini-select" id="tx-status-${tx.id}">
+          <option value="pending" ${tx.status==='pending'?'selected':''}>En attente</option>
+          <option value="paid" ${tx.status==='paid'?'selected':''}>Payé</option>
+          <option value="failed" ${tx.status==='failed'?'selected':''}>Échoué</option>
+        </select>
+      </td>
+      <td>${tx.environment||''}</td>
+      <td style="font-size:.72rem;color:var(--muted)">${tx.created_at?new Date(tx.created_at).toLocaleDateString('fr-FR'):''}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-primary btn-sm" onclick="saveTxStatus(${tx.id})">💾</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTx(${tx.id})">🗑</button>
+      </td>
+    </tr>
+  `).join('')}
+  </tbody></table>`;
+}
+function filterAllTx(){
+  const q=document.getElementById('tx-search').value.toLowerCase();
+  renderAllTx(allTxAdmin.filter(tx=>
+    (tx.client_name||'').toLowerCase().includes(q) || (tx.token||'').toLowerCase().includes(q)
+  ));
+}
+async function saveTxStatus(id){
+  const status=document.getElementById('tx-status-'+id).value;
+  try{
+    const r=await fetch('/api/admin/transactions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    const data=await r.json();
+    if(data.ok){ toast('Statut mis à jour'); } else { toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+async function deleteTx(id){
+  if(!confirm('Supprimer cette transaction ?')) return;
+  try{
+    const r=await fetch('/api/admin/transactions/'+id,{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){ toast('Transaction supprimée'); loadAllTx(); } else { toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+
+// ── PAYOUTS ────────────────────────────────────────
+function openPayoutForm(){
+  const box=document.getElementById('payout-form-box');
+  box.style.display=box.style.display==='none'?'block':'none';
+}
+async function createPayout(){
+  const payload={
+    user_id: document.getElementById('po-user-id').value.trim(),
+    amount: document.getElementById('po-amount').value,
+    phone: document.getElementById('po-phone').value.trim(),
+    operator: document.getElementById('po-operator').value.trim(),
+    country: document.getElementById('po-country').value.trim(),
+    status: document.getElementById('po-status').value
+  };
+  if(!payload.user_id||!payload.amount||!payload.phone){ toast('User ID, montant et téléphone requis',false); return; }
+  try{
+    const r=await fetch('/api/admin/payouts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await r.json();
+    if(data.ok){
+      toast('Payout créé');
+      document.getElementById('payout-form-box').style.display='none';
+      loadPayouts();
+    }else{ toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+async function loadPayouts(){
+  const el=document.getElementById('payouts-list');
+  el.innerHTML='<div class="empty">Chargement...</div>';
+  try{
+    const r=await fetch('/api/admin/payouts');
+    const data=await r.json();
+    const items=data.items||[];
+    if(!items.length){ el.innerHTML='<div class="empty">Aucun payout enregistré.</div>'; return; }
+    el.innerHTML=`<table class="tbl"><thead><tr>
+      <th>User ID</th><th>Montant</th><th>Téléphone</th><th>Opérateur</th><th>Statut</th><th>Date</th><th></th>
+    </tr></thead><tbody>
+    ${items.map(p=>`
+      <tr>
+        <td class="mono">${(p.user_id||'').substring(0,8)}...</td>
+        <td>${Number(p.amount||0).toLocaleString()} XOF</td>
+        <td>${p.phone||''}</td>
+        <td>${p.operator||''}</td>
+        <td>
+          <select class="mini-select" id="po-status-${p.id}">
+            <option value="pending" ${p.status==='pending'?'selected':''}>En attente</option>
+            <option value="paid" ${p.status==='paid'?'selected':''}>Payé</option>
+            <option value="failed" ${p.status==='failed'?'selected':''}>Échoué</option>
+          </select>
+        </td>
+        <td style="font-size:.72rem;color:var(--muted)">${p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR'):''}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-primary btn-sm" onclick="savePayoutStatus(${p.id})">💾</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePayout(${p.id})">🗑</button>
+        </td>
+      </tr>
+    `).join('')}
+    </tbody></table>`;
+  }catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
+}
+async function savePayoutStatus(id){
+  const status=document.getElementById('po-status-'+id).value;
+  try{
+    const r=await fetch('/api/admin/payouts/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    const data=await r.json();
+    if(data.ok){ toast('Statut mis à jour'); } else { toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+async function deletePayout(id){
+  if(!confirm('Supprimer ce payout ?')) return;
+  try{
+    const r=await fetch('/api/admin/payouts/'+id,{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){ toast('Payout supprimé'); loadPayouts(); } else { toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
 </script>
 </body>
 </html>
