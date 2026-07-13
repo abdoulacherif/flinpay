@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;
+  --sidebar:260px;--r-lg:16px;--r-md:12px;--r-sm:9px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
+a{color:var(--blue)}
+code{font-family:'JetBrains Mono',monospace;background:var(--blue-tint);color:var(--blue-deep);padding:2px 6px;border-radius:5px;font-size:.85em}
+
+.topbar{background:var(--ink);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.2rem;color:white;text-decoration:none}
+.logo span{color:#5B7CFF}
+.topbar-right a{color:rgba(255,255,255,.65);text-decoration:none;font-size:.85rem;font-weight:600;margin-left:18px}
+.topbar-right a:hover{color:white}
+.topbar-right a.cta{background:var(--blue);color:white;padding:8px 16px;border-radius:8px}
+
+.layout{display:flex;max-width:1150px;margin:0 auto}
+.toc{width:var(--sidebar);flex-shrink:0;padding:30px 20px;position:sticky;top:60px;align-self:flex-start;height:calc(100vh - 60px);overflow-y:auto}
+.toc-group{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+.toc-group:first-child{margin-top:0}
+.toc a{display:block;padding:6px 10px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:.85rem;margin-bottom:2px}
+.toc a:hover{color:var(--text);background:var(--border-soft)}
+
+.content{flex:1;padding:36px 30px 80px;min-width:0}
+.doc-section{margin-bottom:56px;scroll-margin-top:80px}
+.doc-section h1{font-size:1.9rem;margin-bottom:10px;letter-spacing:-.02em}
+.doc-section h2{font-size:1.2rem;margin:28px 0 12px;letter-spacing:-.01em}
+.doc-section p{font-size:.92rem;line-height:1.75;color:#3A3D52;margin-bottom:14px}
+.doc-section ul{margin:0 0 14px 20px;font-size:.92rem;line-height:1.8;color:#3A3D52}
+.lead{font-size:1.02rem;color:var(--muted);max-width:600px}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+.b-post{background:var(--green-tint);color:#0A7A50}
+.b-get{background:var(--blue-tint);color:var(--blue-deep)}
+
+.endpoint{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 18px;display:flex;align-items:center;gap:12px;margin:14px 0;font-family:'JetBrains Mono',monospace;font-size:.85rem}
+
+.code-block{background:var(--ink);border-radius:var(--r-md);padding:18px 20px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#A8B4FF;overflow-x:auto;line-height:1.7;margin:14px 0;position:relative}
+.code-block .kw{color:#FF79C6}
+.code-block .str{color:#50FA7B}
+.code-block .cm{color:rgba(255,255,255,0.32)}
+.code-tabs{display:flex;gap:6px;margin-bottom:10px}
+.code-tab{background:var(--border-soft);border:none;padding:6px 14px;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted)}
+.code-tab.active{background:var(--blue);color:white}
+
+table.params{width:100%;border-collapse:collapse;font-size:.85rem;margin:14px 0}
+table.params th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border)}
+table.params td{padding:9px 10px;border-bottom:1px solid var(--border-soft)}
+table.params td:first-child{font-family:'JetBrains Mono',monospace;color:var(--blue-deep)}
+
+.callout{border-radius:var(--r-md);padding:14px 16px;font-size:.85rem;margin:16px 0;display:flex;gap:10px;line-height:1.6}
+.callout.warn{background:var(--gold-tint);color:#8A5B00}
+.callout.info{background:var(--blue-tint);color:var(--blue-deep)}
+
+@media(max-width:900px){
+  .toc{display:none}
+  .content{padding:24px 16px 60px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="logo">Flin<span>pay</span> <span style="color:rgba(255,255,255,.4);font-weight:500;font-size:.75rem">Docs</span></a>
+  <div class="topbar-right">
+    <a href="/">Accueil</a>
+    <a href="/login">Connexion</a>
+    <a href="/register" class="cta">Créer un compte</a>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="toc">
+    <div class="toc-group">Démarrage</div>
+    <a href="#intro">Introduction</a>
+    <a href="#auth">Authentification</a>
+    <a href="#kyc">Vérification KYC</a>
+    <div class="toc-group">API Paiements</div>
+    <a href="#pay">Initier un paiement</a>
+    <a href="#responses">Réponses &amp; statuts</a>
+    <a href="#errors">Erreurs</a>
+    <div class="toc-group">Autres outils</div>
+    <a href="#links">Liens de paiement</a>
+    <a href="#env">Sandbox vs Production</a>
+    <a href="#webhooks">Webhooks</a>
+  </nav>
+
+  <div class="content">
+
+    <div class="doc-section" id="intro">
+      <h1>Documentation Flinpay</h1>
+      <p class="lead">Flinpay est un agrégateur de paiement mobile money couvrant 12 pays d'Afrique francophone et anglophone. Une seule intégration API pour encaisser dans tous les corridors supportés.</p>
+      <div class="callout info">💡 Pas encore de compte ? <a href="/register">Créez-en un gratuitement</a> — le plan Starter inclut 100 transactions/mois sans frais fixes.</div>
+    </div>
+
+    <div class="doc-section" id="auth">
+      <h2 style="margin-top:0">Authentification</h2>
+      <p>Toutes les requêtes à l'API de paiement doivent inclure votre clé API dans l'en-tête <code>Authorization</code>, au format Bearer token.</p>
+      <div class="code-block">Authorization: <span class="str">Bearer fp_live_xxxxxxxxxxxxxxxxxxxxxxxx</span></div>
+      <p>Vous trouverez vos clés dans <a href="/api-keys">Dashboard → Clés API</a>. Chaque clé existe en deux versions :</p>
+      <table class="params">
+        <tr><th>Préfixe</th><th>Environnement</th><th>Effet</th></tr>
+        <tr><td>fp_live_</td><td>Production</td><td>Transactions réelles, argent réellement déplacé</td></tr>
+        <tr><td>fp_test_</td><td>Sandbox</td><td>Transactions simulées, aucun argent déplacé</td></tr>
+      </table>
+      <div class="callout warn">⚠️ Ne partagez jamais votre clé <code>fp_live_</code> côté client (navigateur, app mobile). Utilisez-la uniquement depuis votre serveur.</div>
+    </div>
+
+    <div class="doc-section" id="kyc">
+      <h2 style="margin-top:0">Vérification d'identité (KYC)</h2>
+      <p>Pour des raisons de sécurité et de conformité, la génération de clés API nécessite une vérification d'identité préalable. Rendez-vous sur <a href="/kyc">Vérification</a>, soumettez une pièce d'identité (CNI, passeport ou permis), et attendez la validation (généralement sous 24-48h).</p>
+      <p>Tant que votre compte n'est pas vérifié, la page Clés API reste verrouillée.</p>
+    </div>
+
+    <div class="doc-section" id="pay">
+      <h2 style="margin-top:0">Initier un paiement</h2>
+      <p>Déclenche une demande de paiement mobile money vers le numéro du client.</p>
+      <div class="endpoint"><span class="badge b-post">POST</span> /api/pay</div>
+
+      <table class="params">
+        <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+        <tr><td>amount</td><td>number</td><td>Montant à encaisser (dans la devise du pays du client)</td></tr>
+        <tr><td>phone</td><td>string</td><td>Numéro mobile money du client</td></tr>
+        <tr><td>client_name</td><td>string</td><td>Nom complet du client</td></tr>
+        <tr><td>order_id</td><td>string</td><td>Identifiant unique de la commande côté marchand</td></tr>
+        <tr><td>country</td><td>string</td><td>Code pays ISO2 (ex: <code>CI</code>, <code>CM</code>, <code>SN</code>)</td></tr>
+      </table>
+
+      <div class="code-tabs">
+        <button class="code-tab active" onclick="showLang('python')">Python</button>
+        <button class="code-tab" onclick="showLang('js')">JavaScript</button>
+        <button class="code-tab" onclick="showLang('php')">PHP</button>
+      </div>
+
+      <div id="lang-python" class="code-block"><span class="cm"># Python</span>
+<span class="kw">import</span> requests
+
+response = requests.post(
+    <span class="str">"https://flinpay.vercel.app/api/pay"</span>,
+    headers={<span class="str">"Authorization"</span>: <span class="str">"Bearer fp_live_votre_cle"</span>},
+    json={
+        <span class="str">"amount"</span>: <span class="str">10000</span>,
+        <span class="str">"phone"</span>: <span class="str">"0700000000"</span>,
+        <span class="str">"client_name"</span>: <span class="str">"Kouamé Diallo"</span>,
+        <span class="str">"order_id"</span>: <span class="str">"ORD-001"</span>,
+        <span class="str">"country"</span>: <span class="str">"CI"</span>
+    }
+)
+print(response.json())</div>
+
+      <div id="lang-js" class="code-block" style="display:none"><span class="cm">// JavaScript</span>
+<span class="kw">const</span> res = <span class="kw">await</span> fetch(<span class="str">"https://flinpay.vercel.app/api/pay"</span>, {
+  method: <span class="str">"POST"</span>,
+  headers: {
+    <span class="str">"Authorization"</span>: <span class="str">"Bearer fp_live_votre_cle"</span>,
+    <span class="str">"Content-Type"</span>: <span class="str">"application/json"</span>
+  },
+  body: JSON.stringify({
+    amount: <span class="str">10000</span>,
+    phone: <span class="str">"0700000000"</span>,
+    client_name: <span class="str">"Kouamé Diallo"</span>,
+    order_id: <span class="str">"ORD-001"</span>,
+    country: <span class="str">"CI"</span>
+  })
+});
+<span class="kw">const</span> data = <span class="kw">await</span> res.json();</div>
+
+      <div id="lang-php" class="code-block" style="display:none"><span class="cm">&lt;?php // PHP</span>
+$ch = curl_init(<span class="str">"https://flinpay.vercel.app/api/pay"</span>);
+curl_setopt($ch, CURLOPT_POST, <span class="kw">true</span>);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    <span class="str">"Authorization: Bearer fp_live_votre_cle"</span>,
+    <span class="str">"Content-Type: application/json"</span>
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    <span class="str">"amount"</span> =&gt; <span class="str">10000</span>,
+    <span class="str">"phone"</span> =&gt; <span class="str">"0700000000"</span>,
+    <span class="str">"client_name"</span> =&gt; <span class="str">"Kouamé Diallo"</span>,
+    <span class="str">"order_id"</span> =&gt; <span class="str">"ORD-001"</span>,
+    <span class="str">"country"</span> =&gt; <span class="str">"CI"</span>
+]));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, <span class="kw">true</span>);
+$response = json_decode(curl_exec($ch));</div>
+    </div>
+
+    <div class="doc-section" id="responses">
+      <h2 style="margin-top:0">Réponses &amp; statuts</h2>
+      <p>Une requête réussie renvoie :</p>
+      <div class="code-block">{
+  <span class="str">"ok"</span>: <span class="kw">true</span>,
+  <span class="str">"token"</span>: <span class="str">"fp_tx_a1b2c3d4e5f6..."</span>,
+  <span class="str">"order_id"</span>: <span class="str">"ORD-001"</span>,
+  <span class="str">"amount"</span>: <span class="str">10000</span>,
+  <span class="str">"status"</span>: <span class="str">"pending"</span>,
+  <span class="str">"payment_url"</span>: <span class="str">"https://flinpay.vercel.app/pay/fp_tx_..."</span>
+}</div>
+      <p>Statuts possibles pour une transaction :</p>
+      <table class="params">
+        <tr><th>Statut</th><th>Signification</th></tr>
+        <tr><td>pending</td><td>En attente de confirmation par l'opérateur mobile money</td></tr>
+        <tr><td>paid</td><td>Paiement confirmé et encaissé</td></tr>
+        <tr><td>failed</td><td>Paiement refusé, expiré ou annulé</td></tr>
+      </table>
+    </div>
+
+    <div class="doc-section" id="errors">
+      <h2 style="margin-top:0">Erreurs</h2>
+      <table class="params">
+        <tr><th>Code HTTP</th><th>Cause probable</th></tr>
+        <tr><td>400</td><td>Champ requis manquant ou invalide</td></tr>
+        <tr><td>401</td><td>Clé API absente, invalide ou révoquée</td></tr>
+        <tr><td>500</td><td>Erreur serveur — réessayez ou contactez le support</td></tr>
+      </table>
+      <p>Le corps de la réponse d'erreur contient toujours <code>{"ok": false, "error": "..."}</code> avec un message explicite.</p>
+    </div>
+
+    <div class="doc-section" id="links">
+      <h2 style="margin-top:0">Liens de paiement</h2>
+      <p>Pour encaisser sans écrire de code, créez un lien de paiement partageable depuis <a href="/payment-links">Dashboard → Liens de paiement</a>. Le lien ouvre une page de paiement hébergée par Flinpay où votre client saisit son numéro mobile money.</p>
+    </div>
+
+    <div class="doc-section" id="env">
+      <h2 style="margin-top:0">Sandbox vs Production</h2>
+      <p>Utilisez votre clé <code>fp_test_</code> pendant le développement : les transactions sont marquées <code>environment: "sandbox"</code> et n'impliquent aucun mouvement d'argent réel. Basculez vers <code>fp_live_</code> uniquement en production, une fois votre intégration testée.</p>
+    </div>
+
+    <div class="doc-section" id="webhooks">
+      <h2 style="margin-top:0">Webhooks</h2>
+      <div class="callout warn">🚧 Les webhooks de confirmation de paiement (notification automatique vers votre serveur) sont en cours de développement et arrivent prochainement.</div>
+      <p>En attendant, interrogez le statut de vos transactions depuis votre <a href="/transactions">tableau de bord</a>.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showLang(lang){
+  ['python','js','php'].forEach(l=>{
+    document.getElementById('lang-'+l).style.display = l===lang ? 'block' : 'none';
+  });
+  document.querySelectorAll('.code-tab').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
