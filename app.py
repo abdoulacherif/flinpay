@@ -728,6 +728,85 @@ def admin_logout():
 def admin():
     return render_template('admin.html', user=get_current_user())
 
+# ── ADMIN : TRANSACTIONS (tous les utilisateurs) ──
+@app.route('/api/admin/transactions', methods=['GET'])
+@admin_required
+def api_admin_get_transactions():
+    return jsonify({'ok': True, 'items': sb_get('transactions', 'order=created_at.desc&limit=500')})
+
+@app.route('/api/admin/transactions/<int:tid>', methods=['PUT'])
+@admin_required
+def api_admin_update_transaction(tid):
+    ok = sb_patch('transactions', 'id', tid, request.get_json())
+    return jsonify({'ok': ok})
+
+@app.route('/api/admin/transactions/<int:tid>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_transaction(tid):
+    ok = sb_delete('transactions', 'id', tid)
+    return jsonify({'ok': ok})
+
+# ── ADMIN : PAYOUTS ────────────────────────────────
+@app.route('/api/admin/payouts', methods=['GET'])
+@admin_required
+def api_admin_get_payouts():
+    return jsonify({'ok': True, 'items': sb_get('payouts', 'order=created_at.desc')})
+
+@app.route('/api/admin/payouts', methods=['POST'])
+@admin_required
+def api_admin_create_payout():
+    data = request.get_json() or {}
+    if not data.get('user_id') or not data.get('amount') or not data.get('phone'):
+        return jsonify({'ok': False, 'error': 'user_id, amount et phone sont requis'}), 400
+    payload = {
+        'user_id': data.get('user_id'),
+        'amount': data.get('amount'),
+        'phone': data.get('phone'),
+        'operator': data.get('operator', ''),
+        'country': data.get('country', ''),
+        'status': data.get('status', 'pending'),
+        'note': data.get('note', ''),
+        'created_at': datetime.utcnow().isoformat()
+    }
+    row = sb_post('payouts', payload)
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
+
+@app.route('/api/admin/payouts/<int:pid>', methods=['PUT'])
+@admin_required
+def api_admin_update_payout(pid):
+    return jsonify({'ok': sb_patch('payouts', 'id', pid, request.get_json())})
+
+@app.route('/api/admin/payouts/<int:pid>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_payout(pid):
+    return jsonify({'ok': sb_delete('payouts', 'id', pid)})
+
+# ── ADMIN : UTILISATEURS (voir/modifier/supprimer tout) ──
+@app.route('/api/admin/users', methods=['GET'])
+@admin_required
+def api_admin_get_users():
+    users = sb_get('users', 'order=created_at.desc&limit=500')
+    safe = [{k: v for k, v in u.items() if k != 'password_hash'} for u in users]
+    return jsonify({'ok': True, 'items': safe})
+
+@app.route('/api/admin/users/<user_id>', methods=['PUT'])
+@admin_required
+def api_admin_update_user(user_id):
+    data = request.get_json() or {}
+    data.pop('password_hash', None)
+    data.pop('id', None)
+    ok = sb_patch('users', 'id', user_id, data)
+    return jsonify({'ok': ok})
+
+@app.route('/api/admin/users/<user_id>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_user(user_id):
+    ok = sb_delete('users', 'id', user_id)
+    return jsonify({'ok': ok})
+
 @app.route('/api/admin/overview')
 @admin_required
 def api_admin_overview():
