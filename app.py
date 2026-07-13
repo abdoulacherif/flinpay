@@ -585,6 +585,17 @@ def generate_api_key(environment):
     display_prefix = full_key[:14] + '…'
     return full_key, key_hash, display_prefix
 
+def sb_count(table, query=''):
+    try:
+        headers = dict(SUPA_HEADERS)
+        headers['Prefer'] = 'count=exact'
+        sep = '&' if query else ''
+        r = requests.get(f'{SUPABASE_URL}/rest/v1/{table}?{query}{sep}limit=1', headers=headers, timeout=10)
+        cr = r.headers.get('Content-Range', '')
+        return int(cr.split('/')[-1]) if '/' in cr else 0
+    except:
+        return 0
+
 def get_current_user():
     users = sb_get('users', f"id=eq.{request.user_id}")
     return users[0] if users else {}
@@ -715,13 +726,24 @@ def admin_logout():
 @app.route('/admin')
 @admin_required
 def admin():
-    return render_template('admin.html')
+    return render_template('admin.html', user=get_current_user())
+
+@app.route('/api/admin/overview')
+@admin_required
+def api_admin_overview():
+    return jsonify({
+        'ok': True,
+        'users': sb_count('users'),
+        'transactions': sb_count('transactions'),
+        'pending_kyc': sb_count('users', 'kyc_status=eq.pending'),
+        'payment_links': sb_count('payment_links')
+    })
 
 # ── API ADMIN CONFIG ──────────────────────────────
 @app.route('/api/admin/config', methods=['GET'])
 @admin_required
 def api_get_config():
-    return jsonify(sb_get('site_config'))
+    return jsonify({'ok': True, 'items': sb_get('site_config')})
 
 @app.route('/api/admin/config', methods=['PUT'])
 @admin_required
@@ -733,12 +755,16 @@ def api_update_config():
 @app.route('/api/admin/stats', methods=['GET'])
 @admin_required
 def api_get_stats():
-    return jsonify(sb_get('stats', 'order=order_index.asc'))
+    return jsonify({'ok': True, 'items': sb_get('stats', 'order=order_index.asc')})
 
 @app.route('/api/admin/stats', methods=['POST'])
 @admin_required
 def api_create_stat():
-    return jsonify(sb_post('stats', request.get_json()))
+    row = sb_post('stats', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
 
 @app.route('/api/admin/stats/<int:sid>', methods=['PUT'])
 @admin_required
@@ -753,12 +779,16 @@ def api_delete_stat(sid):
 @app.route('/api/admin/features', methods=['GET'])
 @admin_required
 def api_get_features():
-    return jsonify(sb_get('features', 'order=order_index.asc'))
+    return jsonify({'ok': True, 'items': sb_get('features', 'order=order_index.asc')})
 
 @app.route('/api/admin/features', methods=['POST'])
 @admin_required
 def api_create_feature():
-    return jsonify(sb_post('features', request.get_json()))
+    row = sb_post('features', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
 
 @app.route('/api/admin/features/<int:fid>', methods=['PUT'])
 @admin_required
@@ -773,12 +803,16 @@ def api_delete_feature(fid):
 @app.route('/api/admin/pricing', methods=['GET'])
 @admin_required
 def api_get_pricing():
-    return jsonify(sb_get('pricing_plans', 'order=order_index.asc'))
+    return jsonify({'ok': True, 'items': sb_get('pricing_plans', 'order=order_index.asc')})
 
 @app.route('/api/admin/pricing', methods=['POST'])
 @admin_required
 def api_create_plan():
-    return jsonify(sb_post('pricing_plans', request.get_json()))
+    row = sb_post('pricing_plans', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
 
 @app.route('/api/admin/pricing/<int:pid>', methods=['PUT'])
 @admin_required
@@ -793,12 +827,16 @@ def api_delete_plan(pid):
 @app.route('/api/admin/testimonials', methods=['GET'])
 @admin_required
 def api_get_testimonials():
-    return jsonify(sb_get('testimonials', 'order=order_index.asc'))
+    return jsonify({'ok': True, 'items': sb_get('testimonials', 'order=order_index.asc')})
 
 @app.route('/api/admin/testimonials', methods=['POST'])
 @admin_required
 def api_create_testimonial():
-    return jsonify(sb_post('testimonials', request.get_json()))
+    row = sb_post('testimonials', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
 
 @app.route('/api/admin/testimonials/<int:tid>', methods=['PUT'])
 @admin_required
