@@ -477,20 +477,52 @@ def api_delete_key(key_id):
 @user_required
 def api_get_payment_links():
     links = sb_get('payment_links', f"user_id=eq.{request.user_id}&order=created_at.desc")
+    for l in links:
+        if l.get('image_path'):
+            l['image_url'] = sb_storage_public_url('payment-link-images', l['image_path'])
     return jsonify({'ok': True, 'links': links})
 
 @app.route('/api/payment-links', methods=['POST'])
 @user_required
 def api_create_payment_link():
-    data = request.get_json()
-    if not data or not data.get('name') or not data.get('amount'):
-        return jsonify({'ok': False, 'error': 'Nom et montant requis'}), 400
-    try:
-        amount = float(data['amount'])
-    except (TypeError, ValueError):
-        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
-    if amount <= 0:
-        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+    data = request.form
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'ok': False, 'error': 'Le nom est requis'}), 400
+
+    amount_type = data.get('amount_type') if data.get('amount_type') in ('fixed', 'flexible') else 'fixed'
+
+    amount = None
+    min_amount = None
+    if amount_type == 'fixed':
+        try:
+            amount = float(data.get('amount'))
+        except (TypeError, ValueError):
+            return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+        if amount <= 0:
+            return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+    else:
+        raw_min = data.get('min_amount')
+        if raw_min:
+            try:
+                min_amount = float(raw_min)
+            except (TypeError, ValueError):
+                return jsonify({'ok': False, 'error': 'Montant minimum invalide'}), 400
+
+    image_path = None
+    file = request.files.get('image')
+    if file and file.filename:
+        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+        if ext not in ('jpg', 'jpeg', 'png', 'webp'):
+            return jsonify({'ok': False, 'error': 'Image: formats acceptés jpg, png, webp'}), 400
+        file_bytes = file.read()
+        if len(file_bytes) > 5 * 1024 * 1024:
+            return jsonify({'ok': False, 'error': 'Image trop volumineuse (5 Mo max)'}), 400
+        import uuid as _uuid
+        image_path = f"{request.user_id}/{_uuid.uuid4().hex[:12]}.{ext}"
+        uploaded = sb_storage_upload('payment-link-images', image_path, file_bytes, file.mimetype or 'image/jpeg')
+        if not uploaded['ok']:
+            return jsonify({'ok': False, 'error': f"Erreur upload image: {uploaded['detail']}"}), 500
 
     import uuid
     token = 'pay_' + uuid.uuid4().hex[:12]
@@ -498,11 +530,16 @@ def api_create_payment_link():
     payload = {
         'token': token,
         'user_id': request.user_id,
-        'name': data['name'].strip(),
+        'name': name,
         'amount': amount,
+        'amount_type': amount_type,
+        'min_amount': min_amount,
         'description': (data.get('description') or '').strip(),
-        'usage_limit': data.get('usage_limit') or None,
+        'usage_limit': int(data['usage_limit']) if data.get('usage_limit') else None,
         'expires_at': data.get('expires_at') or None,
+        'redirect_url': (data.get('redirect_url') or '').strip() or None,
+        'thank_you_message': (data.get('thank_you_message') or '').strip() or None,
+        'image_path': image_path,
         'active': True,
         'views': 0,
         'paid_count': 0,
@@ -580,6 +617,9 @@ def sb_storage_sign(bucket, path, expires_in=3600):
     except Exception as e:
         print(f'[sb_storage_sign] error: {e}')
         return None
+
+def sb_storage_public_url(bucket, path):
+    return f'{SUPABASE_URL}/storage/v1/object/public/{bucket}/{path}'
 
 def generate_api_key(environment):
     raw = secrets.token_hex(24)
@@ -676,7 +716,8 @@ def pay_page(token):
     valid, reason = _link_status(link)
     if link and valid:
         sb_patch_multi('payment_links', {'token': token}, {'views': (link.get('views') or 0) + 1})
-    return render_template('pay.html', link=link, valid=valid, reason=reason, token=token)
+    image_url = sb_storage_public_url('payment-link-images', link['image_path']) if (link and link.get('image_path')) else None
+    return render_template('pay.html', link=link, valid=valid, reason=reason, token=token, image_url=image_url)
 
 @app.route('/api/pay-link/<token>', methods=['POST'])
 def api_pay_link(token):
@@ -697,11 +738,23 @@ def api_pay_link(token):
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
 
+    if link.get('amount_type') == 'flexible':
+        try:
+            amount = float(data.get('amount'))
+        except (TypeError, ValueError):
+            return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+        if amount <= 0:
+            return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+        if link.get('min_amount') and amount < link['min_amount']:
+            return jsonify({'ok': False, 'error': f"Le montant minimum est de {link['min_amount']} XOF"}), 400
+    else:
+        amount = link['amount']
+
     import uuid
     tx = sb_post('transactions', {
         'token': 'fp_tx_' + uuid.uuid4().hex[:20],
         'order_id': 'link_' + uuid.uuid4().hex[:10],
-        'amount': link['amount'],
+        'amount': amount,
         'client_name': (data.get('name') or '').strip() or 'Client',
         'client_phone': phone,
         'country': data.get('country', ''),
@@ -714,7 +767,11 @@ def api_pay_link(token):
         return jsonify({'ok': False, 'error': 'Erreur lors de la création du paiement'}), 500
 
     sb_patch_multi('payment_links', {'token': token}, {'paid_count': (link.get('paid_count') or 0) + 1})
-    return jsonify({'ok': True, 'message': 'Paiement initié, en attente de confirmation.'})
+    return jsonify({
+        'ok': True,
+        'message': link.get('thank_you_message') or 'Paiement initié, en attente de confirmation.',
+        'redirect_url': link.get('redirect_url')
+    })
 
 # ── ADMIN LOGIN (obsolète — redirige vers le login normal) ──
 @app.route('/admin/login', methods=['GET', 'POST'])
