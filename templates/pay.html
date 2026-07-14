@@ -29,6 +29,8 @@ body::before{
 .amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.4rem;color:white;letter-spacing:-0.02em}
 .desc{color:rgba(255,255,255,0.45);font-size:0.88rem;margin-top:6px;margin-bottom:26px}
 .field{margin-bottom:14px;text-align:left}
+.product-img{width:100%;max-height:180px;object-fit:cover;border-radius:14px;margin-bottom:18px}
+.amount-input-wrap{text-align:left;margin-bottom:6px}
 label{display:block;font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:7px}
 input{
   width:100%;padding:12px 15px;background:rgba(255,255,255,0.05);
@@ -81,8 +83,18 @@ input::placeholder{color:rgba(255,255,255,0.2)}
     </div>
   {% else %}
     <div id="pay-view">
-      <div class="amount">{{ '{:,.0f}'.format(link.amount).replace(',', ' ') }} XOF</div>
-      <div class="desc">{{ link.description or link.name }}</div>
+      {% if image_url %}<img class="product-img" src="{{ image_url }}" alt="{{ link.name }}">{% endif %}
+
+      {% if link.amount_type == 'flexible' %}
+        <div class="desc" style="margin-bottom:14px">{{ link.description or link.name }}</div>
+        <div class="amount-input-wrap">
+          <label>Montant à payer (XOF)</label>
+          <input type="number" id="pay-amount" placeholder="{{ link.min_amount|int if link.min_amount else '1000' }}" min="{{ link.min_amount or 1 }}">
+        </div>
+      {% else %}
+        <div class="amount">{{ '{:,.0f}'.format(link.amount).replace(',', ' ') }} XOF</div>
+        <div class="desc">{{ link.description or link.name }}</div>
+      {% endif %}
 
       <div id="error-msg" class="error-msg"></div>
 
@@ -114,6 +126,7 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 async function doPay(){
   const name=document.getElementById('pay-name').value.trim();
   const phone=document.getElementById('pay-phone').value.trim();
+  const amountInput=document.getElementById('pay-amount');
   const err=document.getElementById('error-msg');
   const btn=document.getElementById('btn-pay');
   err.style.display='none';
@@ -123,20 +136,32 @@ async function doPay(){
     err.style.display='block';
     return;
   }
+  if(amountInput && !amountInput.value){
+    err.textContent='⚠ Le montant est requis.';
+    err.style.display='block';
+    return;
+  }
 
   btn.textContent='Envoi en cours...';
   btn.disabled=true;
 
   try{
+    const payload={name, phone};
+    if(amountInput) payload.amount=amountInput.value;
     const r=await fetch('/api/pay-link/{{ token }}',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name, phone})
+      body:JSON.stringify(payload)
     });
     const data=await r.json();
     if(data.ok){
       document.getElementById('pay-view').style.display='none';
       document.getElementById('success-view').style.display='block';
+      const msgEl=document.querySelector('#success-view .state-text');
+      if(msgEl && data.message) msgEl.textContent=data.message;
+      if(data.redirect_url){
+        setTimeout(()=>{ window.location.href=data.redirect_url; }, 2500);
+      }
     }else{
       err.textContent='⚠ '+(data.error||'Erreur lors du paiement.');
       err.style.display='block';
