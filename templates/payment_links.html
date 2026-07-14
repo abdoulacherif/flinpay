@@ -113,6 +113,13 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .preview-desc{color:rgba(255,255,255,0.5);font-size:.85rem;margin-top:6px}
 .preview-btn{background:var(--blue);color:white;border:none;border-radius:10px;padding:14px 32px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;margin-top:20px;cursor:pointer;width:100%}
 
+.amount-type-toggle{display:flex;gap:8px;margin-bottom:14px}
+.amount-type-btn{flex:1;padding:9px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--muted);text-align:center}
+.amount-type-btn.active{border-color:var(--blue);background:var(--blue-tint);color:var(--blue)}
+.img-drop{border:2px dashed var(--border);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;background:var(--bg);font-size:.82rem;color:var(--muted)}
+.img-drop input{display:none}
+.img-preview{max-width:100%;max-height:120px;border-radius:10px;margin-top:8px;display:none}
+
 .empty{text-align:center;padding:42px 20px;color:var(--muted)}
 .empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
 .empty-text{font-size:.85rem;line-height:1.65}
@@ -237,21 +244,54 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
         <label class="form-label">Nom du produit / service *</label>
         <input class="form-input" id="lk-name" type="text" placeholder="Ex: Abonnement mensuel" oninput="updatePreview()">
       </div>
-      <div class="form-group">
+
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Type de montant</label>
+        <div class="amount-type-toggle">
+          <button type="button" class="amount-type-btn active" id="btn-type-fixed" onclick="setAmountType('fixed')">💰 Montant fixe</button>
+          <button type="button" class="amount-type-btn" id="btn-type-flexible" onclick="setAmountType('flexible')">✏️ Montant libre</button>
+        </div>
+      </div>
+
+      <div class="form-group" id="fixed-amount-group">
         <label class="form-label">Montant (XOF) *</label>
         <input class="form-input" id="lk-amount" type="number" placeholder="5000" oninput="updatePreview()">
       </div>
+      <div class="form-group" id="min-amount-group" style="display:none">
+        <label class="form-label">Montant minimum (optionnel)</label>
+        <input class="form-input" id="lk-min-amount" type="number" placeholder="1000">
+      </div>
+
       <div class="form-group">
         <label class="form-label">Limite d'utilisation</label>
         <input class="form-input" id="lk-limit" type="number" placeholder="Illimité">
       </div>
+      <div class="form-group">
+        <label class="form-label">Date d'expiration</label>
+        <input class="form-input" id="lk-expire" type="date">
+      </div>
+
       <div class="form-group" style="grid-column:1/-1">
         <label class="form-label">Description</label>
         <input class="form-input" id="lk-desc" type="text" placeholder="Description optionnelle" oninput="updatePreview()">
       </div>
+
       <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Date d'expiration</label>
-        <input class="form-input" id="lk-expire" type="date">
+        <label class="form-label">Photo du produit (optionnel)</label>
+        <label class="img-drop" id="img-drop-label">
+          📷 Cliquez pour choisir une image (jpg, png, webp — 5 Mo max)
+          <input type="file" id="lk-image" accept=".jpg,.jpeg,.png,.webp" onchange="onImageChange()">
+        </label>
+        <img class="img-preview" id="img-preview">
+      </div>
+
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">URL de redirection après paiement (optionnel)</label>
+        <input class="form-input" id="lk-redirect" type="url" placeholder="https://monsite.com/merci">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Message de remerciement (optionnel)</label>
+        <input class="form-input" id="lk-thankyou" type="text" placeholder="Merci pour votre achat !">
       </div>
     </div>
 
@@ -278,10 +318,33 @@ function openModal(){document.getElementById('modal').classList.add('show')}
 function closeModal(){document.getElementById('modal').classList.remove('show')}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal()})
 
+let currentAmountType='fixed';
+function setAmountType(type){
+  currentAmountType=type;
+  document.getElementById('btn-type-fixed').classList.toggle('active', type==='fixed');
+  document.getElementById('btn-type-flexible').classList.toggle('active', type==='flexible');
+  document.getElementById('fixed-amount-group').style.display=type==='fixed'?'block':'none';
+  document.getElementById('min-amount-group').style.display=type==='flexible'?'block':'none';
+  updatePreview();
+}
+function onImageChange(){
+  const f=document.getElementById('lk-image').files[0];
+  const prev=document.getElementById('img-preview');
+  if(f){
+    const reader=new FileReader();
+    reader.onload=e=>{ prev.src=e.target.result; prev.style.display='block'; };
+    reader.readAsDataURL(f);
+  }else{
+    prev.style.display='none';
+  }
+}
+
 function updatePreview(){
   const amount=document.getElementById('lk-amount').value;
   const desc=document.getElementById('lk-desc').value||document.getElementById('lk-name').value||'Description du produit';
-  document.getElementById('prev-amount').textContent=(parseInt(amount)||0).toLocaleString()+' XOF';
+  document.getElementById('prev-amount').textContent = currentAmountType==='flexible'
+    ? 'Montant libre'
+    : (parseInt(amount)||0).toLocaleString()+' XOF';
   document.getElementById('prev-desc').textContent=desc;
 }
 
@@ -310,7 +373,9 @@ async function loadLinks(){
     if(!data.ok){ toast(data.error||'Erreur de chargement',false); links=[]; renderLinks(); return; }
     links=(data.links||[]).map(l=>({
       token:l.token, name:l.name, amount:Number(l.amount)||0,
+      amountType:l.amount_type||'fixed', minAmount:l.min_amount,
       desc:l.description||'', limit:l.usage_limit||'∞', expire:l.expires_at||null,
+      imageUrl:l.image_url||null,
       url:`https://flinpay.vercel.app/pay/${l.token}`,
       active:l.active!==false, views:l.views||0, paid:l.paid_count||0
     }));
@@ -324,23 +389,41 @@ async function loadLinks(){
 async function createLink(){
   const name=document.getElementById('lk-name').value.trim();
   const amount=document.getElementById('lk-amount').value;
+  const minAmount=document.getElementById('lk-min-amount').value;
   const desc=document.getElementById('lk-desc').value.trim();
   const limit=document.getElementById('lk-limit').value;
   const expire=document.getElementById('lk-expire').value;
-  if(!name||!amount){toast('Nom et montant requis',false);return}
+  const redirect=document.getElementById('lk-redirect').value.trim();
+  const thankyou=document.getElementById('lk-thankyou').value.trim();
+  const imageFile=document.getElementById('lk-image').files[0];
+
+  if(!name){toast('Le nom est requis',false);return}
+  if(currentAmountType==='fixed' && !amount){toast('Le montant est requis',false);return}
 
   const btn=document.getElementById('btn-create-link');
   btn.disabled=true; btn.textContent='Création...';
+
+  const fd=new FormData();
+  fd.append('name', name);
+  fd.append('amount_type', currentAmountType);
+  if(currentAmountType==='fixed') fd.append('amount', amount);
+  else if(minAmount) fd.append('min_amount', minAmount);
+  fd.append('description', desc);
+  if(limit) fd.append('usage_limit', limit);
+  if(expire) fd.append('expires_at', expire);
+  if(redirect) fd.append('redirect_url', redirect);
+  if(thankyou) fd.append('thank_you_message', thankyou);
+  if(imageFile) fd.append('image', imageFile);
+
   try{
-    const r=await fetch('/api/payment-links',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name, amount:parseFloat(amount), description:desc, usage_limit:limit?parseInt(limit):null, expires_at:expire||null})
-    });
+    const r=await fetch('/api/payment-links',{ method:'POST', body:fd });
     const data=await r.json();
     if(data.ok){
       closeModal();
-      ['lk-name','lk-amount','lk-desc','lk-limit','lk-expire'].forEach(id=>document.getElementById(id).value='');
+      ['lk-name','lk-amount','lk-min-amount','lk-desc','lk-limit','lk-expire','lk-redirect','lk-thankyou'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('lk-image').value='';
+      document.getElementById('img-preview').style.display='none';
+      setAmountType('fixed');
       updatePreview();
       toast('Lien créé ! Partagez-le avec vos clients.');
       loadLinks();
@@ -363,12 +446,14 @@ function renderLinks(){
   el.innerHTML=links.map((l,i)=>`
     <div class="link-card">
       <div class="link-top">
+        ${l.imageUrl?`<img src="${l.imageUrl}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;flex-shrink:0">`:''}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap">
             <div class="link-name">${l.name}</div>
             <span class="badge ${l.active?'b-active':'b-inactive'}">${l.active?'Actif':'Inactif'}</span>
+            <span class="badge" style="background:var(--blue-tint);color:var(--blue)">${l.amountType==='flexible'?'✏️ Libre':'💰 Fixe'}</span>
           </div>
-          <div class="link-amount">${l.amount.toLocaleString()} XOF</div>
+          <div class="link-amount">${l.amountType==='flexible' ? (l.minAmount?`Dès ${Number(l.minAmount).toLocaleString()} XOF`:'Montant libre') : l.amount.toLocaleString()+' XOF'}</div>
           ${l.desc?`<div style="font-size:.78rem;color:var(--muted);margin-top:4px">${l.desc}</div>`:''}
           <div class="link-url">${l.url}</div>
           <div class="link-stats">
