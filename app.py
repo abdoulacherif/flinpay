@@ -366,8 +366,8 @@ def api_kyc_submit():
 
     path = f"{request.user_id}/{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.{ext}"
     uploaded = sb_storage_upload('kyc-documents', path, file_bytes, file.mimetype or 'application/octet-stream')
-    if not uploaded:
-        return jsonify({'ok': False, 'error': "Erreur lors de l'upload du document. Vérifie que le bucket 'kyc-documents' existe."}), 500
+    if not uploaded['ok']:
+        return jsonify({'ok': False, 'error': f"Erreur upload: {uploaded['detail']}"}), 500
 
     updated = sb_patch('users', 'id', request.user_id, {
         'kyc_status': 'pending',
@@ -601,10 +601,13 @@ def sb_storage_upload(bucket, path, file_bytes, content_type):
             'x-upsert': 'true'
         }
         r = requests.post(url, headers=headers, data=file_bytes, timeout=20)
-        return r.ok
+        if r.ok:
+            return {'ok': True}
+        print(f'[sb_storage_upload] status={r.status_code} body={r.text[:300]}')
+        return {'ok': False, 'detail': r.text[:300]}
     except Exception as e:
         print(f'[sb_storage_upload] error: {e}')
-        return False
+        return {'ok': False, 'detail': str(e)}
 
 def sb_storage_sign(bucket, path, expires_in=3600):
     try:
