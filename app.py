@@ -701,6 +701,19 @@ def leekpay_create_checkout(amount, description, return_url=None, cancel_url=Non
         print(f'[leekpay_create_checkout] error: {e}')
         return {'ok': False, 'detail': str(e)}
 
+def leekpay_get_checkout(checkout_id):
+    try:
+        r = requests.get(
+            f'{LEEKPAY_API_BASE}/checkout/{checkout_id}',
+            headers={'Authorization': f'Bearer {LEEKPAY_SECRET_KEY}'},
+            timeout=10
+        )
+        if r.ok:
+            return {'ok': True, 'data': r.json().get('data', {})}
+        return {'ok': False, 'detail': r.text[:300]}
+    except Exception as e:
+        return {'ok': False, 'detail': str(e)}
+
 def leekpay_verify_signature(raw_body, signature):
     if not signature or not LEEKPAY_PUBLIC_KEY:
         return False
@@ -784,7 +797,7 @@ def pay_page(token):
     if link and valid:
         sb_patch_multi('payment_links', {'token': token}, {'views': (link.get('views') or 0) + 1})
     image_url = sb_storage_public_url('payment-link-images', link['image_path']) if (link and link.get('image_path')) else None
-    return render_template('pay.html', link=link, valid=valid, reason=reason, token=token, image_url=image_url)
+    return render_template('pay.html', link=link, valid=valid, reason=reason, token=token, image_url=image_url, leekpay_public_key=LEEKPAY_PUBLIC_KEY)
 
 @app.route('/api/pay-link/<token>', methods=['POST'])
 def api_pay_link(token):
@@ -853,6 +866,62 @@ def api_pay_link(token):
     return jsonify({
         'ok': True,
         'payment_url': checkout['data']['payment_url']
+    })
+
+@app.route('/api/pay-link/<token>/confirm', methods=['POST'])
+def api_pay_link_confirm(token):
+    links = sb_get('payment_links', f'token=eq.{token}')
+    link = links[0] if links else None
+    valid, reason = _link_status(link)
+    if not valid:
+        return jsonify({'ok': False, 'error': 'Lien invalide'}), 400
+
+    data = request.get_json() or {}
+    payment_id = (data.get('payment_id') or '').strip()
+    phone = (data.get('phone') or '').strip()
+    name = (data.get('name') or '').strip() or 'Client'
+    if not payment_id:
+        return jsonify({'ok': False, 'error': 'payment_id requis'}), 400
+
+    # On ne fait jamais confiance au seul événement navigateur : on revérifie
+    # le vrai statut du paiement côté serveur avec la clé secrète.
+    amount = data.get('amount') or link.get('amount')
+    status = 'pending'
+    check = leekpay_get_checkout(payment_id)
+    if check['ok']:
+        remote_status = check['data'].get('status')
+        amount = check['data'].get('amount', amount)
+        if remote_status == 'paid':
+            status = 'paid'
+        elif remote_status in ('failed', 'cancelled', 'expired'):
+            status = 'failed'
+
+    import uuid
+    tx = sb_post('transactions', {
+        'token': 'fp_tx_' + uuid.uuid4().hex[:20],
+        'order_id': 'link_' + uuid.uuid4().hex[:10],
+        'amount': amount,
+        'client_name': name,
+        'client_phone': phone,
+        'country': data.get('country', ''),
+        'status': status,
+        'environment': 'production',
+        'user_id': link['user_id'],
+        'leekpay_checkout_id': payment_id,
+        'paid_at': datetime.utcnow().isoformat() if status == 'paid' else None,
+        'created_at': datetime.utcnow().isoformat()
+    })
+    if not tx or (isinstance(tx, dict) and tx.get('_error')):
+        return jsonify({'ok': False, 'error': "Erreur lors de l'enregistrement du paiement"}), 500
+
+    if status == 'paid':
+        sb_patch_multi('payment_links', {'token': token}, {'paid_count': (link.get('paid_count') or 0) + 1})
+
+    return jsonify({
+        'ok': True,
+        'status': status,
+        'message': link.get('thank_you_message') or 'Merci pour votre paiement !',
+        'redirect_url': link.get('redirect_url')
     })
 
 @app.route('/pay/<token>/merci')
