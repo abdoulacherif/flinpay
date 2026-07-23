@@ -142,7 +142,7 @@ async function doPay(){
     return;
   }
 
-  btn.textContent='Envoi en cours...';
+  btn.textContent='Redirection vers le paiement...';
   btn.disabled=true;
 
   try{
@@ -154,14 +154,8 @@ async function doPay(){
       body:JSON.stringify(payload)
     });
     const data=await r.json();
-    if(data.ok){
-      document.getElementById('pay-view').style.display='none';
-      document.getElementById('success-view').style.display='block';
-      const msgEl=document.querySelector('#success-view .state-text');
-      if(msgEl && data.message) msgEl.textContent=data.message;
-      if(data.redirect_url){
-        setTimeout(()=>{ window.location.href=data.redirect_url; }, 2500);
-      }
+    if(data.ok && data.payment_url){
+      window.location.href=data.payment_url;
     }else{
       err.textContent='⚠ '+(data.error||'Erreur lors du paiement.');
       err.style.display='block';
