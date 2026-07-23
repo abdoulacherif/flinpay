@@ -3,6 +3,7 @@ import re
 import jwt
 import bcrypt
 import hashlib
+import hmac
 import secrets
 import requests
 from datetime import datetime, timedelta
@@ -30,6 +31,10 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
 JWT_SECRET = os.getenv('JWT_SECRET')
+
+LEEKPAY_SECRET_KEY = os.getenv('LEEKPAY_SECRET_KEY')
+LEEKPAY_PUBLIC_KEY = os.getenv('LEEKPAY_PUBLIC_KEY')
+LEEKPAY_API_BASE = 'https://leekpay.fr/api/v1'
 
 SUPA_HEADERS = {
     'apikey': SUPABASE_KEY,
@@ -298,6 +303,7 @@ def api_pay():
 
     import uuid
     token = 'fp_tx_' + uuid.uuid4().hex[:20]
+    env_label = 'sandbox' if environment == 'sandbox' else 'production'
 
     tx_payload = {
         'token': token,
@@ -307,10 +313,29 @@ def api_pay():
         'client_phone': data['phone'],
         'country': data.get('country', ''),
         'status': 'pending',
-        'environment': 'sandbox' if environment == 'sandbox' else 'production',
+        'environment': env_label,
         'user_id': user_id,
         'created_at': datetime.utcnow().isoformat()
     }
+
+    payment_url = f'https://flinpay.vercel.app/pay/{token}'
+
+    # En production, on crée une vraie session de paiement LeekPay.
+    # En sandbox, on garde une simulation locale (aucun argent réel déplacé).
+    if env_label == 'production':
+        checkout = leekpay_create_checkout(
+            amount=data['amount'],
+            description=f"Commande {data['order_id']}",
+            customer_name=data['client_name'],
+            customer_phone=data['phone'],
+            webhook_url='https://flinpay.vercel.app/webhook/leekpay',
+            metadata={'flinpay_token': token, 'order_id': data['order_id']}
+        )
+        if not checkout['ok']:
+            return jsonify({'ok': False, 'error': f"Erreur LeekPay: {checkout['detail']}"}), 502
+        tx_payload['leekpay_checkout_id'] = checkout['data']['id']
+        tx_payload['leekpay_payment_url'] = checkout['data']['payment_url']
+        payment_url = checkout['data']['payment_url']
 
     tx = sb_post('transactions', tx_payload)
 
@@ -323,7 +348,7 @@ def api_pay():
         'order_id': data['order_id'],
         'amount': data['amount'],
         'status': 'pending',
-        'payment_url': f'https://flinpay.vercel.app/pay/{token}'
+        'payment_url': payment_url
     })
 
 @app.route('/api/transactions/export', methods=['GET'])
@@ -643,6 +668,45 @@ def sb_count(table, query=''):
     except:
         return 0
 
+def leekpay_create_checkout(amount, description, return_url=None, cancel_url=None,
+                             customer_name=None, customer_phone=None, customer_email=None,
+                             webhook_url=None, metadata=None):
+    try:
+        payload = {
+            'amount': amount,
+            'currency': 'XOF',
+            'description': (description or '')[:500]
+        }
+        if return_url: payload['return_url'] = return_url
+        if cancel_url: payload['cancel_url'] = cancel_url
+        if customer_name: payload['customer_name'] = customer_name
+        if customer_phone: payload['customer_phone'] = customer_phone
+        if customer_email: payload['customer_email'] = customer_email
+        if webhook_url: payload['webhook_url'] = webhook_url
+        if metadata: payload['metadata'] = metadata
+
+        r = requests.post(
+            f'{LEEKPAY_API_BASE}/checkout',
+            headers={
+                'Authorization': f'Bearer {LEEKPAY_SECRET_KEY}',
+                'Content-Type': 'application/json'
+            },
+            json=payload, timeout=15
+        )
+        if r.status_code == 201 and r.json().get('success'):
+            return {'ok': True, 'data': r.json()['data']}
+        print(f'[leekpay_create_checkout] status={r.status_code} body={r.text[:300]}')
+        return {'ok': False, 'detail': r.text[:300]}
+    except Exception as e:
+        print(f'[leekpay_create_checkout] error: {e}')
+        return {'ok': False, 'detail': str(e)}
+
+def leekpay_verify_signature(raw_body, signature):
+    if not signature or not LEEKPAY_PUBLIC_KEY:
+        return False
+    expected = hmac.new(LEEKPAY_PUBLIC_KEY.encode(), raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)
+
 def get_current_user():
     users = sb_get('users', f"id=eq.{request.user_id}")
     return users[0] if users else {}
@@ -754,27 +818,90 @@ def api_pay_link(token):
         amount = link['amount']
 
     import uuid
+    tx_token = 'fp_tx_' + uuid.uuid4().hex[:20]
+    customer_name = (data.get('name') or '').strip() or 'Client'
+
+    checkout = leekpay_create_checkout(
+        amount=amount,
+        description=link.get('description') or link['name'],
+        return_url=link.get('redirect_url') or f'https://flinpay.vercel.app/pay/{token}/merci',
+        customer_name=customer_name,
+        customer_phone=phone,
+        webhook_url='https://flinpay.vercel.app/webhook/leekpay',
+        metadata={'flinpay_tx_token': tx_token, 'payment_link_token': token}
+    )
+    if not checkout['ok']:
+        return jsonify({'ok': False, 'error': f"Erreur LeekPay: {checkout['detail']}"}), 502
+
     tx = sb_post('transactions', {
-        'token': 'fp_tx_' + uuid.uuid4().hex[:20],
+        'token': tx_token,
         'order_id': 'link_' + uuid.uuid4().hex[:10],
         'amount': amount,
-        'client_name': (data.get('name') or '').strip() or 'Client',
+        'client_name': customer_name,
         'client_phone': phone,
         'country': data.get('country', ''),
         'status': 'pending',
         'environment': 'production',
         'user_id': link['user_id'],
+        'leekpay_checkout_id': checkout['data']['id'],
+        'leekpay_payment_url': checkout['data']['payment_url'],
         'created_at': datetime.utcnow().isoformat()
     })
     if not tx or (isinstance(tx, dict) and tx.get('_error')):
         return jsonify({'ok': False, 'error': 'Erreur lors de la création du paiement'}), 500
 
-    sb_patch_multi('payment_links', {'token': token}, {'paid_count': (link.get('paid_count') or 0) + 1})
     return jsonify({
         'ok': True,
-        'message': link.get('thank_you_message') or 'Paiement initié, en attente de confirmation.',
-        'redirect_url': link.get('redirect_url')
+        'payment_url': checkout['data']['payment_url']
     })
+
+@app.route('/pay/<token>/merci')
+def pay_thank_you(token):
+    links = sb_get('payment_links', f'token=eq.{token}')
+    link = links[0] if links else None
+    message = (link.get('thank_you_message') if link and link.get('thank_you_message') else None) or 'Merci pour votre paiement !'
+    return render_template('pay_thanks.html', message=message)
+
+# ── WEBHOOK LEEKPAY ───────────────────────────────
+@app.route('/webhook/leekpay', methods=['POST'])
+def webhook_leekpay():
+    raw_body = request.get_data()
+    signature = request.headers.get('X-LeekPay-Signature', '')
+
+    if not leekpay_verify_signature(raw_body, signature):
+        return jsonify({'ok': False, 'error': 'Signature invalide'}), 401
+
+    payload = request.get_json(silent=True) or {}
+    event = payload.get('event')
+    data = payload.get('data', {})
+    checkout_id = data.get('checkout_id') or data.get('transaction_id')
+    status = data.get('status')
+
+    if not checkout_id or not status:
+        return jsonify({'ok': False, 'error': 'Payload incomplet'}), 400
+
+    matches = sb_get('transactions', f'leekpay_checkout_id=eq.{checkout_id}')
+    if not matches:
+        # Rien à faire côté Flinpay, mais on répond 200 pour que LeekPay ne réessaie pas indéfiniment
+        return jsonify({'ok': True, 'note': 'transaction inconnue'}), 200
+    tx = matches[0]
+
+    new_status = {'paid': 'paid', 'failed': 'failed', 'cancelled': 'failed', 'expired': 'failed'}.get(status, tx.get('status'))
+    update = {'status': new_status}
+    if status == 'paid':
+        update['paid_at'] = data.get('paid_at') or datetime.utcnow().isoformat()
+
+    sb_patch('transactions', 'id', tx['id'], update)
+
+    if status == 'paid':
+        meta = data.get('metadata') or {}
+        link_token = meta.get('payment_link_token')
+        if link_token:
+            links = sb_get('payment_links', f'token=eq.{link_token}')
+            if links:
+                sb_patch_multi('payment_links', {'token': link_token}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+
+    return jsonify({'ok': True}), 200
 
 # ── ADMIN LOGIN (obsolète — redirige vers le login normal) ──
 @app.route('/admin/login', methods=['GET', 'POST'])
