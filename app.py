@@ -276,6 +276,39 @@ def api_get_transactions():
     txs = sb_get('transactions', f"user_id=eq.{request.user_id}&order=created_at.desc&limit=100")
     return jsonify({'ok': True, 'transactions': txs})
 
+@app.route('/api/transactions/<int:tx_id>/sync', methods=['POST'])
+@user_required
+def api_sync_transaction(tx_id):
+    matches = sb_get('transactions', f'id=eq.{tx_id}&user_id=eq.{request.user_id}')
+    if not matches:
+        return jsonify({'ok': False, 'error': 'Introuvable'}), 404
+    tx = matches[0]
+    if not tx.get('leekpay_checkout_id'):
+        return jsonify({'ok': False, 'error': "Pas de paiement LeekPay associé à cette transaction"}), 400
+
+    check = leekpay_get_checkout(tx['leekpay_checkout_id'])
+    if not check['ok']:
+        return jsonify({'ok': False, 'error': f"Erreur LeekPay: {check['detail']}"}), 502
+
+    remote_status = check['data'].get('status')
+    status_map = {
+        'completed': 'paid', 'success': 'paid', 'paid': 'paid',
+        'failed': 'failed', 'cancelled': 'failed', 'canceled': 'failed', 'expired': 'failed'
+    }
+    new_status = status_map.get(remote_status, tx['status'])
+
+    if new_status != tx['status']:
+        update = {'status': new_status}
+        if new_status == 'paid':
+            update['paid_at'] = datetime.utcnow().isoformat()
+        sb_patch('transactions', 'id', tx_id, update)
+        if new_status == 'paid' and tx.get('payment_link_token'):
+            links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
+            if links:
+                sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+
+    return jsonify({'ok': True, 'status': new_status})
+
 @app.route('/api/pay', methods=['POST'])
 def api_pay():
     auth = request.headers.get('Authorization', '')
@@ -858,6 +891,7 @@ def api_pay_link(token):
         'user_id': link['user_id'],
         'leekpay_checkout_id': checkout['data']['id'],
         'leekpay_payment_url': checkout['data']['payment_url'],
+        'payment_link_token': token,
         'created_at': datetime.utcnow().isoformat()
     })
     if not tx or (isinstance(tx, dict) and tx.get('_error')):
@@ -942,11 +976,11 @@ def webhook_leekpay():
 
     payload = request.get_json(silent=True) or {}
     event = payload.get('event')
-    data = payload.get('data', {})
-    checkout_id = data.get('checkout_id') or data.get('transaction_id')
-    status = data.get('status')
+    tx_data = payload.get('transaction', {})
+    checkout_id = tx_data.get('id')
+    remote_status = tx_data.get('status')
 
-    if not checkout_id or not status:
+    if not checkout_id or not remote_status:
         return jsonify({'ok': False, 'error': 'Payload incomplet'}), 400
 
     matches = sb_get('transactions', f'leekpay_checkout_id=eq.{checkout_id}')
@@ -955,20 +989,21 @@ def webhook_leekpay():
         return jsonify({'ok': True, 'note': 'transaction inconnue'}), 200
     tx = matches[0]
 
-    new_status = {'paid': 'paid', 'failed': 'failed', 'cancelled': 'failed', 'expired': 'failed'}.get(status, tx.get('status'))
+    status_map = {
+        'completed': 'paid', 'success': 'paid', 'paid': 'paid',
+        'failed': 'failed', 'cancelled': 'failed', 'canceled': 'failed', 'expired': 'failed'
+    }
+    new_status = status_map.get(remote_status, tx.get('status'))
     update = {'status': new_status}
-    if status == 'paid':
-        update['paid_at'] = data.get('paid_at') or datetime.utcnow().isoformat()
+    if new_status == 'paid':
+        update['paid_at'] = datetime.utcnow().isoformat()
 
     sb_patch('transactions', 'id', tx['id'], update)
 
-    if status == 'paid':
-        meta = data.get('metadata') or {}
-        link_token = meta.get('payment_link_token')
-        if link_token:
-            links = sb_get('payment_links', f'token=eq.{link_token}')
-            if links:
-                sb_patch_multi('payment_links', {'token': link_token}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+    if new_status == 'paid' and tx.get('payment_link_token'):
+        links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
+        if links:
+            sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
 
     return jsonify({'ok': True}), 200
 
