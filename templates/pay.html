@@ -60,7 +60,6 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 </style>
 </head>
 <body>
-<script src="https://leekpay.fr/js/leekpay.js"></script>
 <div class="box">
   <div class="logo">Flin<span>pay</span></div>
 
@@ -124,7 +123,7 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 
 {% if valid %}
 <script>
-function doPay(){
+async function doPay(){
   const name=document.getElementById('pay-name').value.trim();
   const phone=document.getElementById('pay-phone').value.trim();
   const amountInput=document.getElementById('pay-amount');
@@ -143,52 +142,32 @@ function doPay(){
     return;
   }
 
-  const amount = amountInput ? parseFloat(amountInput.value) : {{ link.amount if link else 0 }};
-
-  btn.textContent='Ouverture du paiement...';
+  btn.textContent='Redirection vers le paiement...';
   btn.disabled=true;
 
-  LeekPay.checkout({
-    amount: amount,
-    currency: 'XOF',
-    apiKey: '{{ leekpay_public_key }}',
-    description: {{ (link.description or link.name if link else '') | tojson }},
-
-    onSuccess: async function(data){
-      btn.textContent='Confirmation...';
-      try{
-        const r=await fetch('/api/pay-link/{{ token }}/confirm',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({payment_id:data.payment_id, amount:data.amount, name, phone})
-        });
-        const res=await r.json();
-        if(res.ok && res.status==='paid'){
-          document.getElementById('pay-view').style.display='none';
-          document.getElementById('success-view').style.display='block';
-          const msgEl=document.querySelector('#success-view .state-text');
-          if(msgEl && res.message) msgEl.textContent=res.message;
-          if(res.redirect_url){
-            setTimeout(()=>{ window.location.href=res.redirect_url; }, 2500);
-          }
-        }else{
-          err.textContent='⚠ Paiement en attente de confirmation. Rafraîchissez dans un instant.';
-          err.style.display='block';
-          btn.textContent='💳 Payer maintenant';
-          btn.disabled=false;
-        }
-      }catch(e){
-        err.textContent='⚠ Erreur lors de la confirmation. Contactez le support si le montant a été débité.';
-        err.style.display='block';
-        btn.textContent='💳 Payer maintenant';
-        btn.disabled=false;
-      }
-    },
-    onCancel: function(){
+  try{
+    const payload={name, phone};
+    if(amountInput) payload.amount=amountInput.value;
+    const r=await fetch('/api/pay-link/{{ token }}',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const data=await r.json();
+    if(data.ok && data.payment_url){
+      window.location.href=data.payment_url;
+    }else{
+      err.textContent='⚠ '+(data.error||'Erreur lors du paiement.');
+      err.style.display='block';
       btn.textContent='💳 Payer maintenant';
       btn.disabled=false;
     }
-  });
+  }catch(e){
+    err.textContent='⚠ Erreur de connexion. Réessayez.';
+    err.style.display='block';
+    btn.textContent='💳 Payer maintenant';
+    btn.disabled=false;
+  }
 }
 </script>
 {% endif %}
