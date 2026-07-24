@@ -215,9 +215,9 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="tx-table">
-          <thead><tr><th>ID</th><th>Client</th><th>Montant</th><th>Statut</th><th>Téléphone</th><th>Date</th></tr></thead>
+          <thead><tr><th>ID</th><th>Client</th><th>Montant</th><th>Statut</th><th>Téléphone</th><th>Date</th><th></th></tr></thead>
           <tbody id="tx-tbody">
-            <tr><td colspan="6"><div class="empty"><div class="empty-text">Chargement...</div></div></td></tr>
+            <tr><td colspan="7"><div class="empty"><div class="empty-text">Chargement...</div></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -246,19 +246,21 @@ async function loadProfile(){
 let allTx=[];
 async function loadTransactions(){
   const tbody=document.getElementById('tx-tbody');
-  tbody.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-text">Chargement...</div></div></td></tr>';
+  tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-text">Chargement...</div></div></td></tr>';
   try{
     const r=await fetch('/api/transactions');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     const data=await r.json();
     if(!data.ok){ toast&&toast(data.error||'Erreur de chargement',false); allTx=[]; renderTx(allTx); return; }
     allTx=(data.transactions||[]).map(tx=>({
+      dbId:tx.id,
       id:tx.token||'',
       client:tx.client_name||'—',
       amount:Number(tx.amount)||0,
       status:tx.status||'pending',
       phone:tx.client_phone||'—',
       country:tx.country||'',
+      hasCheckout:!!tx.leekpay_checkout_id,
       date:tx.created_at?new Date(tx.created_at).toLocaleString('fr-FR'):''
     }));
     renderTx(allTx);
@@ -270,7 +272,7 @@ function renderTx(txs){
   const tbody=document.getElementById('tx-tbody');
   document.getElementById('tx-total').textContent=txs.length?`(${txs.length})`:'';
   if(!txs.length){
-    tbody.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction pour le moment.<br>Intégrez l\'API pour commencer à encaisser.</div></div></td></tr>';
+    tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction pour le moment.<br>Intégrez l\'API pour commencer à encaisser.</div></div></td></tr>';
     return;
   }
   tbody.innerHTML=txs.map(tx=>`
@@ -283,8 +285,18 @@ function renderTx(txs){
       </span></td>
       <td>${tx.phone}</td>
       <td style="font-size:.76rem;color:var(--muted)">${tx.date}</td>
+      <td>${tx.status==='pending'&&tx.hasCheckout?`<button class="btn btn-outline btn-sm" onclick="syncTx(${tx.dbId},this)">🔄 Vérifier</button>`:''}</td>
     </tr>
   `).join('');
+}
+async function syncTx(dbId, btn){
+  btn.disabled=true; btn.textContent='...';
+  try{
+    const r=await fetch('/api/transactions/'+dbId+'/sync',{method:'POST'});
+    const data=await r.json();
+    if(data.ok){ loadTransactions(); }
+    else{ btn.disabled=false; btn.textContent='🔄 Vérifier'; alert(data.error||'Erreur'); }
+  }catch(e){ btn.disabled=false; btn.textContent='🔄 Vérifier'; }
 }
 function filterTx(){
   const search=document.getElementById('tx-search').value.toLowerCase();
