@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -8,22 +9,23 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--muted:#8A8FA8}
+html,body{height:auto}
 body{
   font-family:'Inter',sans-serif;
   background:#0D0D0D;min-height:100vh;
   display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:40px 20px;position:relative;overflow:hidden
+  align-items:center;
+  padding:40px 20px;position:relative;overflow-x:hidden
 }
 body::before{
-  content:'';position:absolute;inset:0;
+  content:'';position:fixed;inset:0;
   background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.18) 0%,transparent 70%);
-  pointer-events:none
+  pointer-events:none;z-index:0
 }
 body::after{
-  content:'';position:absolute;inset:0;
+  content:'';position:fixed;inset:0;
   background:radial-gradient(ellipse 40% 40% at 90% 100%,rgba(0,196,140,0.08) 0%,transparent 60%);
-  pointer-events:none
+  pointer-events:none;z-index:0
 }
 .box{
   background:#141420;
@@ -31,7 +33,8 @@ body::after{
   border-radius:24px;padding:48px 44px;
   width:100%;max-width:480px;
   position:relative;z-index:1;
-  box-shadow:0 32px 64px rgba(0,0,0,0.4)
+  box-shadow:0 32px 64px rgba(0,0,0,0.4);
+  margin:auto 0
 }
 .logo-wrap{text-align:center;margin-bottom:6px}
 .logo{
@@ -85,6 +88,10 @@ select option{background:#1a1a2e;color:white}
 .strength-label{
   font-size:0.7rem;color:rgba(255,255,255,0.3);
   margin-top:4px
+}
+.referral-note{
+  font-size:0.74rem;color:var(--green);
+  margin-top:6px;display:none;align-items:center;gap:6px
 }
 .terms{
   display:flex;align-items:flex-start;gap:10px;
@@ -162,7 +169,7 @@ select option{background:#1a1a2e;color:white}
   </div>
   <div class="subtitle">Créez votre compte gratuitement</div>
 
-  <div class="plan-badge">🚀 Plan Starter — Gratuit</div>
+  <div class="plan-badge">🚀 Plan Starter — Gratuit — 300 transactions/mois</div>
 
   <div id="error-msg" class="error-msg"></div>
   <div id="success-msg" class="success-msg"></div>
@@ -213,6 +220,12 @@ select option{background:#1a1a2e;color:white}
   </div>
 
   <div class="field">
+    <label>Code de parrainage (optionnel)</label>
+    <input type="text" id="referral" placeholder="Ex: FPA3F9C1" style="text-transform:uppercase">
+    <div class="referral-note" id="referral-note">✓ Code de parrainage appliqué</div>
+  </div>
+
+  <div class="field">
     <label>Mot de passe</label>
     <div class="password-wrap">
       <input type="password" id="password" placeholder="Min. 8 caractères"
@@ -253,6 +266,20 @@ select option{background:#1a1a2e;color:white}
 <div class="back"><a href="/">← Retour à l'accueil</a></div>
 
 <script>
+// Pré-remplit le code de parrainage depuis l'URL (?ref=CODE)
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  if (ref) {
+    const input = document.getElementById('referral');
+    input.value = ref.toUpperCase();
+    document.getElementById('referral-note').style.display = 'flex';
+  }
+})();
+document.getElementById('referral').addEventListener('input', function(){
+  document.getElementById('referral-note').style.display = this.value.trim() ? 'flex' : 'none';
+});
+
 function togglePass(id) {
   const input = document.getElementById(id);
   input.type = input.type === 'password' ? 'text' : 'password';
@@ -285,6 +312,7 @@ function showError(msg) {
   el.textContent = '⚠ ' + msg;
   el.style.display = 'block';
   document.getElementById('success-msg').style.display = 'none';
+  el.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
 function showSuccess(msg) {
@@ -301,6 +329,7 @@ async function doRegister() {
   const company   = document.getElementById('company').value.trim();
   const country   = document.getElementById('country').value;
   const phone     = document.getElementById('phone').value.trim();
+  const referral  = document.getElementById('referral').value.trim();
   const password  = document.getElementById('password').value;
   const password2 = document.getElementById('password2').value;
   const terms     = document.getElementById('terms-check').checked;
@@ -330,12 +359,12 @@ async function doRegister() {
     const r = await fetch('/api/register', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({firstname, lastname, email, company, country, phone, password})
+      body: JSON.stringify({firstname, lastname, email, company, country, phone, password, referral_code: referral})
     });
     const data = await r.json();
     if (data.ok) {
-      showSuccess('Compte créé ! Redirection vers le dashboard...');
-      setTimeout(() => window.location.href = '/dashboard', 2000);
+      showSuccess('Compte créé ! Redirection vers la connexion...');
+      setTimeout(() => window.location.href = '/login', 1800);
     } else {
       showError(data.error || 'Erreur lors de la création du compte.');
     }
