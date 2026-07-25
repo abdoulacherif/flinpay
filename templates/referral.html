@@ -1,252 +1,276 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Parrainage</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;--danger:#FF4444}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
-h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
-.layout{display:flex;min-height:100vh}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--black);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
-.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
-.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;text-decoration:none}
-.logo-text span{color:var(--blue)}
-.close-sb{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer}
-.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
-.nav-group{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 20px 5px}
-.nav-link{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.45);font-size:0.86rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .2s}
-.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.15);border-left-color:var(--blue)}
-.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
-.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06)}
+:root{
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;
+  --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.icon{width:18px;height:18px;flex-shrink:0}
+.icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
+.logo-text span{color:#5B7CFF}
+.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
+.corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
+.corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
+.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:9px 22px;color:rgba(255,255,255,0.5);font-size:.855rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
+.nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
+.nav-link:hover .icon{color:rgba(255,255,255,0.7)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
+.nav-link.active .icon{color:#8EA6FF}
+.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.88rem;flex-shrink:0}
-.user-name{font-size:0.83rem;font-weight:600;color:white}
-.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3)}
-.logout-link{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.25);font-size:0.78rem;padding:10px 20px 14px;text-decoration:none;border-top:1px solid rgba(255,255,255,0.04);transition:color .2s}
-.logout-link:hover{color:#ff7070}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150}
+.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-name{font-size:.82rem;font-weight:600;color:white}
+.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
+.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
+.logout-link:hover{color:#ff7d7d}
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
-.main{margin-left:250px;flex:1}
-.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.topbar-left{display:flex;align-items:center;gap:14px}
-.burger{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
-.burger-line{width:22px;height:2px;background:var(--text);border-radius:2px;display:block}
-.page-title{font-size:1rem;font-weight:700}
-.content{padding:28px}
-.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
-.card-head{padding:16px 22px;border-bottom:1px solid #F0F2F7;display:flex;justify-content:space-between;align-items:center}
-.card-title{font-size:0.9rem;font-weight:700}
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
+.burger-btn:hover{background:var(--bg)}
+.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+
+.page{flex:1;padding:30px;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft)}
+.card-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:22px}
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.84rem;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
-.btn-primary{background:var(--blue);color:white}
-.btn-primary:hover{background:#1430e0}
-.btn-gold{background:var(--gold);color:var(--black)}
-.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
-.btn-sm{padding:6px 14px;font-size:0.76rem}
-#toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:white;padding:12px 20px;border-radius:11px;font-size:0.85rem;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,0.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+
+.referral-hero{background:linear-gradient(135deg,var(--blue) 0%,#0A1FCC 60%,#5B2CFF 100%);border-radius:var(--r-lg);padding:28px;color:white;position:relative;overflow:hidden;margin-bottom:18px;text-align:center}
+.referral-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.07)}
+.referral-hero::after{content:'';position:absolute;bottom:-40px;left:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,180,0,0.09)}
+.ref-icon{font-size:2.2rem;margin-bottom:10px;position:relative;z-index:1}
+.ref-title{font-size:1.15rem;font-weight:800;position:relative;z-index:1}
+.ref-sub{color:rgba(255,255,255,.65);font-size:.85rem;margin-top:4px;position:relative;z-index:1;max-width:420px;margin-left:auto;margin-right:auto}
+
+.code-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:14px 18px;margin:18px auto 0;max-width:420px;display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.code-val{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:white;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.copy-btn{background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;padding:7px 12px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;white-space:nowrap}
+.copy-btn:hover{background:rgba(255,255,255,0.25)}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.stat-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow-sm);text-align:center}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.7rem;color:var(--blue)}
+.stat-lbl{font-size:.78rem;color:var(--muted);margin-top:4px}
+
+.tbl{width:100%;border-collapse:collapse;font-size:.83rem}
+.tbl th{padding:10px 14px;text-align:left;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFBFF;border-bottom:1px solid var(--border-soft)}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--border-soft)}
+.tbl tr:last-child td{border-bottom:none}
+.badge{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.b-pro{background:var(--gold-tint);color:#8A5B00}
+.b-starter{background:var(--border-soft);color:var(--muted)}
+
+.perk-note{background:var(--gold-tint);color:#8A5B00;border-radius:var(--r-md);padding:12px 16px;font-size:.83rem;margin-top:14px}
+.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:.85rem}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
 #toast.show{transform:translateY(0);opacity:1}
-.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
-.stat-card{background:white;border-radius:14px;padding:20px;border:1px solid #E8EAF0}
-.stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.7rem;letter-spacing:-0.02em;margin-bottom:3px}
-.stat-lbl{font-size:0.78rem;color:var(--muted)}
-.stat-icon{font-size:1.4rem;margin-bottom:10px}
-.ref-hero{background:linear-gradient(135deg,var(--blue),#0A1FCC);border-radius:16px;padding:30px;color:white;margin-bottom:20px;position:relative;overflow:hidden}
-.ref-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.06)}
-.ref-hero::after{content:'';position:absolute;bottom:-20px;left:30%;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.04)}
-.ref-link-box{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:11px;padding:12px 16px;margin-top:16px}
-.ref-link-val{font-family:monospace;font-size:0.88rem;color:white;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ref-copy-btn{background:var(--gold);color:var(--black);border:none;border-radius:8px;padding:8px 16px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;white-space:nowrap;transition:all .2s}
-.ref-copy-btn:hover{background:#e6a200}
-.levels-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
-.level-card{border-radius:12px;padding:18px;text-align:center;border:2px solid}
-.level-1{border-color:var(--gold);background:#FFFBEF}
-.level-2{border-color:var(--blue);background:#EEF2FF}
-.level-3{border-color:var(--green);background:#EDFAF4}
-.level-icon{font-size:1.8rem;margin-bottom:8px}
-.level-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;margin-bottom:4px}
-.level-pct{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem}
-.level-desc{font-size:0.72rem;color:var(--muted);margin-top:4px}
-.ref-table{width:100%;border-collapse:collapse;font-size:0.83rem}
-.ref-table th{padding:9px 14px;text-align:left;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;background:#FAFBFF;border-bottom:1px solid #F0F2F7}
-.ref-table td{padding:12px 14px;border-bottom:1px solid #F8F9FB}
-.ref-table tr:last-child td{border-bottom:none}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:0.7rem;font-weight:700}
-.b-success{background:#D4F5E9;color:#0A7A50}
-.b-pending{background:#FFF3CC;color:#856404}
-.share-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-.share-btn{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:1.5px solid #E8EAF0;background:white;cursor:pointer;font-size:0.83rem;font-weight:600;transition:all .2s;text-decoration:none;color:var(--text)}
-.share-btn:hover{border-color:var(--blue);background:#EEF2FF}
+
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
   .main{margin-left:0}
-  .burger{display:flex}
-  .close-sb{display:block}
-  .stat-row{grid-template-columns:1fr 1fr}
-  .levels-grid{grid-template-columns:1fr}
+  .burger-btn{display:flex}
+  .close-sidebar{display:block}
+  .page{padding:16px}
+}
+@media(max-width:520px){
+  .stats-row{grid-template-columns:1fr}
+  .code-box{flex-direction:column;align-items:stretch}
 }
 </style>
 </head>
 <body>
-<div class="overlay" id="overlay" onclick="closeSB()"></div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  </defs>
+</svg>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
-    <button class="close-sb" onclick="closeSB()">✕</button>
+    <div>
+      <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
   </div>
+
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>12 pays</b></div>
+    <div class="corridor-flags">🇨🇮 🇨🇲 🇸🇳 🇧🇯 🇹🇬 🇲🇱 🇳🇪 🇧🇫 🇹🇩 🇬🇦 🇳🇬 🇨🇩</div>
+  </div>
+
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
-    <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
-    <a class="nav-link" href="/transactions"><span class="icon">💳</span> Transactions</a>
-    <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
-    <a class="nav-link" href="/payment-links"><span class="icon">🔗</span> Liens de paiement</a>
+    <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
     <div class="nav-group">Développeur</div>
-    <a class="nav-link" href="/api-keys"><span class="icon">🔑</span> Clés API</a>
-    <a class="nav-link" href="/webhooks"><span class="icon">🪝</span> Webhooks</a>
-    <a class="nav-link" href="/sandbox"><span class="icon">🧪</span> Sandbox</a>
+    <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
     <div class="nav-group">Compte</div>
-    <a class="nav-link" href="/profile"><span class="icon">👤</span> Profil</a>
-    <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
-    <a class="nav-link active" href="/referral"><span class="icon">🎁</span> Parrainage</a>
+    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+    <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+    <a class="nav-link active" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
+
   <div class="sidebar-user">
     <div class="user-row">
-      <div class="user-av" id="user-av">U</div>
-      <div><div class="user-name" id="user-name">Utilisateur</div><div class="user-email" id="user-email">—</div></div>
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+      <div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
+      </div>
     </div>
   </div>
-  <a class="logout-link" href="/login">🚪 Déconnexion</a>
+  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
 </aside>
 
 <div class="main">
   <div class="topbar">
-    <div class="topbar-left">
-      <button class="burger" onclick="openSB()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
-      <div class="page-title">🎁 Parrainage</div>
-    </div>
+    <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+    <div class="topbar-title"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</div>
   </div>
-  <div class="content">
 
-    <!-- Hero -->
-    <div class="ref-hero">
-      <div style="position:relative;z-index:1">
-        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:8px">Programme de parrainage</div>
-        <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:8px">Gagnez en parrainant 🎉</h2>
-        <p style="color:rgba(255,255,255,0.65);font-size:0.9rem;max-width:500px">Partagez votre lien et gagnez une commission sur chaque transaction de vos filleuls sur 3 niveaux.</p>
-        <div class="ref-link-box">
-          <div class="ref-link-val" id="ref-link">https://flinpay.com/register?ref=FP00001</div>
-          <button class="ref-copy-btn" onclick="copyRefLink()">📋 Copier</button>
-        </div>
+  <div class="page">
+    <div class="referral-hero">
+      <div class="ref-icon">🎁</div>
+      <div class="ref-title">Gagnez 10% sur chaque filleul</div>
+      <div class="ref-sub">Partagez votre lien. Quand un filleul passe au plan Pro (8 500 FCFA/mois), vous touchez 850 FCFA à chaque renouvellement.</div>
+      <div class="code-box">
+        <div class="code-val" id="ref-link">Chargement...</div>
+        <button class="copy-btn" onclick="copyLink()">📋 Copier</button>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="stat-row">
+    <div class="stats-row">
       <div class="stat-card">
-        <div class="stat-icon">👥</div>
-        <div class="stat-val" id="ref-count">0</div>
-        <div class="stat-lbl">Filleuls actifs</div>
+        <div class="stat-val" id="stat-count">—</div>
+        <div class="stat-lbl">Filleuls</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">💰</div>
-        <div class="stat-val" id="ref-earnings">0 XOF</div>
-        <div class="stat-lbl">Commissions gagnées</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">⏳</div>
-        <div class="stat-val" id="ref-pending">0 XOF</div>
-        <div class="stat-lbl">En attente de paiement</div>
+        <div class="stat-val" id="stat-balance">—</div>
+        <div class="stat-lbl">Solde gagné (FCFA)</div>
       </div>
     </div>
 
-    <!-- Niveaux -->
     <div class="card">
-      <div class="card-head"><div class="card-title">Structure des commissions</div></div>
-      <div class="card-body">
-        <div class="levels-grid">
-          <div class="level-card level-1">
-            <div class="level-icon">🥇</div>
-            <div class="level-name">Niveau 1</div>
-            <div class="level-pct" style="color:var(--gold)">5%</div>
-            <div class="level-desc">Sur chaque transaction de vos filleuls directs</div>
-          </div>
-          <div class="level-card level-2">
-            <div class="level-icon">🥈</div>
-            <div class="level-name">Niveau 2</div>
-            <div class="level-pct" style="color:var(--blue)">2%</div>
-            <div class="level-desc">Sur les transactions des filleuls de vos filleuls</div>
-          </div>
-          <div class="level-card level-3">
-            <div class="level-icon">🥉</div>
-            <div class="level-name">Niveau 3</div>
-            <div class="level-pct" style="color:var(--green)">1%</div>
-            <div class="level-desc">Sur le 3ème niveau de votre réseau</div>
-          </div>
-        </div>
-        <div style="background:#EEF2FF;border-radius:10px;padding:14px 18px;font-size:0.83rem;color:var(--blue)">
-          💡 Exemple : votre filleul encaisse 100 000 XOF → vous gagnez <strong>5 000 XOF</strong> automatiquement.
-        </div>
-      </div>
+      <div class="card-head"><div class="card-title">Mes filleuls</div></div>
+      <div class="card-body" style="overflow-x:auto" id="referred-list"><div class="empty">Chargement...</div></div>
     </div>
 
-    <!-- Partage -->
     <div class="card">
-      <div class="card-head"><div class="card-title">Partager votre lien</div></div>
-      <div class="card-body">
-        <div class="share-btns">
-          <a class="share-btn" onclick="shareWhatsApp()">💬 WhatsApp</a>
-          <a class="share-btn" onclick="shareTelegram()">✈️ Telegram</a>
-          <a class="share-btn" onclick="shareEmail()">📧 Email</a>
-          <a class="share-btn" onclick="copyRefLink()">🔗 Copier le lien</a>
-        </div>
+      <div class="card-head"><div class="card-title">Historique des gains</div></div>
+      <div class="card-body" style="overflow-x:auto" id="earnings-list"><div class="empty">Chargement...</div></div>
+      <div class="card-body" style="padding-top:0">
+        <div class="perk-note">🎁 D'autres avantages de parrainage arrivent bientôt.</div>
       </div>
     </div>
-
-    <!-- Filleuls -->
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">Mes filleuls</div>
-        <span style="font-size:0.76rem;color:var(--muted)" id="ref-total"></span>
-      </div>
-      <div id="ref-list">
-        <div style="text-align:center;padding:40px 20px;color:var(--muted)">
-          <div style="font-size:2.5rem;margin-bottom:10px">👥</div>
-          <div style="font-size:0.86rem">Aucun filleul pour l'instant.<br>Partagez votre lien pour commencer !</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Historique commissions -->
-    <div class="card">
-      <div class="card-head"><div class="card-title">Historique des commissions</div></div>
-      <div style="overflow-x:auto">
-        <table class="ref-table" id="commission-table">
-          <thead><tr><th>Date</th><th>Filleul</th><th>Niveau</th><th>Transaction</th><th>Commission</th><th>Statut</th></tr></thead>
-          <tbody id="commission-tbody">
-            <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Aucune commission pour l'instant</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
   </div>
 </div>
 <div id="toast"></div>
 <script>
-function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'#00C48C':'#FF4444';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
-const refLink='https://www.flinpay.cfd/register?ref=FP00001';
-document.getElementById('ref-link').textContent=refLink;
-function copyRefLink(){navigator.clipboard.writeText(refLink).then(()=>toast('Lien copié !'))}
-function shareWhatsApp(){window.open('https://wa.me/?text='+encodeURIComponent('🚀 Rejoins Flinpay et commence à accepter les paiements mobile money en Afrique ! '+refLink))}
-function shareTelegram(){window.open('https://t.me/share/url?url='+encodeURIComponent(refLink)+'&text='+encodeURIComponent('🚀 Rejoins Flinpay — Agrégateur de paiement africain'))}
-function shareEmail(){window.open('mailto:?subject=Rejoins Flinpay&body='+encodeURIComponent('Bonjour,\n\nJe t\'invite à rejoindre Flinpay, la plateforme de paiement mobile pour l\'Afrique.\n\n'+refLink))}
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+
+let referralLink='';
+
+async function loadReferral(){
+  try{
+    const r=await fetch('/api/referral');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok) return;
+
+    referralLink=data.referral_link;
+    document.getElementById('ref-link').textContent=data.referral_link;
+    document.getElementById('stat-count').textContent=data.referred_count;
+    document.getElementById('stat-balance').textContent=Number(data.balance||0).toLocaleString();
+
+    const refList=document.getElementById('referred-list');
+    if(!data.referred_users.length){
+      refList.innerHTML='<div class="empty">Aucun filleul pour le moment.<br>Partagez votre lien pour commencer à gagner des commissions.</div>';
+    }else{
+      refList.innerHTML=`<table class="tbl"><thead><tr><th>Nom</th><th>Plan</th><th>Inscrit le</th></tr></thead><tbody>
+        ${data.referred_users.map(u=>`<tr>
+          <td>${u.firstname||''} ${u.lastname||''}</td>
+          <td><span class="badge ${u.plan==='pro'?'b-pro':'b-starter'}">${u.plan==='pro'?'⭐ Pro':'Starter'}</span></td>
+          <td style="font-size:.76rem;color:var(--muted)">${u.created_at?new Date(u.created_at).toLocaleDateString('fr-FR'):''}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    }
+
+    const earnList=document.getElementById('earnings-list');
+    if(!data.earnings_history.length){
+      earnList.innerHTML='<div class="empty">Aucun gain pour le moment.</div>';
+    }else{
+      earnList.innerHTML=`<table class="tbl"><thead><tr><th>Montant</th><th>Source</th><th>Date</th></tr></thead><tbody>
+        ${data.earnings_history.map(e=>`<tr>
+          <td style="font-weight:700">+${Number(e.amount).toLocaleString()} FCFA</td>
+          <td>${e.source==='subscription'?'Abonnement filleul':e.source||''}</td>
+          <td style="font-size:.76rem;color:var(--muted)">${e.created_at?new Date(e.created_at).toLocaleDateString('fr-FR'):''}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    }
+  }catch(e){}
+}
+
+function copyLink(){
+  if(!referralLink) return;
+  navigator.clipboard.writeText(referralLink).then(()=>toast('Lien copié !'));
+}
+
+loadReferral();
 </script>
 </body>
 </html>
