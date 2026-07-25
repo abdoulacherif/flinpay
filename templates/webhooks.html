@@ -1,218 +1,346 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Webhooks</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;--danger:#FF4444}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+:root{
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;
+  --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--black);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
-.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
-.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;text-decoration:none}
-.logo-text span{color:var(--blue)}
-.close-sb{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer}
-.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
-.nav-group{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 20px 5px}
-.nav-link{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.45);font-size:0.86rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .2s}
-.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.15);border-left-color:var(--blue)}
-.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
-.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06)}
+.icon{width:18px;height:18px;flex-shrink:0}
+.icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
+.logo-text span{color:#5B7CFF}
+.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
+.corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
+.corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
+.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:9px 22px;color:rgba(255,255,255,0.5);font-size:.855rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
+.nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
+.nav-link:hover .icon{color:rgba(255,255,255,0.7)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
+.nav-link.active .icon{color:#8EA6FF}
+.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.88rem}
-.user-name{font-size:0.83rem;font-weight:600;color:white}
-.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3)}
-.logout-link{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.25);font-size:0.78rem;padding:10px 20px 14px;text-decoration:none;border-top:1px solid rgba(255,255,255,0.04)}
-.logout-link:hover{color:#ff7070}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150}
+.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-name{font-size:.82rem;font-weight:600;color:white}
+.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
+.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
+.logout-link:hover{color:#ff7d7d}
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
-.main{margin-left:250px;min-height:100vh}
-.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-left{display:flex;align-items:center;gap:14px}
-.burger{display:none;background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:5px}
-.burger-line{width:22px;height:2px;background:var(--text);border-radius:2px;display:block}
-.page-title{font-size:1rem;font-weight:700}
-.content{padding:28px}
-.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
-.card-head{padding:16px 22px;border-bottom:1px solid #F0F2F7;display:flex;justify-content:space-between;align-items:center}
-.card-title{font-size:0.9rem;font-weight:700}
+.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
+.burger-btn:hover{background:var(--bg)}
+.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+
+.page{flex:1;padding:30px;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:22px}
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.84rem;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;transition:all .2s}
+
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
 .btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
-.btn-outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
-.btn-sm{padding:6px 14px;font-size:0.76rem}
-.form-input{padding:10px 14px;border:1.5px solid #E0E2EC;border-radius:9px;font-size:0.88rem;width:100%}
-.webhook-card{background:white;border-radius:12px;border:1px solid #E8EAF0;padding:18px 20px;margin-bottom:12px}
-.wh-url{font-family:monospace;font-size:0.85rem;font-weight:600}
-.wh-desc{font-size:0.76rem;color:var(--muted);margin-top:4px}
-.event-tag{background:var(--bg);border-radius:6px;padding:3px 8px;font-size:0.72rem;font-family:monospace;margin-right:4px}
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center}
+.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline:hover{background:var(--blue-tint)}
+.btn-sm{padding:6px 12px;font-size:.76rem}
+
+.webhook-card{background:var(--bg);border-radius:var(--r-md);border:1px solid var(--border);padding:16px 18px;margin-bottom:12px}
+.wh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.wh-url{font-family:'JetBrains Mono',monospace;font-size:.83rem;font-weight:600;word-break:break-all}
+.wh-desc{font-size:.76rem;color:var(--muted);margin-top:4px}
+.event-tag{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:.7rem;font-family:'JetBrains Mono',monospace;margin-right:4px;display:inline-block;margin-top:8px}
+.wh-actions{display:flex;gap:8px;flex-shrink:0}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-bg.show{display:flex}
-.modal{background:white;border-radius:18px;padding:30px;width:100%;max-width:480px;margin:20px}
+.modal{background:var(--surface);border-radius:20px;padding:30px;width:100%;max-width:480px;margin:20px;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:18px}
 .form-group{margin-bottom:14px}
-.form-label{font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:6px;display:block}
-.checkbox-item{display:flex;align-items:center;gap:10px;font-size:0.85rem;margin-bottom:6px}
-#toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:white;padding:12px 20px;border-radius:11px;font-size:0.85rem;transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+.form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;outline:none}
+.form-input:focus{border-color:var(--blue)}
+.checkbox-item{display:flex;align-items:center;gap:9px;font-size:.85rem;margin-bottom:8px;font-family:'JetBrains Mono',monospace}
+.modal-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end}
+
+.event-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.event-info-card{padding:14px;background:var(--bg);border-radius:10px}
+.event-info-card code{background:var(--surface);border:1px solid var(--border);padding:3px 8px;border-radius:5px;font-size:.8rem;display:block;margin-bottom:6px;font-family:'JetBrains Mono',monospace}
+.event-info-desc{font-size:.76rem;color:var(--muted)}
+
+.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:.85rem}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
 #toast.show{transform:translateY(0);opacity:1}
-@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.burger{display:flex}.close-sb{display:block}.content{padding:16px}}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .burger-btn{display:flex}
+  .close-sidebar{display:block}
+  .page{padding:16px}
+  .event-info-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
-<div class="overlay" id="overlay" onclick="closeSB()"></div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  </defs>
+</svg>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
-    <button class="close-sb" onclick="closeSB()">✕</button>
+    <div>
+      <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
   </div>
+
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>12 pays</b></div>
+    <div class="corridor-flags">🇨🇮 🇨🇲 🇸🇳 🇧🇯 🇹🇬 🇲🇱 🇳🇪 🇧🇫 🇹🇩 🇬🇦 🇳🇬 🇨🇩</div>
+  </div>
+
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
-    <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
-    <a class="nav-link" href="/transactions"><span class="icon">💳</span> Transactions</a>
-    <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
-    <a class="nav-link" href="/payment-links"><span class="icon">🔗</span> Liens de paiement</a>
+    <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
     <div class="nav-group">Développeur</div>
-    <a class="nav-link" href="/api-keys"><span class="icon">🔑</span> Clés API</a>
-    <a class="nav-link active" href="/webhooks"><span class="icon">🪝</span> Webhooks</a>
-    <a class="nav-link" href="/sandbox"><span class="icon">🧪</span> Sandbox</a>
+    <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+    <a class="nav-link active" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
     <div class="nav-group">Compte</div>
-    <a class="nav-link" href="/profile"><span class="icon">👤</span> Profil</a>
-    <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
-    <a class="nav-link" href="/referral"><span class="icon">🎁</span> Parrainage</a>
+    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+    <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
+
   <div class="sidebar-user">
     <div class="user-row">
-      <div class="user-av">U</div>
-      <div><div class="user-name">Utilisateur</div><div class="user-email">—</div></div>
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+      <div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
+      </div>
     </div>
   </div>
-  <a class="logout-link" href="/login">🚪 Déconnexion</a>
+  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
 </aside>
 
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="burger" onclick="openSB()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
-      <div class="page-title">🪝 Webhooks</div>
+      <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+      <div class="topbar-title"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</div>
     </div>
-    <button class="btn btn-primary btn-sm" onclick="openModal()">+ Ajouter un webhook</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Ajouter un webhook</button>
   </div>
-  <div class="content">
 
+  <div class="page">
     <div class="card">
       <div class="card-head"><div class="card-title">Endpoints configurés</div></div>
-      <div class="card-body" id="wh-list">
-        <div style="text-align:center;padding:30px;color:var(--muted)">
-          <div style="font-size:2.5rem;margin-bottom:10px">🪝</div>
-          <div style="font-size:0.86rem">Aucun webhook configuré.</div>
-        </div>
-      </div>
+      <div class="card-body" id="wh-list"><div class="empty">Chargement...</div></div>
     </div>
 
     <div class="card">
       <div class="card-head"><div class="card-title">📋 Événements disponibles</div></div>
       <div class="card-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div style="padding:14px;background:var(--bg);border-radius:10px">
-            <code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem;display:block;margin-bottom:6px">payment.success</code>
-            <div style="font-size:0.76rem;color:var(--muted)">Paiement confirmé</div>
+        <div class="event-info-grid">
+          <div class="event-info-card">
+            <code>payment.success</code>
+            <div class="event-info-desc">Envoyé automatiquement quand un paiement est confirmé</div>
           </div>
-          <div style="padding:14px;background:var(--bg);border-radius:10px">
-            <code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem;display:block;margin-bottom:6px">payment.failed</code>
-            <div style="font-size:0.76rem;color:var(--muted)">Paiement échoué</div>
-          </div>
-          <div style="padding:14px;background:var(--bg);border-radius:10px">
-            <code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem;display:block;margin-bottom:6px">payment.pending</code>
-            <div style="font-size:0.76rem;color:var(--muted)">Paiement en attente</div>
-          </div>
-          <div style="padding:14px;background:var(--bg);border-radius:10px">
-            <code style="background:white;padding:3px 8px;border-radius:5px;font-size:0.8rem;display:block;margin-bottom:6px">payout.success</code>
-            <div style="font-size:0.76rem;color:var(--muted)">Payout envoyé</div>
+          <div class="event-info-card">
+            <code>payment.failed</code>
+            <div class="event-info-desc">Envoyé automatiquement quand un paiement échoue</div>
           </div>
         </div>
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-head"><div class="card-title">📜 Logs récents</div></div>
-      <div id="wh-logs">
-        <div style="text-align:center;padding:24px;color:var(--muted);font-size:0.85rem">Aucun log disponible</div>
-      </div>
-    </div>
-
   </div>
 </div>
+
 <div class="modal-bg" id="modal">
   <div class="modal">
-    <h3>🪝 Nouveau webhook</h3>
+    <h3><span class="icon"><svg><use href="#ic-zap"/></svg></span> Nouveau webhook</h3>
     <div class="form-group">
       <label class="form-label">URL endpoint *</label>
       <input class="form-input" id="wh-url" type="url" placeholder="https://monsite.com/webhook">
     </div>
     <div class="form-group">
-      <label class="form-label">Description</label>
+      <label class="form-label">Description (optionnel)</label>
       <input class="form-input" id="wh-desc" type="text" placeholder="Webhook production">
     </div>
     <div class="form-group">
       <label class="form-label">Événements à écouter</label>
       <label class="checkbox-item"><input type="checkbox" name="events" value="payment.success" checked> payment.success</label>
       <label class="checkbox-item"><input type="checkbox" name="events" value="payment.failed" checked> payment.failed</label>
-      <label class="checkbox-item"><input type="checkbox" name="events" value="payment.pending"> payment.pending</label>
-      <label class="checkbox-item"><input type="checkbox" name="events" value="payout.success"> payout.success</label>
     </div>
-    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+    <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
-      <button class="btn btn-primary" onclick="saveWebhook()">Enregistrer</button>
+      <button class="btn btn-primary" id="btn-save-wh" onclick="saveWebhook()">Enregistrer</button>
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
 <script>
-function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-function toast(msg,ok){ok=ok===undefined?true:ok;var t=document.getElementById('toast');t.textContent=(ok?'OK ':'X ')+msg;t.style.borderLeftColor=ok?'#00C48C':'#FF4444';t.classList.add('show');setTimeout(function(){t.classList.remove('show')},3000)}
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 function openModal(){document.getElementById('modal').classList.add('show')}
 function closeModal(){document.getElementById('modal').classList.remove('show')}
-document.getElementById('modal').addEventListener('click',function(e){if(e.target===document.getElementById('modal'))closeModal()});
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 
-var webhooks=[];
-function saveWebhook(){
-  var url=document.getElementById('wh-url').value.trim();
-  var desc=document.getElementById('wh-desc').value.trim();
-  if(!url||url.indexOf('http')!==0){toast('URL valide requise',false);return}
-  var checks=document.querySelectorAll('input[name="events"]:checked');
-  var events=[];
-  for(var i=0;i<checks.length;i++){events.push(checks[i].value)}
-  if(!events.length){toast('Selectionnez un evenement',false);return}
-  webhooks.unshift({url:url,desc:desc,events:events});
-  renderWebhooks();
-  closeModal();
-  document.getElementById('wh-url').value='';
-  document.getElementById('wh-desc').value='';
-  toast('Webhook ajoute !');
+async function loadProfile(){
+  try{
+    const r=await fetch('/api/me');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok) return;
+    const user=data.user;
+    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
+    document.getElementById('user-email').textContent=user.email||'';
+  }catch(e){}
 }
-function renderWebhooks(){
-  var el=document.getElementById('wh-list');
-  if(!webhooks.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:2.5rem;margin-bottom:10px">🪝</div><div style="font-size:0.86rem">Aucun webhook configure.</div></div>';return}
-  var html='';
-  for(var i=0;i<webhooks.length;i++){
-    var w=webhooks[i];
-    var tags='';
-    for(var j=0;j<w.events.length;j++){tags+='<span class="event-tag">'+w.events[j]+'</span>'}
-    html+='<div class="webhook-card"><div class="wh-url">'+w.url+'</div>';
-    if(w.desc){html+='<div class="wh-desc">'+w.desc+'</div>'}
-    html+='<div style="margin-top:10px">'+tags+'</div>';
-    html+='<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-outline btn-sm" onclick="testWH('+i+')">Tester</button><button class="btn btn-danger btn-sm" onclick="deleteWH('+i+')">Supprimer</button></div></div>';
+
+async function loadWebhooks(){
+  const el=document.getElementById('wh-list');
+  el.innerHTML='<div class="empty">Chargement...</div>';
+  try{
+    const r=await fetch('/api/webhooks');
+    const data=await r.json();
+    const hooks=data.webhooks||[];
+    if(!hooks.length){
+      el.innerHTML='<div class="empty">Aucun webhook configuré.<br>Recevez une notification à chaque paiement confirmé ou échoué.</div>';
+      return;
+    }
+    el.innerHTML=hooks.map(w=>`
+      <div class="webhook-card">
+        <div class="wh-top">
+          <div style="flex:1;min-width:0">
+            <div class="wh-url">${w.url}</div>
+            ${w.description?`<div class="wh-desc">${w.description}</div>`:''}
+            <div>${(w.events||[]).map(ev=>`<span class="event-tag">${ev}</span>`).join('')}</div>
+          </div>
+          <div class="wh-actions">
+            <button class="btn btn-outline btn-sm" onclick="testWebhook(${w.id},this)">Tester</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteWebhook(${w.id})"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){
+    el.innerHTML='<div class="empty">Erreur de chargement.</div>';
   }
-  el.innerHTML=html;
 }
-function testWH(i){toast('Test envoye a '+webhooks[i].url)}
-function deleteWH(i){if(confirm('Supprimer ce webhook ?')){webhooks.splice(i,1);renderWebhooks();toast('Webhook supprime')}}
+
+async function saveWebhook(){
+  const url=document.getElementById('wh-url').value.trim();
+  const desc=document.getElementById('wh-desc').value.trim();
+  const checks=document.querySelectorAll('input[name="events"]:checked');
+  const events=Array.from(checks).map(c=>c.value);
+  if(!url||!url.startsWith('http')){ toast('URL valide requise',false); return; }
+  if(!events.length){ toast('Sélectionnez au moins un événement',false); return; }
+
+  const btn=document.getElementById('btn-save-wh');
+  btn.disabled=true; btn.textContent='Enregistrement...';
+  try{
+    const r=await fetch('/api/webhooks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,description:desc,events})});
+    const data=await r.json();
+    if(data.ok){
+      closeModal();
+      document.getElementById('wh-url').value='';
+      document.getElementById('wh-desc').value='';
+      toast('Webhook ajouté !');
+      loadWebhooks();
+    }else{
+      toast(data.error||'Erreur',false);
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+  btn.disabled=false; btn.textContent='Enregistrer';
+}
+
+async function testWebhook(id, btn){
+  btn.disabled=true; btn.textContent='...';
+  try{
+    const r=await fetch('/api/webhooks/'+id+'/test',{method:'POST'});
+    const data=await r.json();
+    if(data.ok){ toast('Test envoyé — réponse HTTP '+data.status_code); }
+    else{ toast(data.error||'Échec du test',false); }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+  btn.disabled=false; btn.textContent='Tester';
+}
+
+async function deleteWebhook(id){
+  if(!confirm('Supprimer ce webhook ?')) return;
+  try{
+    const r=await fetch('/api/webhooks/'+id,{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){ toast('Webhook supprimé'); loadWebhooks(); }
+    else{ toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+
+loadProfile();
+loadWebhooks();
 </script>
 </body>
 </html>
