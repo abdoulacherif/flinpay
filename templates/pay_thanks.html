@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merci — Flinpay</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',sans-serif;background:#0D0D0D;min-height:100vh;
+  display:flex;align-items:center;justify-content:center;padding:40px 20px;
+  position:relative;overflow:hidden
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(0,196,140,0.18) 0%,transparent 70%);
+  pointer-events:none
+}
+.box{
+  background:#141420;border:1px solid rgba(255,255,255,0.08);
+  border-radius:24px;padding:44px 36px;width:100%;max-width:420px;
+  text-align:center;position:relative;z-index:1;box-shadow:0 32px 64px rgba(0,0,0,0.4)
+}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;color:white;margin-bottom:20px}
+.logo span{color:#1A3CFF}
+.icon{font-size:2.8rem;margin-bottom:16px}
+.msg{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:white;line-height:1.5;margin-bottom:10px}
+.note{color:rgba(255,255,255,0.4);font-size:0.85rem;line-height:1.6}
+.back{margin-top:24px;font-size:0.82rem}
+.back a{color:rgba(255,255,255,0.3);text-decoration:none}
+.back a:hover{color:white}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">Flin<span>pay</span></div>
+  <div class="icon">✅</div>
+  <div class="msg">{{ message }}</div>
+  <div class="note">Si votre paiement mobile money n'est pas encore confirmé, patientez quelques instants — le marchand recevra la confirmation automatiquement.</div>
+  <div class="back"><a href="/">← Propulsé par Flinpay</a></div>
+</div>
+</body>
+</html>
