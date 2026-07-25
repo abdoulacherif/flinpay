@@ -1,0 +1,305 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Vérification d'identité</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;
+  --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.icon{width:18px;height:18px;flex-shrink:0}
+.icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
+.logo-text span{color:#5B7CFF}
+.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
+.corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
+.corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
+.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:9px 22px;color:rgba(255,255,255,0.5);font-size:.855rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
+.nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
+.nav-link:hover .icon{color:rgba(255,255,255,0.7)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
+.nav-link.active .icon{color:#8EA6FF}
+.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
+.user-row{display:flex;align-items:center;gap:10px}
+.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-name{font-size:.82rem;font-weight:600;color:white}
+.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
+.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
+.logout-link:hover{color:#ff7d7d}
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
+.overlay.show{display:block}
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
+.burger-btn:hover{background:var(--bg)}
+.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+
+.page{flex:1;padding:30px;max-width:640px;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft)}
+.card-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.card-body{padding:22px}
+
+.status-banner{padding:16px 20px;border-radius:var(--r-md);display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+.status-banner.pending{background:var(--gold-tint);color:#8A5B00}
+.status-banner.verified{background:var(--green-tint);color:#0A7A50}
+.status-banner.rejected{background:var(--danger-tint);color:#B3271A}
+.status-banner .icon{width:22px;height:22px;flex-shrink:0;margin-top:1px}
+.status-banner strong{display:block;font-size:.88rem;margin-bottom:2px}
+.status-banner span{font-size:.82rem;line-height:1.5;opacity:.9}
+
+.form-group{margin-bottom:16px}
+.form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
+.form-input,select.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--blue)}
+.file-drop{
+  border:2px dashed var(--border);border-radius:var(--r-md);padding:26px 20px;text-align:center;
+  cursor:pointer;transition:all .15s;background:var(--bg)
+}
+.file-drop:hover{border-color:var(--blue);background:var(--blue-tint)}
+.file-drop input{display:none}
+.file-drop .icon{width:28px;height:28px;color:var(--muted);margin:0 auto 8px}
+.file-drop-text{font-size:.85rem;color:var(--muted)}
+.file-drop-name{font-size:.85rem;color:var(--blue);font-weight:600;margin-top:6px;font-family:'JetBrains Mono',monospace}
+
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.87rem;padding:12px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;width:100%}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:var(--blue-deep)}
+.btn-primary:disabled{opacity:.5;pointer-events:none}
+.error-msg{background:var(--danger-tint);color:#B3271A;border-radius:9px;padding:10px 14px;font-size:.83rem;margin-bottom:14px;display:none}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+#toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .burger-btn{display:flex}
+  .close-sidebar{display:block}
+  .page{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="ic-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+  </defs>
+</svg>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div>
+      <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+  </div>
+
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>12 pays</b></div>
+    <div class="corridor-flags">🇨🇮 🇨🇲 🇸🇳 🇧🇯 🇹🇬 🇲🇱 🇳🇪 🇧🇫 🇹🇩 🇬🇦 🇳🇬 🇨🇩</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-group">Principal</div>
+    <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
+    <div class="nav-group">Développeur</div>
+    <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
+    <div class="nav-group">Compte</div>
+    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+    <a class="nav-link active" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-row">
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+      <div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
+      </div>
+    </div>
+  </div>
+  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+    <div class="topbar-title"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification d'identité</div>
+  </div>
+
+  <div class="page">
+    <div id="status-area"></div>
+
+    <div class="card" id="form-card">
+      <div class="card-head"><div class="card-title">Soumettre vos documents</div></div>
+      <div class="card-body">
+        <div class="error-msg" id="error-msg"></div>
+        <div class="form-group">
+          <label class="form-label">Nom complet (identique à la pièce)</label>
+          <input class="form-input" id="kyc-name" type="text" placeholder="Kouamé Diallo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type de pièce</label>
+          <select class="form-input" id="kyc-type">
+            <option value="cni">Carte Nationale d'Identité</option>
+            <option value="passeport">Passeport</option>
+            <option value="permis">Permis de conduire</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Numéro de la pièce</label>
+          <input class="form-input" id="kyc-number" type="text" placeholder="CI0012345678">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Photo ou scan de la pièce</label>
+          <label class="file-drop" id="drop-zone">
+            <span class="icon"><svg><use href="#ic-upload"/></svg></span>
+            <div class="file-drop-text">Cliquez pour choisir un fichier<br>(JPG, PNG ou PDF — 8 Mo max)</div>
+            <div class="file-drop-name" id="file-name"></div>
+            <input type="file" id="kyc-file" accept=".jpg,.jpeg,.png,.pdf" onchange="onFileChange()">
+          </label>
+        </div>
+        <button class="btn btn-primary" id="btn-submit" onclick="submitKyc()">Envoyer pour vérification</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+
+function onFileChange(){
+  const f=document.getElementById('kyc-file').files[0];
+  document.getElementById('file-name').textContent=f?f.name:'';
+}
+
+async function loadStatus(){
+  try{
+    const r=await fetch('/api/me');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok) return;
+    const user=data.user;
+    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
+    document.getElementById('user-email').textContent=user.email||'';
+
+    const status=user.kyc_status||'unverified';
+    const area=document.getElementById('status-area');
+    const formCard=document.getElementById('form-card');
+
+    if(status==='verified'){
+      area.innerHTML=`<div class="status-banner verified"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span><div><strong>Identité vérifiée</strong><span>Vous pouvez générer des clés API et accéder à toutes les fonctionnalités.</span></div></div>`;
+      formCard.style.display='none';
+    }else if(status==='pending'){
+      area.innerHTML=`<div class="status-banner pending"><span class="icon"><svg><use href="#ic-clock"/></svg></span><div><strong>Vérification en cours</strong><span>Votre document a été envoyé et est en cours de revue (24-48h).</span></div></div>`;
+      formCard.style.display='none';
+    }else if(status==='rejected'){
+      area.innerHTML=`<div class="status-banner rejected"><span class="icon"><svg><use href="#ic-alert"/></svg></span><div><strong>Document refusé</strong><span>${user.kyc_rejection_reason||'Document invalide.'} Vous pouvez soumettre un nouveau document ci-dessous.</span></div></div>`;
+      formCard.style.display='block';
+    }else{
+      area.innerHTML='';
+      formCard.style.display='block';
+    }
+  }catch(e){}
+}
+
+async function submitKyc(){
+  const name=document.getElementById('kyc-name').value.trim();
+  const type=document.getElementById('kyc-type').value;
+  const number=document.getElementById('kyc-number').value.trim();
+  const file=document.getElementById('kyc-file').files[0];
+  const err=document.getElementById('error-msg');
+  err.style.display='none';
+
+  if(!name||!number||!file){
+    err.textContent='Remplissez tous les champs et choisissez un fichier.';
+    err.style.display='block';
+    return;
+  }
+
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true; btn.textContent='Envoi en cours...';
+
+  const fd=new FormData();
+  fd.append('full_name', name);
+  fd.append('id_type', type);
+  fd.append('id_number', number);
+  fd.append('document', file);
+
+  try{
+    const r=await fetch('/api/kyc/submit',{method:'POST', body:fd});
+    const data=await r.json();
+    if(data.ok){
+      toast('Document envoyé pour vérification !');
+      loadStatus();
+    }else{
+      err.textContent=data.error||'Erreur lors de l\'envoi.';
+      err.style.display='block';
+    }
+  }catch(e){
+    err.textContent='Erreur de connexion.';
+    err.style.display='block';
+  }
+  btn.disabled=false; btn.textContent='Envoyer pour vérification';
+}
+
+loadStatus();
+</script>
+</body>
+</html>
