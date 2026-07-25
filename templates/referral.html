@@ -241,7 +241,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'#00C48C':'#FF4444';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
-const refLink='https://flinpay.vercel.app/register?ref=FP00001';
+const refLink='https://www.flinpay.cfd/register?ref=FP00001';
 document.getElementById('ref-link').textContent=refLink;
 function copyRefLink(){navigator.clipboard.writeText(refLink).then(()=>toast('Lien copié !'))}
 function shareWhatsApp(){window.open('https://wa.me/?text='+encodeURIComponent('🚀 Rejoins Flinpay et commence à accepter les paiements mobile money en Afrique ! '+refLink))}

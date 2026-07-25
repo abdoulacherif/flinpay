@@ -137,13 +137,30 @@ function closeSB(){document.getElementById('sidebar').classList.remove('open');d
 
 var allTx=[];
 function loadTransactions(){
-  allTx=[
-    {id:'fp_tx_abc123',client:'Kouamé D.',amount:15000,status:'paid',operator:'Orange Money',country:'CI',date:'2025-06-29 10:23'},
-    {id:'fp_tx_def456',client:'Aminata S.',amount:8500,status:'pending',operator:'Wave',country:'SN',date:'2025-06-29 09:15'},
-    {id:'fp_tx_ghi789',client:'Ibrahim T.',amount:25000,status:'paid',operator:'MTN MoMo',country:'CM',date:'2025-06-28 16:44'},
-    {id:'fp_tx_jkl012',client:'Fatou B.',amount:5000,status:'failed',operator:'Moov Money',country:'BJ',date:'2025-06-28 14:30'}
-  ];
-  renderTx(allTx);
+  fetch('/api/transactions')
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(data.ok && data.transactions){
+        allTx=data.transactions.map(function(tx){
+          return {
+            id: tx.token,
+            client: tx.client_name,
+            amount: tx.amount,
+            status: tx.status,
+            operator: tx.operator || '-',
+            country: tx.country || '',
+            date: new Date(tx.created_at).toLocaleString('fr-FR')
+          };
+        });
+      } else {
+        allTx=[];
+      }
+      renderTx(allTx);
+    })
+    .catch(function(){
+      allTx=[];
+      renderTx(allTx);
+    });
 }
 function renderTx(txs){
   var tbody=document.getElementById('tx-tbody');

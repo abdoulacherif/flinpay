@@ -170,7 +170,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 <span class="kw">import</span> requests
 
 API_KEY = <span class="str">"fp_live_votre_cle_ici"</span>
-BASE_URL = <span class="str">"https://flinpay.vercel.app"</span>
+BASE_URL = <span class="str">"https://www.flinpay.cfd"</span>
 
 response = requests.post(
     f<span class="str">"{BASE_URL}/api/pay"</span>,
@@ -185,7 +185,7 @@ response = requests.post(
 )
 print(response.json())</div>
         <div id="code-js" class="code-block" style="display:none"><span class="cm">// JavaScript — Initier un paiement Flinpay</span>
-<span class="kw">const</span> response = <span class="kw">await</span> fetch(<span class="str">'https://flinpay.vercel.app/api/pay'</span>, {
+<span class="kw">const</span> response = <span class="kw">await</span> fetch(<span class="str">'https://www.flinpay.cfd/api/pay'</span>, {
   method: <span class="str">'POST'</span>,
   headers: {
     <span class="str">'Authorization'</span>: <span class="str">'Bearer fp_live_votre_cle_ici'</span>,
@@ -202,7 +202,7 @@ print(response.json())</div>
 <span class="kw">const</span> data = <span class="kw">await</span> response.json();
 console.log(data);</div>
         <div id="code-php" class="code-block" style="display:none"><span class="cm">&lt;?php // PHP — Initier un paiement Flinpay</span>
-$ch = curl_init(<span class="str">'https://flinpay.vercel.app/api/pay'</span>);
+$ch = curl_init(<span class="str">'https://www.flinpay.cfd/api/pay'</span>);
 curl_setopt($ch, CURLOPT_POST, <span class="kw">true</span>);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     <span class="str">'Authorization: Bearer fp_live_votre_cle_ici'</span>,

@@ -225,7 +225,7 @@ def api_pay():
         'order_id': data['order_id'],
         'amount': data['amount'],
         'status': 'pending',
-        'payment_url': f'https://flinpay.vercel.app/pay/{token}'
+        'payment_url': f'https://www.flinpay.cfd/pay/{token}'
     })
 
 @app.route('/api/transactions/export', methods=['GET'])

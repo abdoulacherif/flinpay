@@ -213,7 +213,7 @@ function createLink(){
   const expire=document.getElementById('lk-expire').value;
   if(!name||!amount){toast('Nom et montant requis',false);return}
   const id='pay_'+Math.random().toString(36).substr(2,8);
-  const url=`https://flinpay.vercel.app/pay/${id}`;
+  const url=`https://www.flinpay.cfd/pay/${id}`;
   links.unshift({id,name,amount:parseInt(amount),desc,limit:limit||'∞',expire:expire||null,url,active:true,views:0,paid:0,created:new Date().toLocaleDateString('fr-FR')});
   renderLinks();
   closeModal();
