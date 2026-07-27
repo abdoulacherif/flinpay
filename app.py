@@ -1192,16 +1192,11 @@ def pay_page(token):
     links = sb_get('payment_links', f'token=eq.{token}')
     link = links[0] if links else None
     valid, reason = _link_status(link)
-    operators = {}
     if link and valid:
         sb_patch_multi('payment_links', {'token': token}, {'views': (link.get('views') or 0) + 1})
-        merchant = get_user_by_id(link['user_id'])
-        operators = get_country_operators(merchant.get('country', ''))
-        if not operators:
-            valid = False
-            reason = 'pays_non_couvert'
     image_url = sb_storage_public_url('payment-link-images', link['image_path']) if (link and link.get('image_path')) else None
-    return render_template('pay.html', link=link, valid=valid, reason=reason, token=token, image_url=image_url, operators=operators)
+    return render_template('pay.html', link=link, valid=valid, reason=reason, token=token, image_url=image_url,
+                            countries_operators=SOLEASPAY_SERVICES, available_countries=COUNTRIES)
 
 @app.route('/api/pay-link/<token>', methods=['POST'])
 def api_pay_link(token):
@@ -1224,6 +1219,7 @@ def api_pay_link(token):
     data = request.get_json() or {}
     phone = (data.get('phone') or '').strip()
     operator = data.get('operator', '')
+    customer_country = data.get('country', '')
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
 
@@ -1246,7 +1242,8 @@ def api_pay_link(token):
     merchant = get_user_by_id(link['user_id'])
     merchant_currency = next((c['currency'] for c in COUNTRIES if c['code'] == merchant.get('country')), 'XOF')
 
-    service_id = get_service_id(merchant.get('country', ''), operator)
+    # L'opérateur mobile money dépend du pays du CLIENT qui paie, pas du marchand.
+    service_id = get_service_id(customer_country, operator)
     if not service_id:
         return jsonify({'ok': False, 'error': "Opérateur indisponible pour ce pays"}), 400
 
