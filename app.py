@@ -39,7 +39,26 @@ LEEKPAY_API_BASE = 'https://leekpay.fr/api/v1'
 SOLEASPAY_API_KEY = os.getenv('SOLEASPAY_API_KEY')
 SOLEASPAY_CALLBACK_SECRET = os.getenv('SOLEASPAY_CALLBACK_SECRET')
 SOLEASPAY_BASE = 'https://soleaspay.com'
-SOLEASPAY_SERVICE_IDS = {'momo': 1, 'om': 2}
+
+# Services réellement actifs chez SoleasPay par pays (vérifié via /api/services-list).
+# format : code_pays -> { clé_opérateur: (service_id, libellé) }
+SOLEASPAY_SERVICES = {
+    'CM': {'momo': (1, 'MTN Mobile Money'), 'om': (2, 'Orange Money')},
+    'CI': {'om': (29, 'Orange Money'), 'momo': (30, 'MTN Money'), 'moov': (31, 'Moov Money'), 'wave': (32, 'Wave')},
+    'BF': {'moov': (33, 'Moov Money'), 'om': (34, 'Orange Money')},
+    'BJ': {'momo': (35, 'MTN Money'), 'moov': (36, 'Moov Money')},
+    'TG': {'tmoney': (37, 'T-Money'), 'moov': (38, 'Moov Money')},
+    'CD': {'vodacom': (52, 'Vodacom M-Pesa'), 'airtel': (53, 'Airtel Money'), 'om': (54, 'Orange Money')},
+    'GA': {'airtel': (57, 'Airtel Money')},
+}
+
+def get_country_operators(country_code):
+    return SOLEASPAY_SERVICES.get(country_code, {})
+
+def get_service_id(country_code, operator_key):
+    ops = SOLEASPAY_SERVICES.get(country_code, {})
+    entry = ops.get(operator_key)
+    return entry[0] if entry else None
 
 SUPA_HEADERS = {
     'apikey': SUPABASE_KEY,
@@ -236,9 +255,13 @@ def api_billing_subscribe():
     user = get_current_user()
     data = request.get_json() or {}
     phone = (data.get('phone') or user.get('phone') or '').strip()
-    operator = data.get('operator', 'momo')
+    operator = data.get('operator', '')
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
+
+    service_id = get_service_id(user.get('country', ''), operator)
+    if not service_id:
+        return jsonify({'ok': False, 'error': "Opérateur non disponible pour votre pays"}), 400
 
     price = get_subscription_price()
     total = amount_with_markup(price)
@@ -258,7 +281,7 @@ def api_billing_subscribe():
         payer_email=user.get('email', ''),
         success_url='https://www.flinpay.cfd/billing?upgraded=1',
         failure_url='https://www.flinpay.cfd/billing',
-        service=operator
+        service_id=service_id
     )
     if not collect['ok']:
         return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
@@ -484,7 +507,7 @@ def api_pay():
 
     country_code = data.get('country', '')
     merchant_currency = next((c['currency'] for c in COUNTRIES if c['code'] == country_code), 'XOF')
-    operator = data.get('operator', 'momo')
+    operator = data.get('operator', '')
 
     tx_payload = {
         'token': token,
@@ -503,6 +526,9 @@ def api_pay():
     # En production, on déclenche une vraie collecte SoleasPay (confirmation directe sur le
     # téléphone du client). En sandbox, on garde une simulation locale sans argent réel.
     if env_label == 'production':
+        service_id = get_service_id(country_code, operator)
+        if not service_id:
+            return jsonify({'ok': False, 'error': f"Opérateur '{operator}' non disponible pour le pays '{country_code}'"}), 400
         markup_amount = amount_with_markup(data['amount'])
         xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
         collect = soleaspay_collect(
@@ -515,7 +541,7 @@ def api_pay():
             payer_email=data.get('email', ''),
             success_url=f'https://www.flinpay.cfd/pay-status/{token}',
             failure_url=f'https://www.flinpay.cfd/pay-status/{token}',
-            service=operator
+            service_id=service_id
         )
         if not collect['ok']:
             return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
@@ -918,9 +944,8 @@ def soleaspay_convert(amount, from_currency, to_currency='XAF'):
     return float(amount)  # repli : XOF/XAF sont à parité de toute façon
 
 def soleaspay_collect(wallet, amount, currency, order_id, description, payer, payer_email,
-                       success_url, failure_url, service='momo'):
+                       success_url, failure_url, service_id):
     try:
-        service_id = SOLEASPAY_SERVICE_IDS.get(service, 1)
         headers = {
             'x-api-key': SOLEASPAY_API_KEY,
             'operation': '2',
@@ -1171,10 +1196,16 @@ def pay_page(token):
     links = sb_get('payment_links', f'token=eq.{token}')
     link = links[0] if links else None
     valid, reason = _link_status(link)
+    operators = {}
     if link and valid:
         sb_patch_multi('payment_links', {'token': token}, {'views': (link.get('views') or 0) + 1})
+        merchant = get_user_by_id(link['user_id'])
+        operators = get_country_operators(merchant.get('country', ''))
+        if not operators:
+            valid = False
+            reason = 'pays_non_couvert'
     image_url = sb_storage_public_url('payment-link-images', link['image_path']) if (link and link.get('image_path')) else None
-    return render_template('pay.html', link=link, valid=valid, reason=reason, token=token, image_url=image_url, leekpay_public_key=LEEKPAY_PUBLIC_KEY)
+    return render_template('pay.html', link=link, valid=valid, reason=reason, token=token, image_url=image_url, operators=operators)
 
 @app.route('/api/pay-link/<token>', methods=['POST'])
 def api_pay_link(token):
@@ -1196,7 +1227,7 @@ def api_pay_link(token):
 
     data = request.get_json() or {}
     phone = (data.get('phone') or '').strip()
-    operator = data.get('operator', 'momo')
+    operator = data.get('operator', '')
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
 
@@ -1218,6 +1249,11 @@ def api_pay_link(token):
 
     merchant = get_user_by_id(link['user_id'])
     merchant_currency = next((c['currency'] for c in COUNTRIES if c['code'] == merchant.get('country')), 'XOF')
+
+    service_id = get_service_id(merchant.get('country', ''), operator)
+    if not service_id:
+        return jsonify({'ok': False, 'error': "Opérateur indisponible pour ce pays"}), 400
+
     markup_amount = amount_with_markup(amount)
     xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
 
@@ -1231,7 +1267,7 @@ def api_pay_link(token):
         payer_email='',
         success_url=f'https://www.flinpay.cfd/pay/{token}/merci',
         failure_url=f'https://www.flinpay.cfd/pay/{token}',
-        service=operator
+        service_id=service_id
     )
     if not collect['ok']:
         return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
