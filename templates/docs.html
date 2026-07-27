@@ -140,6 +140,7 @@ table.params td:first-child{font-family:'JetBrains Mono',monospace;color:var(--b
         <tr><td>client_name</td><td>string</td><td>Nom complet du client</td></tr>
         <tr><td>order_id</td><td>string</td><td>Identifiant unique de la commande côté marchand</td></tr>
         <tr><td>country</td><td>string</td><td>Code pays ISO2 (ex: <code>CI</code>, <code>CM</code>, <code>SN</code>)</td></tr>
+        <tr><td>operator</td><td>string</td><td><code>momo</code> (MTN Mobile Money) ou <code>om</code> (Orange Money)</td></tr>
       </table>
 
       <div class="code-tabs">
@@ -159,7 +160,8 @@ response = requests.post(
         <span class="str">"phone"</span>: <span class="str">"0700000000"</span>,
         <span class="str">"client_name"</span>: <span class="str">"Kouamé Diallo"</span>,
         <span class="str">"order_id"</span>: <span class="str">"ORD-001"</span>,
-        <span class="str">"country"</span>: <span class="str">"CI"</span>
+        <span class="str">"country"</span>: <span class="str">"CI"</span>,
+        <span class="str">"operator"</span>: <span class="str">"momo"</span>
     }
 )
 print(response.json())</div>
@@ -176,7 +178,8 @@ print(response.json())</div>
     phone: <span class="str">"0700000000"</span>,
     client_name: <span class="str">"Kouamé Diallo"</span>,
     order_id: <span class="str">"ORD-001"</span>,
-    country: <span class="str">"CI"</span>
+    country: <span class="str">"CI"</span>,
+    operator: <span class="str">"momo"</span>
   })
 });
 <span class="kw">const</span> data = <span class="kw">await</span> res.json();</div>
@@ -193,10 +196,12 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
     <span class="str">"phone"</span> =&gt; <span class="str">"0700000000"</span>,
     <span class="str">"client_name"</span> =&gt; <span class="str">"Kouamé Diallo"</span>,
     <span class="str">"order_id"</span> =&gt; <span class="str">"ORD-001"</span>,
-    <span class="str">"country"</span> =&gt; <span class="str">"CI"</span>
+    <span class="str">"country"</span> =&gt; <span class="str">"CI"</span>,
+    <span class="str">"operator"</span> =&gt; <span class="str">"momo"</span>
 ]));
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, <span class="kw">true</span>);
 $response = json_decode(curl_exec($ch));</div>
+      <div class="callout info">📲 Le client reçoit une confirmation directe sur son téléphone (USSD) — il n'y a pas de page de paiement à ouvrir ni de redirection à gérer.</div>
     </div>
 
     <div class="doc-section" id="responses">
@@ -207,8 +212,7 @@ $response = json_decode(curl_exec($ch));</div>
   <span class="str">"token"</span>: <span class="str">"fp_tx_a1b2c3d4e5f6..."</span>,
   <span class="str">"order_id"</span>: <span class="str">"ORD-001"</span>,
   <span class="str">"amount"</span>: <span class="str">10000</span>,
-  <span class="str">"status"</span>: <span class="str">"pending"</span>,
-  <span class="str">"payment_url"</span>: <span class="str">"https://www.flinpay.cfd/pay/fp_tx_..."</span>
+  <span class="str">"status"</span>: <span class="str">"pending"</span>
 }</div>
       <p>Statuts possibles pour une transaction :</p>
       <table class="params">
@@ -232,7 +236,7 @@ $response = json_decode(curl_exec($ch));</div>
 
     <div class="doc-section" id="links">
       <h2 style="margin-top:0">Liens de paiement</h2>
-      <p>Pour encaisser sans écrire de code, créez un lien de paiement partageable depuis <a href="/payment-links">Dashboard → Liens de paiement</a>. Le lien ouvre une page de paiement hébergée par Flinpay où votre client saisit son numéro mobile money.</p>
+      <p>Pour encaisser sans écrire de code, créez un lien de paiement partageable depuis <a href="/payment-links">Dashboard → Liens de paiement</a>. Votre client ouvre la page (hébergée par Flinpay), choisit son opérateur (MTN MoMo ou Orange Money) et confirme directement depuis son téléphone — aucune redirection vers un site tiers.</p>
     </div>
 
     <div class="doc-section" id="env">
@@ -242,8 +246,20 @@ $response = json_decode(curl_exec($ch));</div>
 
     <div class="doc-section" id="webhooks">
       <h2 style="margin-top:0">Webhooks</h2>
-      <div class="callout warn">🚧 Les webhooks de confirmation de paiement (notification automatique vers votre serveur) sont en cours de développement et arrivent prochainement.</div>
-      <p>En attendant, interrogez le statut de vos transactions depuis votre <a href="/transactions">tableau de bord</a>.</p>
+      <p>Configurez un endpoint depuis <a href="/webhooks">Dashboard → Webhooks</a> pour recevoir une notification à chaque paiement confirmé ou échoué.</p>
+      <div class="code-block">{
+  <span class="str">"event"</span>: <span class="str">"payment.success"</span>,
+  <span class="str">"data"</span>: {
+    <span class="str">"token"</span>: <span class="str">"fp_tx_a1b2c3d4e5f6..."</span>,
+    <span class="str">"order_id"</span>: <span class="str">"ORD-001"</span>,
+    <span class="str">"amount"</span>: <span class="str">10000</span>,
+    <span class="str">"status"</span>: <span class="str">"paid"</span>,
+    <span class="str">"client_name"</span>: <span class="str">"Kouamé Diallo"</span>,
+    <span class="str">"client_phone"</span>: <span class="str">"0700000000"</span>
+  }
+}</div>
+      <p>Événements disponibles : <code>payment.success</code>, <code>payment.failed</code>.</p>
+      <div class="callout warn">⚠️ Flinpay n'envoie pas de signature sur ces notifications sortantes pour l'instant — vérifiez la cohérence des données reçues (montant, order_id) avec votre propre historique avant de considérer un paiement comme confirmé.</div>
     </div>
 
   </div>
