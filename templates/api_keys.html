@@ -316,10 +316,15 @@ response = requests.post(
         <span class="str">"phone"</span>: <span class="str">"0700000000"</span>,
         <span class="str">"client_name"</span>: <span class="str">"Kouamé Diallo"</span>,
         <span class="str">"order_id"</span>: <span class="str">"ORD-001"</span>,
-        <span class="str">"country"</span>: <span class="str">"CI"</span>
+        <span class="str">"country"</span>: <span class="str">"CI"</span>,
+        <span class="cm"># "momo" (MTN) ou "om" (Orange Money)</span>
+        <span class="str">"operator"</span>: <span class="str">"momo"</span>
     }
 )
-print(response.json())</div>
+print(response.json())
+<span class="cm"># Le client reçoit une confirmation directe sur son téléphone.
+# Pas de lien de paiement renvoyé — suivez le statut via le dashboard
+# ou votre webhook (payment.success / payment.failed).</span></div>
       </div>
     </div>`;
   loadKeys();
