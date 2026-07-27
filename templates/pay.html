@@ -71,13 +71,14 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 
   {% if not valid %}
     <div class="icon-big">
-      {% if reason == 'expire' %}⏰{% elif reason == 'inactif' %}🚫{% elif reason == 'limite' %}🔒{% else %}❓{% endif %}
+      {% if reason == 'expire' %}⏰{% elif reason == 'inactif' %}🚫{% elif reason == 'limite' %}🔒{% elif reason == 'pays_non_couvert' %}🌍{% else %}❓{% endif %}
     </div>
     <div class="state-title">
       {% if reason == 'introuvable' %}Lien introuvable
       {% elif reason == 'inactif' %}Lien désactivé
       {% elif reason == 'expire' %}Lien expiré
       {% elif reason == 'limite' %}Limite atteinte
+      {% elif reason == 'pays_non_couvert' %}Pays non couvert
       {% else %}Lien indisponible{% endif %}
     </div>
     <div class="state-text">
@@ -85,6 +86,7 @@ input::placeholder{color:rgba(255,255,255,0.2)}
       {% elif reason == 'inactif' %}Ce lien a été désactivé par le marchand.
       {% elif reason == 'expire' %}Ce lien de paiement n'est plus valide.
       {% elif reason == 'limite' %}Ce lien a atteint son nombre maximum d'utilisations.
+      {% elif reason == 'pays_non_couvert' %}Le paiement mobile money n'est pas encore disponible dans le pays de ce marchand.
       {% else %}Contactez le marchand pour obtenir un nouveau lien.{% endif %}
     </div>
   {% else %}
@@ -107,8 +109,9 @@ input::placeholder{color:rgba(255,255,255,0.2)}
       <div class="field">
         <label>Opérateur mobile money</label>
         <div class="op-toggle">
-          <button type="button" class="op-btn active" id="op-momo" onclick="setOperator('momo')">🟡 MTN MoMo</button>
-          <button type="button" class="op-btn" id="op-om" onclick="setOperator('om')">🟠 Orange Money</button>
+          {% for key, info in operators.items() %}
+          <button type="button" class="op-btn{% if loop.first %} active{% endif %}" id="op-{{ key }}" onclick="setOperator('{{ key }}')">{{ info[1] }}</button>
+          {% endfor %}
         </div>
       </div>
       <div class="field">
@@ -138,13 +141,13 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 
 {% if valid %}
 <script>
-let currentOperator='momo';
+let currentOperator='{{ operators.keys()|list|first if operators else "" }}';
 let currentTxToken=null;
 
 function setOperator(op){
   currentOperator=op;
-  document.getElementById('op-momo').classList.toggle('active', op==='momo');
-  document.getElementById('op-om').classList.toggle('active', op==='om');
+  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('op-'+op).classList.add('active');
 }
 
 async function doPay(){
