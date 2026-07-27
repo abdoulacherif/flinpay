@@ -39,6 +39,7 @@ LEEKPAY_API_BASE = 'https://leekpay.fr/api/v1'
 SOLEASPAY_API_KEY = os.getenv('SOLEASPAY_API_KEY')
 SOLEASPAY_CALLBACK_SECRET = os.getenv('SOLEASPAY_CALLBACK_SECRET')
 SOLEASPAY_BASE = 'https://soleaspay.com'
+SOLEASPAY_MIN_AMOUNT = 100  # XAF/XOF — en dessous, SoleasPay refuse la transaction
 
 # Services réellement actifs chez SoleasPay par pays (vérifié via /api/services-list).
 # format : code_pays -> { clé_opérateur: (service_id, libellé) }
@@ -527,6 +528,8 @@ def api_pay():
             return jsonify({'ok': False, 'error': f"Opérateur '{operator}' non disponible pour le pays '{country_code}'"}), 400
         markup_amount = amount_with_markup(data['amount'])
         xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
+        if xaf_amount < SOLEASPAY_MIN_AMOUNT:
+            return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} XOF)"}), 400
         collect = soleaspay_collect(
             wallet=data['phone'],
             amount=xaf_amount,
@@ -782,8 +785,8 @@ def api_create_payment_link():
             amount = float(data.get('amount'))
         except (TypeError, ValueError):
             return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
-        if amount <= 0:
-            return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+        if amount < SOLEASPAY_MIN_AMOUNT:
+            return jsonify({'ok': False, 'error': f'Montant minimum : {SOLEASPAY_MIN_AMOUNT} XOF'}), 400
     else:
         raw_min = data.get('min_amount')
         if raw_min:
@@ -791,6 +794,8 @@ def api_create_payment_link():
                 min_amount = float(raw_min)
             except (TypeError, ValueError):
                 return jsonify({'ok': False, 'error': 'Montant minimum invalide'}), 400
+            if min_amount < SOLEASPAY_MIN_AMOUNT:
+                return jsonify({'ok': False, 'error': f'Montant minimum : {SOLEASPAY_MIN_AMOUNT} XOF'}), 400
 
     image_path = None
     file = request.files.get('image')
@@ -1249,6 +1254,8 @@ def api_pay_link(token):
 
     markup_amount = amount_with_markup(amount)
     xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
+    if xaf_amount < SOLEASPAY_MIN_AMOUNT:
+        return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} XOF)"}), 400
 
     collect = soleaspay_collect(
         wallet=phone,
