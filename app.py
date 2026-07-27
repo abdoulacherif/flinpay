@@ -67,18 +67,14 @@ SUPA_HEADERS = {
     'Prefer': 'return=representation'
 }
 
+# Uniquement les pays réellement couverts par SoleasPay (services actifs vérifiés).
 COUNTRIES = [
     {'code':'CM','name':'Cameroun','flag':'🇨🇲','currency':'XAF'},
-    {'code':'BJ','name':'Bénin','flag':'🇧🇯','currency':'XOF'},
-    {'code':'ML','name':'Mali','flag':'🇲🇱','currency':'XOF'},
-    {'code':'TG','name':'Togo','flag':'🇹🇬','currency':'XOF'},
-    {'code':'BF','name':'Burkina Faso','flag':'🇧🇫','currency':'XOF'},
-    {'code':'TD','name':'Tchad','flag':'🇹🇩','currency':'XAF'},
-    {'code':'CD','name':'RDC','flag':'🇨🇩','currency':'CDF'},
-    {'code':'SN','name':'Sénégal','flag':'🇸🇳','currency':'XOF'},
     {'code':'CI','name':"Côte d'Ivoire",'flag':'🇨🇮','currency':'XOF'},
-    {'code':'NE','name':'Niger','flag':'🇳🇪','currency':'XOF'},
-    {'code':'NG','name':'Nigeria','flag':'🇳🇬','currency':'NGN'},
+    {'code':'BF','name':'Burkina Faso','flag':'🇧🇫','currency':'XOF'},
+    {'code':'BJ','name':'Bénin','flag':'🇧🇯','currency':'XOF'},
+    {'code':'TG','name':'Togo','flag':'🇹🇬','currency':'XOF'},
+    {'code':'CD','name':'RDC','flag':'🇨🇩','currency':'CDF'},
     {'code':'GA','name':'Gabon','flag':'🇬🇦','currency':'XAF'},
 ]
 
