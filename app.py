@@ -36,6 +36,11 @@ LEEKPAY_SECRET_KEY = os.getenv('LEEKPAY_SECRET_KEY')
 LEEKPAY_PUBLIC_KEY = os.getenv('LEEKPAY_PUBLIC_KEY')
 LEEKPAY_API_BASE = 'https://leekpay.fr/api/v1'
 
+SOLEASPAY_API_KEY = os.getenv('SOLEASPAY_API_KEY')
+SOLEASPAY_CALLBACK_SECRET = os.getenv('SOLEASPAY_CALLBACK_SECRET')
+SOLEASPAY_BASE = 'https://soleaspay.com'
+SOLEASPAY_SERVICE_IDS = {'momo': 1, 'om': 2}
+
 SUPA_HEADERS = {
     'apikey': SUPABASE_KEY,
     'Authorization': f'Bearer {SUPABASE_KEY}',
@@ -229,18 +234,37 @@ def api_me():
 @user_required
 def api_billing_subscribe():
     user = get_current_user()
-    checkout = leekpay_create_checkout(
-        amount=8500,
+    data = request.get_json() or {}
+    phone = (data.get('phone') or user.get('phone') or '').strip()
+    operator = data.get('operator', 'momo')
+    if not phone:
+        return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
+
+    price = get_subscription_price()
+    total = amount_with_markup(price)
+    merchant_currency = next((c['currency'] for c in COUNTRIES if c['code'] == user.get('country')), 'XOF')
+    xaf_total = soleaspay_convert(total, merchant_currency, 'XAF')
+
+    import uuid
+    checkout_ref = 'sub_' + uuid.uuid4().hex[:16]
+
+    collect = soleaspay_collect(
+        wallet=phone,
+        amount=xaf_total,
+        currency='XAF',
+        order_id=checkout_ref,
         description='Abonnement Flinpay Pro (mensuel)',
-        customer_name=f"{user.get('firstname','')} {user.get('lastname','')}".strip() or None,
-        customer_phone=user.get('phone') or None,
-        return_url='https://www.flinpay.cfd/billing?upgraded=1',
-        webhook_url='https://www.flinpay.cfd/webhook/leekpay'
+        payer=f"{user.get('firstname','')} {user.get('lastname','')}".strip(),
+        payer_email=user.get('email', ''),
+        success_url='https://www.flinpay.cfd/billing?upgraded=1',
+        failure_url='https://www.flinpay.cfd/billing',
+        service=operator
     )
-    if not checkout['ok']:
-        return jsonify({'ok': False, 'error': f"Erreur LeekPay: {checkout['detail']}"}), 502
-    sb_patch('users', 'id', request.user_id, {'pending_upgrade_checkout_id': checkout['data']['id']})
-    return jsonify({'ok': True, 'payment_url': checkout['data']['payment_url']})
+    if not collect['ok']:
+        return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
+
+    sb_patch('users', 'id', request.user_id, {'pending_upgrade_checkout_id': checkout_ref})
+    return jsonify({'ok': True, 'message': 'Une confirmation de paiement a été envoyée sur votre téléphone.'})
 
 @app.route('/api/referral')
 @user_required
@@ -392,18 +416,15 @@ def api_sync_transaction(token):
     if not matches:
         return jsonify({'ok': False, 'error': 'Introuvable'}), 404
     tx = matches[0]
-    if not tx.get('leekpay_checkout_id'):
-        return jsonify({'ok': False, 'error': "Pas de paiement LeekPay associé à cette transaction"}), 400
+    if not tx.get('gateway_reference'):
+        return jsonify({'ok': False, 'error': "Pas de paiement associé à cette transaction"}), 400
 
-    check = leekpay_get_checkout(tx['leekpay_checkout_id'])
+    check = soleaspay_verify(tx['token'], tx['gateway_reference'])
     if not check['ok']:
-        return jsonify({'ok': False, 'error': f"Erreur LeekPay: {check['detail']}"}), 502
+        return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {check['detail']}"}), 502
 
-    remote_status = check['data'].get('status')
-    status_map = {
-        'completed': 'paid', 'success': 'paid', 'paid': 'paid',
-        'failed': 'failed', 'cancelled': 'failed', 'canceled': 'failed', 'expired': 'failed'
-    }
+    remote_status = check.get('status')
+    status_map = {'SUCCESS': 'paid', 'REFUND': 'failed'}
     new_status = status_map.get(remote_status, tx['status'])
 
     if new_status != tx['status']:
@@ -415,6 +436,15 @@ def api_sync_transaction(token):
             links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
             if links:
                 sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+        if new_status == 'paid' and tx.get('user_id'):
+            merchant = get_user_by_id(tx['user_id'])
+            new_balance = (merchant.get('available_balance') or 0) + float(tx.get('amount') or 0)
+            sb_patch('users', 'id', tx['user_id'], {'available_balance': new_balance})
+        if new_status in ('paid', 'failed') and tx.get('user_id'):
+            dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
+                'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
+                'status': new_status, 'client_name': tx.get('client_name'), 'client_phone': tx.get('client_phone')
+            })
 
     return jsonify({'ok': True, 'status': new_status})
 
@@ -452,37 +482,44 @@ def api_pay():
     token = 'fp_tx_' + uuid.uuid4().hex[:20]
     env_label = 'sandbox' if environment == 'sandbox' else 'production'
 
+    country_code = data.get('country', '')
+    merchant_currency = next((c['currency'] for c in COUNTRIES if c['code'] == country_code), 'XOF')
+    operator = data.get('operator', 'momo')
+
     tx_payload = {
         'token': token,
         'order_id': data['order_id'],
         'amount': data['amount'],
         'client_name': data['client_name'],
         'client_phone': data['phone'],
-        'country': data.get('country', ''),
+        'country': country_code,
         'status': 'pending',
         'environment': env_label,
         'user_id': user_id,
+        'operator': operator,
         'created_at': datetime.utcnow().isoformat()
     }
 
-    payment_url = f'https://www.flinpay.cfd/pay/{token}'
-
-    # En production, on crée une vraie session de paiement LeekPay.
-    # En sandbox, on garde une simulation locale (aucun argent réel déplacé).
+    # En production, on déclenche une vraie collecte SoleasPay (confirmation directe sur le
+    # téléphone du client). En sandbox, on garde une simulation locale sans argent réel.
     if env_label == 'production':
-        checkout = leekpay_create_checkout(
-            amount=data['amount'],
+        markup_amount = amount_with_markup(data['amount'])
+        xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
+        collect = soleaspay_collect(
+            wallet=data['phone'],
+            amount=xaf_amount,
+            currency='XAF',
+            order_id=token,
             description=f"Commande {data['order_id']}",
-            customer_name=data['client_name'],
-            customer_phone=data['phone'],
-            webhook_url='https://www.flinpay.cfd/webhook/leekpay',
-            metadata={'flinpay_token': token, 'order_id': data['order_id']}
+            payer=data['client_name'],
+            payer_email=data.get('email', ''),
+            success_url=f'https://www.flinpay.cfd/pay-status/{token}',
+            failure_url=f'https://www.flinpay.cfd/pay-status/{token}',
+            service=operator
         )
-        if not checkout['ok']:
-            return jsonify({'ok': False, 'error': f"Erreur LeekPay: {checkout['detail']}"}), 502
-        tx_payload['leekpay_checkout_id'] = checkout['data']['id']
-        tx_payload['leekpay_payment_url'] = checkout['data']['payment_url']
-        payment_url = checkout['data']['payment_url']
+        if not collect['ok']:
+            return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
+        tx_payload['gateway_reference'] = collect['data'].get('reference')
 
     tx = sb_post('transactions', tx_payload)
 
@@ -495,7 +532,7 @@ def api_pay():
         'order_id': data['order_id'],
         'amount': data['amount'],
         'status': 'pending',
-        'payment_url': payment_url
+        'message': 'Une notification a été envoyée sur le téléphone du client pour confirmer le paiement.'
     })
 
 @app.route('/api/transactions/export', methods=['GET'])
@@ -867,6 +904,68 @@ def sb_count(table, query=''):
     except:
         return 0
 
+def soleaspay_convert(amount, from_currency, to_currency='XAF'):
+    if from_currency == to_currency:
+        return float(amount)
+    try:
+        r = requests.get(f'{SOLEASPAY_BASE}/api/convert',
+                          params={'amount': amount, 'from': from_currency, 'to': to_currency}, timeout=10)
+        data = r.json()
+        if data.get('success'):
+            return float(data['data']['value'])
+    except Exception as e:
+        print(f'[soleaspay_convert] error: {e}')
+    return float(amount)  # repli : XOF/XAF sont à parité de toute façon
+
+def soleaspay_collect(wallet, amount, currency, order_id, description, payer, payer_email,
+                       success_url, failure_url, service='momo'):
+    try:
+        service_id = SOLEASPAY_SERVICE_IDS.get(service, 1)
+        headers = {
+            'x-api-key': SOLEASPAY_API_KEY,
+            'operation': '2',
+            'service': str(service_id),
+            'Content-Type': 'application/json'
+        }
+        payload = {
+            'wallet': wallet,
+            'amount': amount,
+            'currency': currency,
+            'orderId': order_id,
+            'description': description,
+            'payer': payer,
+            'payerEmail': payer_email or '',
+            'successUrl': success_url,
+            'failureUrl': failure_url
+        }
+        r = requests.post(f'{SOLEASPAY_BASE}/api/agent/bills/v3', headers=headers, json=payload, timeout=20)
+        data = r.json()
+        if data.get('success'):
+            return {'ok': True, 'data': data.get('data', {})}
+        print(f'[soleaspay_collect] status={r.status_code} body={r.text[:300]}')
+        return {'ok': False, 'detail': data.get('message', 'Erreur inconnue')}
+    except Exception as e:
+        print(f'[soleaspay_collect] error: {e}')
+        return {'ok': False, 'detail': str(e)}
+
+def soleaspay_verify(order_id, pay_id):
+    try:
+        headers = {'x-api-key': SOLEASPAY_API_KEY, 'Content-Type': 'application/json'}
+        r = requests.get(f'{SOLEASPAY_BASE}/api/agent/verif-pay',
+                          headers=headers, params={'orderId': order_id, 'payId': pay_id}, timeout=15)
+        data = r.json()
+        if data.get('success'):
+            return {'ok': True, 'status': data.get('status'), 'data': data.get('data', {})}
+        return {'ok': False, 'detail': data.get('message', 'Erreur inconnue')}
+    except Exception as e:
+        return {'ok': False, 'detail': str(e)}
+
+def soleaspay_verify_callback_signature(header_value):
+    if not header_value or not SOLEASPAY_CALLBACK_SECRET:
+        return False
+    expected = hashlib.sha512(SOLEASPAY_CALLBACK_SECRET.encode()).hexdigest()
+    return hmac.compare_digest(expected, header_value)
+
 def leekpay_create_checkout(amount, description, return_url=None, cancel_url=None,
                              customer_name=None, customer_phone=None, customer_email=None,
                              webhook_url=None, metadata=None):
@@ -938,14 +1037,28 @@ def ensure_referral_code(user):
     sb_patch('users', 'id', user['id'], {'referral_code': code})
     return code
 
-def get_platform_fee_percent():
-    rows = sb_get('site_config', 'key=eq.platform_fee_percent')
+def get_markup_percent():
+    rows = sb_get('site_config', 'key=eq.markup_percent')
     if rows:
         try:
             return float(rows[0]['value'])
         except (TypeError, ValueError):
             pass
-    return 2.5
+    return 2.0
+
+def get_subscription_price():
+    rows = sb_get('site_config', 'key=eq.subscription_price')
+    if rows:
+        try:
+            return float(rows[0]['value'])
+        except (TypeError, ValueError):
+            pass
+    return 8500.0
+
+def amount_with_markup(base_amount):
+    """Montant à envoyer à LeekPay : le prix du marchand + notre marge, pour que le
+    client final paie le surplus au lieu que ce soit déduit du solde du marchand."""
+    return round(float(base_amount) * (1 + get_markup_percent() / 100), 2)
 
 def get_user_by_id(user_id):
     users = sb_get('users', f'id=eq.{user_id}')
@@ -1083,6 +1196,7 @@ def api_pay_link(token):
 
     data = request.get_json() or {}
     phone = (data.get('phone') or '').strip()
+    operator = data.get('operator', 'momo')
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
 
@@ -1102,17 +1216,25 @@ def api_pay_link(token):
     tx_token = 'fp_tx_' + uuid.uuid4().hex[:20]
     customer_name = (data.get('name') or '').strip() or 'Client'
 
-    checkout = leekpay_create_checkout(
-        amount=amount,
+    merchant = get_user_by_id(link['user_id'])
+    merchant_currency = next((c['currency'] for c in COUNTRIES if c['code'] == merchant.get('country')), 'XOF')
+    markup_amount = amount_with_markup(amount)
+    xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
+
+    collect = soleaspay_collect(
+        wallet=phone,
+        amount=xaf_amount,
+        currency='XAF',
+        order_id=tx_token,
         description=link.get('description') or link['name'],
-        return_url=link.get('redirect_url') or f'https://www.flinpay.cfd/pay/{token}/merci',
-        customer_name=customer_name,
-        customer_phone=phone,
-        webhook_url='https://www.flinpay.cfd/webhook/leekpay',
-        metadata={'flinpay_tx_token': tx_token, 'payment_link_token': token}
+        payer=customer_name,
+        payer_email='',
+        success_url=f'https://www.flinpay.cfd/pay/{token}/merci',
+        failure_url=f'https://www.flinpay.cfd/pay/{token}',
+        service=operator
     )
-    if not checkout['ok']:
-        return jsonify({'ok': False, 'error': f"Erreur LeekPay: {checkout['detail']}"}), 502
+    if not collect['ok']:
+        return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
 
     tx = sb_post('transactions', {
         'token': tx_token,
@@ -1120,12 +1242,12 @@ def api_pay_link(token):
         'amount': amount,
         'client_name': customer_name,
         'client_phone': phone,
-        'country': data.get('country', ''),
+        'country': merchant.get('country', ''),
         'status': 'pending',
         'environment': 'production',
         'user_id': link['user_id'],
-        'leekpay_checkout_id': checkout['data']['id'],
-        'leekpay_payment_url': checkout['data']['payment_url'],
+        'operator': operator,
+        'gateway_reference': collect['data'].get('reference'),
         'payment_link_token': token,
         'created_at': datetime.utcnow().isoformat()
     })
@@ -1134,63 +1256,52 @@ def api_pay_link(token):
 
     return jsonify({
         'ok': True,
-        'payment_url': checkout['data']['payment_url']
+        'tx_token': tx_token,
+        'message': 'Une confirmation de paiement a été envoyée sur le téléphone du client.'
     })
 
-@app.route('/api/pay-link/<token>/confirm', methods=['POST'])
-def api_pay_link_confirm(token):
-    links = sb_get('payment_links', f'token=eq.{token}')
-    link = links[0] if links else None
-    valid, reason = _link_status(link)
-    if not valid:
-        return jsonify({'ok': False, 'error': 'Lien invalide'}), 400
+@app.route('/api/pay-status/<tx_token>')
+def api_pay_status(tx_token):
+    matches = sb_get('transactions', f'token=eq.{tx_token}')
+    if not matches:
+        return jsonify({'ok': False, 'error': 'Introuvable'}), 404
+    tx = matches[0]
 
-    data = request.get_json() or {}
-    payment_id = (data.get('payment_id') or '').strip()
-    phone = (data.get('phone') or '').strip()
-    name = (data.get('name') or '').strip() or 'Client'
-    if not payment_id:
-        return jsonify({'ok': False, 'error': 'payment_id requis'}), 400
+    if tx['status'] == 'pending' and tx.get('gateway_reference'):
+        check = soleaspay_verify(tx['token'], tx['gateway_reference'])
+        if check['ok']:
+            status_map = {'SUCCESS': 'paid', 'REFUND': 'failed'}
+            new_status = status_map.get(check.get('status'), tx['status'])
+            if new_status != tx['status']:
+                update = {'status': new_status}
+                if new_status == 'paid':
+                    update['paid_at'] = datetime.utcnow().isoformat()
+                sb_patch_multi('transactions', {'token': tx_token}, update)
+                tx['status'] = new_status
+                if new_status == 'paid' and tx.get('payment_link_token'):
+                    links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
+                    if links:
+                        sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+                if new_status == 'paid' and tx.get('user_id'):
+                    merchant = get_user_by_id(tx['user_id'])
+                    new_balance = (merchant.get('available_balance') or 0) + float(tx.get('amount') or 0)
+                    sb_patch('users', 'id', tx['user_id'], {'available_balance': new_balance})
+                if new_status in ('paid', 'failed') and tx.get('user_id'):
+                    dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
+                        'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
+                        'status': new_status, 'client_name': tx.get('client_name'), 'client_phone': tx.get('client_phone')
+                    })
 
-    # On ne fait jamais confiance au seul événement navigateur : on revérifie
-    # le vrai statut du paiement côté serveur avec la clé secrète.
-    amount = data.get('amount') or link.get('amount')
-    status = 'pending'
-    check = leekpay_get_checkout(payment_id)
-    if check['ok']:
-        remote_status = check['data'].get('status')
-        amount = check['data'].get('amount', amount)
-        if remote_status == 'paid':
-            status = 'paid'
-        elif remote_status in ('failed', 'cancelled', 'expired'):
-            status = 'failed'
-
-    import uuid
-    tx = sb_post('transactions', {
-        'token': 'fp_tx_' + uuid.uuid4().hex[:20],
-        'order_id': 'link_' + uuid.uuid4().hex[:10],
-        'amount': amount,
-        'client_name': name,
-        'client_phone': phone,
-        'country': data.get('country', ''),
-        'status': status,
-        'environment': 'production',
-        'user_id': link['user_id'],
-        'leekpay_checkout_id': payment_id,
-        'paid_at': datetime.utcnow().isoformat() if status == 'paid' else None,
-        'created_at': datetime.utcnow().isoformat()
-    })
-    if not tx or (isinstance(tx, dict) and tx.get('_error')):
-        return jsonify({'ok': False, 'error': "Erreur lors de l'enregistrement du paiement"}), 500
-
-    if status == 'paid':
-        sb_patch_multi('payment_links', {'token': token}, {'paid_count': (link.get('paid_count') or 0) + 1})
+    link = None
+    if tx.get('payment_link_token'):
+        links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
+        link = links[0] if links else None
 
     return jsonify({
         'ok': True,
-        'status': status,
-        'message': link.get('thank_you_message') or 'Merci pour votre paiement !',
-        'redirect_url': link.get('redirect_url')
+        'status': tx['status'],
+        'message': (link.get('thank_you_message') if link and link.get('thank_you_message') else None) or 'Merci pour votre paiement !',
+        'redirect_url': link.get('redirect_url') if link else None
     })
 
 @app.route('/pay/<token>/merci')
@@ -1200,34 +1311,27 @@ def pay_thank_you(token):
     message = (link.get('thank_you_message') if link and link.get('thank_you_message') else None) or 'Merci pour votre paiement !'
     return render_template('pay_thanks.html', message=message)
 
-# ── WEBHOOK LEEKPAY ───────────────────────────────
-@app.route('/webhook/leekpay', methods=['POST'])
-def webhook_leekpay():
-    raw_body = request.get_data()
-    signature = request.headers.get('X-LeekPay-Signature', '')
-
-    if not leekpay_verify_signature(raw_body, signature):
+# ── WEBHOOK SOLEASPAY ─────────────────────────────
+@app.route('/webhook/soleaspay', methods=['POST'])
+def webhook_soleaspay():
+    signature = request.headers.get('x-private-key', '')
+    if not soleaspay_verify_callback_signature(signature):
         return jsonify({'ok': False, 'error': 'Signature invalide'}), 401
 
     payload = request.get_json(silent=True) or {}
-    event = payload.get('event')
-    tx_data = payload.get('transaction', {})
-    checkout_id = tx_data.get('id')
-    remote_status = tx_data.get('status')
+    remote_status = payload.get('status')  # SUCCESS | RECEIVED | REFUND
+    tx_data = payload.get('data', {})
+    external_reference = tx_data.get('external_reference')  # notre order_id = notre token
 
-    if not checkout_id or not remote_status:
+    if not external_reference or not remote_status:
         return jsonify({'ok': False, 'error': 'Payload incomplet'}), 400
 
-    status_map = {
-        'completed': 'paid', 'success': 'paid', 'paid': 'paid',
-        'failed': 'failed', 'cancelled': 'failed', 'canceled': 'failed', 'expired': 'failed'
-    }
+    status_map = {'SUCCESS': 'paid', 'REFUND': 'failed'}
 
-    matches = sb_get('transactions', f'leekpay_checkout_id=eq.{checkout_id}')
-    if not matches:
-        # Pas une transaction marchande : peut-être un paiement d'abonnement Pro
-        pending_users = sb_get('users', f'pending_upgrade_checkout_id=eq.{checkout_id}')
-        if pending_users and status_map.get(remote_status) == 'paid':
+    # Abonnement Pro ?
+    pending_users = sb_get('users', f'pending_upgrade_checkout_id=eq.{external_reference}')
+    if pending_users:
+        if status_map.get(remote_status) == 'paid':
             u = pending_users[0]
             sb_patch('users', 'id', u['id'], {
                 'plan': 'pro',
@@ -1235,7 +1339,7 @@ def webhook_leekpay():
                 'pending_upgrade_checkout_id': None
             })
             if u.get('referred_by'):
-                commission = round(8500 * REFERRAL_COMMISSION_RATE, 2)
+                commission = round(get_subscription_price() * REFERRAL_COMMISSION_RATE, 2)
                 sb_post('referral_earnings', {
                     'referrer_id': u['referred_by'],
                     'referred_id': u['id'],
@@ -1246,6 +1350,10 @@ def webhook_leekpay():
                 referrer = get_user_by_id(u['referred_by'])
                 new_balance = (referrer.get('referral_balance') or 0) + commission
                 sb_patch('users', 'id', u['referred_by'], {'referral_balance': new_balance})
+        return jsonify({'ok': True, 'note': 'abonnement traité'}), 200
+
+    matches = sb_get('transactions', f'token=eq.{external_reference}')
+    if not matches:
         return jsonify({'ok': True, 'note': 'transaction inconnue'}), 200
     tx = matches[0]
 
@@ -1262,10 +1370,10 @@ def webhook_leekpay():
             sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
 
     if new_status == 'paid' and tx.get('user_id'):
-        fee_pct = get_platform_fee_percent()
-        net_amount = round(float(tx.get('amount') or 0) * (1 - fee_pct / 100), 2)
+        # Le marchand reçoit le montant plein : notre marge a déjà été prise en
+        # majorant ce que le client final a payé (voir amount_with_markup).
         merchant = get_user_by_id(tx['user_id'])
-        new_balance = (merchant.get('available_balance') or 0) + net_amount
+        new_balance = (merchant.get('available_balance') or 0) + float(tx.get('amount') or 0)
         sb_patch('users', 'id', tx['user_id'], {'available_balance': new_balance})
 
     if new_status in ('paid', 'failed') and tx.get('user_id'):
