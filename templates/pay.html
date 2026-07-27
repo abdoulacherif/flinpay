@@ -57,7 +57,9 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 .back{margin-top:22px;font-size:0.8rem}
 .back a{color:rgba(255,255,255,0.3);text-decoration:none}
 .back a:hover{color:white}
-.op-toggle{display:flex;gap:8px;margin-bottom:14px}
+.op-toggle{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+select#pay-country{width:100%;padding:12px 15px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:white;font-size:0.9rem;font-family:'Inter',sans-serif;outline:none}
+select#pay-country option{background:#1a1a2e;color:white}
 .op-btn{flex:1;padding:10px;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);cursor:pointer;font-size:0.82rem;font-weight:600;text-align:center}
 .op-btn.active{border-color:var(--blue);background:rgba(26,60,255,0.15);color:white}
 .check-note{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:14px;line-height:1.6}
@@ -107,12 +109,17 @@ input::placeholder{color:rgba(255,255,255,0.2)}
       <div id="error-msg" class="error-msg"></div>
 
       <div class="field">
-        <label>Opérateur mobile money</label>
-        <div class="op-toggle">
-          {% for key, info in operators.items() %}
-          <button type="button" class="op-btn{% if loop.first %} active{% endif %}" id="op-{{ key }}" onclick="setOperator('{{ key }}')">{{ info[1] }}</button>
+        <label>Pays du numéro mobile money</label>
+        <select id="pay-country" onchange="onCountryChange()">
+          <option value="">— Sélectionnez —</option>
+          {% for c in available_countries %}
+          <option value="{{ c.code }}">{{ c.flag }} {{ c.name }}</option>
           {% endfor %}
-        </div>
+        </select>
+      </div>
+      <div class="field" id="op-field" style="display:none">
+        <label>Opérateur mobile money</label>
+        <div class="op-toggle" id="op-toggle"></div>
       </div>
       <div class="field">
         <label>Nom complet</label>
@@ -141,8 +148,25 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 
 {% if valid %}
 <script>
-let currentOperator='{{ operators.keys()|list|first if operators else "" }}';
+const COUNTRY_OPERATORS = {{ countries_operators | tojson }};
+let currentOperator='';
 let currentTxToken=null;
+
+function onCountryChange(){
+  const country=document.getElementById('pay-country').value;
+  const ops=COUNTRY_OPERATORS[country] || {};
+  const wrap=document.getElementById('op-toggle');
+  const field=document.getElementById('op-field');
+  const keys=Object.keys(ops);
+  if(!keys.length){
+    field.style.display='none';
+    currentOperator='';
+    return;
+  }
+  wrap.innerHTML=keys.map((k,i)=>`<button type="button" class="op-btn${i===0?' active':''}" id="op-${k}" onclick="setOperator('${k}')">${ops[k][1]}</button>`).join('');
+  currentOperator=keys[0];
+  field.style.display='block';
+}
 
 function setOperator(op){
   currentOperator=op;
@@ -153,11 +177,22 @@ function setOperator(op){
 async function doPay(){
   const name=document.getElementById('pay-name').value.trim();
   const phone=document.getElementById('pay-phone').value.trim();
+  const country=document.getElementById('pay-country').value;
   const amountInput=document.getElementById('pay-amount');
   const err=document.getElementById('error-msg');
   const btn=document.getElementById('btn-pay');
   err.style.display='none';
 
+  if(!country){
+    err.textContent='⚠ Sélectionnez le pays de votre numéro.';
+    err.style.display='block';
+    return;
+  }
+  if(!currentOperator){
+    err.textContent='⚠ Sélectionnez un opérateur.';
+    err.style.display='block';
+    return;
+  }
   if(!phone){
     err.textContent='⚠ Le numéro mobile money est requis.';
     err.style.display='block';
@@ -173,7 +208,7 @@ async function doPay(){
   btn.disabled=true;
 
   try{
-    const payload={name, phone, operator: currentOperator};
+    const payload={name, phone, operator: currentOperator, country};
     if(amountInput) payload.amount=amountInput.value;
     const r=await fetch('/api/pay-link/{{ token }}',{
       method:'POST',
