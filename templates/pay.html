@@ -57,6 +57,12 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 .back{margin-top:22px;font-size:0.8rem}
 .back a{color:rgba(255,255,255,0.3);text-decoration:none}
 .back a:hover{color:white}
+.op-toggle{display:flex;gap:8px;margin-bottom:14px}
+.op-btn{flex:1;padding:10px;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);cursor:pointer;font-size:0.82rem;font-weight:600;text-align:center}
+.op-btn.active{border-color:var(--blue);background:rgba(26,60,255,0.15);color:white}
+.check-note{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:14px;line-height:1.6}
+.btn-verify{background:transparent;border:1.5px solid rgba(255,255,255,0.2);color:white;border-radius:10px;padding:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;margin-top:14px;width:100%}
+.btn-verify:disabled{opacity:0.5;pointer-events:none}
 </style>
 </head>
 <body>
@@ -99,6 +105,13 @@ input::placeholder{color:rgba(255,255,255,0.2)}
       <div id="error-msg" class="error-msg"></div>
 
       <div class="field">
+        <label>Opérateur mobile money</label>
+        <div class="op-toggle">
+          <button type="button" class="op-btn active" id="op-momo" onclick="setOperator('momo')">🟡 MTN MoMo</button>
+          <button type="button" class="op-btn" id="op-om" onclick="setOperator('om')">🟠 Orange Money</button>
+        </div>
+      </div>
+      <div class="field">
         <label>Nom complet</label>
         <input type="text" id="pay-name" placeholder="Kouamé Diallo">
       </div>
@@ -112,9 +125,11 @@ input::placeholder{color:rgba(255,255,255,0.2)}
     </div>
 
     <div id="success-view" style="display:none">
-      <div class="icon-big">✅</div>
-      <div class="state-title">Paiement initié</div>
-      <div class="state-text">Une demande de paiement a été envoyée sur votre mobile money. Confirmez-la pour finaliser la transaction.</div>
+      <div class="icon-big">📲</div>
+      <div class="state-title">Vérifiez votre téléphone</div>
+      <div class="state-text">Une demande de confirmation a été envoyée sur votre mobile money. Composez votre code pour valider le paiement.</div>
+      <button class="btn-verify" id="btn-verify" onclick="checkStatus()">🔄 J'ai confirmé, vérifier</button>
+      <div class="check-note" id="check-note"></div>
     </div>
   {% endif %}
 
@@ -123,6 +138,15 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 
 {% if valid %}
 <script>
+let currentOperator='momo';
+let currentTxToken=null;
+
+function setOperator(op){
+  currentOperator=op;
+  document.getElementById('op-momo').classList.toggle('active', op==='momo');
+  document.getElementById('op-om').classList.toggle('active', op==='om');
+}
+
 async function doPay(){
   const name=document.getElementById('pay-name').value.trim();
   const phone=document.getElementById('pay-phone').value.trim();
@@ -142,11 +166,11 @@ async function doPay(){
     return;
   }
 
-  btn.textContent='Redirection vers le paiement...';
+  btn.textContent='Envoi en cours...';
   btn.disabled=true;
 
   try{
-    const payload={name, phone};
+    const payload={name, phone, operator: currentOperator};
     if(amountInput) payload.amount=amountInput.value;
     const r=await fetch('/api/pay-link/{{ token }}',{
       method:'POST',
@@ -154,8 +178,10 @@ async function doPay(){
       body:JSON.stringify(payload)
     });
     const data=await r.json();
-    if(data.ok && data.payment_url){
-      window.location.href=data.payment_url;
+    if(data.ok){
+      currentTxToken=data.tx_token;
+      document.getElementById('pay-view').style.display='none';
+      document.getElementById('success-view').style.display='block';
     }else{
       err.textContent='⚠ '+(data.error||'Erreur lors du paiement.');
       err.style.display='block';
@@ -167,6 +193,35 @@ async function doPay(){
     err.style.display='block';
     btn.textContent='💳 Payer maintenant';
     btn.disabled=false;
+  }
+}
+
+async function checkStatus(){
+  if(!currentTxToken) return;
+  const btn=document.getElementById('btn-verify');
+  const note=document.getElementById('check-note');
+  btn.disabled=true; btn.textContent='Vérification...';
+  try{
+    const r=await fetch('/api/pay-status/'+currentTxToken);
+    const data=await r.json();
+    if(data.ok && data.status==='paid'){
+      document.getElementById('success-view').innerHTML=`
+        <div class="icon-big">✅</div>
+        <div class="state-title">Paiement confirmé</div>
+        <div class="state-text">${data.message||'Merci pour votre paiement !'}</div>`;
+      if(data.redirect_url){
+        setTimeout(()=>{ window.location.href=data.redirect_url; }, 2000);
+      }
+    }else if(data.ok && data.status==='failed'){
+      note.textContent='❌ Le paiement a échoué ou a été annulé.';
+      btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier";
+    }else{
+      note.textContent='⏳ Toujours en attente. Réessayez dans quelques secondes.';
+      btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier";
+    }
+  }catch(e){
+    note.textContent='⚠ Erreur de connexion.';
+    btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier";
   }
 }
 </script>
