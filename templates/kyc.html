@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -78,15 +77,28 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
 .form-input,select.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
 .form-input:focus{border-color:var(--blue)}
+
+.section-divider{display:flex;align-items:center;gap:10px;margin:24px 0 14px}
+.section-divider .line{flex:1;height:1px;background:var(--border-soft)}
+.section-divider .label{font-size:.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+
+.doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.doc-grid{grid-template-columns:1fr}}
+
 .file-drop{
-  border:2px dashed var(--border);border-radius:var(--r-md);padding:26px 20px;text-align:center;
-  cursor:pointer;transition:all .15s;background:var(--bg)
+  border:2px dashed var(--border);border-radius:var(--r-md);padding:22px 16px;text-align:center;
+  cursor:pointer;transition:all .15s;background:var(--bg);position:relative;overflow:hidden
 }
 .file-drop:hover{border-color:var(--blue);background:var(--blue-tint)}
 .file-drop input{display:none}
-.file-drop .icon{width:28px;height:28px;color:var(--muted);margin:0 auto 8px}
-.file-drop-text{font-size:.85rem;color:var(--muted)}
-.file-drop-name{font-size:.85rem;color:var(--blue);font-weight:600;margin-top:6px;font-family:'JetBrains Mono',monospace}
+.file-drop .icon{width:26px;height:26px;color:var(--muted);margin:0 auto 8px}
+.file-drop-text{font-size:.8rem;color:var(--muted);line-height:1.4}
+.file-drop-name{font-size:.78rem;color:var(--blue);font-weight:600;margin-top:6px;font-family:'JetBrains Mono',monospace;word-break:break-all}
+.file-drop-thumb{max-width:100%;max-height:100px;border-radius:8px;margin-bottom:8px;display:none}
+.file-drop.has-file{border-style:solid;border-color:var(--green);background:var(--green-tint)}
+
+.selfie-tips{background:var(--blue-tint);border-radius:var(--r-sm);padding:12px 14px;font-size:.79rem;color:var(--blue-deep);line-height:1.55;margin-bottom:14px}
+.selfie-tips b{display:block;margin-bottom:4px;font-family:'Space Grotesk',sans-serif;font-size:.8rem}
 
 .btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.87rem;padding:12px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;width:100%}
 .btn-primary{background:var(--blue);color:white}
@@ -125,6 +137,9 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
     <symbol id="ic-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
     <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+    <symbol id="ic-id-front" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><line x1="13" y1="10" x2="18" y2="10"/><line x1="13" y1="14" x2="18" y2="14"/></symbol>
+    <symbol id="ic-id-back" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="13" x2="14" y2="13"/><line x1="5" y1="16" x2="10" y2="16"/></symbol>
+    <symbol id="ic-selfie" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 18c0-2.5 2.2-4 5-4s5 1.5 5 4"/></symbol>
   </defs>
 </svg>
 
@@ -188,6 +203,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <div class="card-head"><div class="card-title">Soumettre vos documents</div></div>
       <div class="card-body">
         <div class="error-msg" id="error-msg"></div>
+
         <div class="form-group">
           <label class="form-label">Nom complet (identique à la pièce)</label>
           <input class="form-input" id="kyc-name" type="text" placeholder="Kouamé Diallo">
@@ -204,15 +220,49 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
           <label class="form-label">Numéro de la pièce</label>
           <input class="form-input" id="kyc-number" type="text" placeholder="CI0012345678">
         </div>
+
+        <div class="section-divider"><span class="label">Pièce d'identité</span><span class="line"></span></div>
+
+        <div class="doc-grid">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Recto</label>
+            <label class="file-drop" id="drop-front">
+              <img class="file-drop-thumb" id="thumb-front">
+              <span class="icon"><svg><use href="#ic-id-front"/></svg></span>
+              <div class="file-drop-text">Face avant de la pièce</div>
+              <div class="file-drop-name" id="name-front"></div>
+              <input type="file" id="kyc-file-front" accept=".jpg,.jpeg,.png,.pdf" onchange="onFileChange('front')">
+            </label>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Verso</label>
+            <label class="file-drop" id="drop-back">
+              <img class="file-drop-thumb" id="thumb-back">
+              <span class="icon"><svg><use href="#ic-id-back"/></svg></span>
+              <div class="file-drop-text">Face arrière de la pièce</div>
+              <div class="file-drop-name" id="name-back"></div>
+              <input type="file" id="kyc-file-back" accept=".jpg,.jpeg,.png,.pdf" onchange="onFileChange('back')">
+            </label>
+          </div>
+        </div>
+
+        <div class="section-divider"><span class="label">Photo du visage</span><span class="line"></span></div>
+
+        <div class="selfie-tips">
+          <b>📸 Conseils pour la photo</b>
+          Visage bien visible et centré, sans lunettes de soleil ni couvre-chef, dans un endroit bien éclairé. Vous pouvez prendre un selfie ou envoyer une photo récente.
+        </div>
+
         <div class="form-group">
-          <label class="form-label">Photo ou scan de la pièce</label>
-          <label class="file-drop" id="drop-zone">
-            <span class="icon"><svg><use href="#ic-upload"/></svg></span>
-            <div class="file-drop-text">Cliquez pour choisir un fichier<br>(JPG, PNG ou PDF — 8 Mo max)</div>
-            <div class="file-drop-name" id="file-name"></div>
-            <input type="file" id="kyc-file" accept=".jpg,.jpeg,.png,.pdf" onchange="onFileChange()">
+          <label class="file-drop" id="drop-selfie">
+            <img class="file-drop-thumb" id="thumb-selfie">
+            <span class="icon"><svg><use href="#ic-selfie"/></svg></span>
+            <div class="file-drop-text">Cliquez pour prendre ou choisir une photo de votre visage<br>(JPG ou PNG — 8 Mo max)</div>
+            <div class="file-drop-name" id="name-selfie"></div>
+            <input type="file" id="kyc-file-selfie" accept=".jpg,.jpeg,.png" capture="user" onchange="onFileChange('selfie')">
           </label>
         </div>
+
         <button class="btn btn-primary" id="btn-submit" onclick="submitKyc()">Envoyer pour vérification</button>
       </div>
     </div>
@@ -225,9 +275,27 @@ function openSidebar(){document.getElementById('sidebar').classList.add('open');
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 
-function onFileChange(){
-  const f=document.getElementById('kyc-file').files[0];
-  document.getElementById('file-name').textContent=f?f.name:'';
+function onFileChange(kind){
+  const input=document.getElementById('kyc-file-'+kind);
+  const f=input.files[0];
+  const nameEl=document.getElementById('name-'+kind);
+  const thumbEl=document.getElementById('thumb-'+kind);
+  const dropEl=document.getElementById('drop-'+kind);
+  if(f){
+    nameEl.textContent=f.name;
+    dropEl.classList.add('has-file');
+    if(f.type.startsWith('image/')){
+      const reader=new FileReader();
+      reader.onload=e=>{ thumbEl.src=e.target.result; thumbEl.style.display='block'; };
+      reader.readAsDataURL(f);
+    }else{
+      thumbEl.style.display='none';
+    }
+  }else{
+    nameEl.textContent='';
+    thumbEl.style.display='none';
+    dropEl.classList.remove('has-file');
+  }
 }
 
 async function loadStatus(){
@@ -249,10 +317,10 @@ async function loadStatus(){
       area.innerHTML=`<div class="status-banner verified"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span><div><strong>Identité vérifiée</strong><span>Vous pouvez générer des clés API et accéder à toutes les fonctionnalités.</span></div></div>`;
       formCard.style.display='none';
     }else if(status==='pending'){
-      area.innerHTML=`<div class="status-banner pending"><span class="icon"><svg><use href="#ic-clock"/></svg></span><div><strong>Vérification en cours</strong><span>Votre document a été envoyé et est en cours de revue (24-48h).</span></div></div>`;
+      area.innerHTML=`<div class="status-banner pending"><span class="icon"><svg><use href="#ic-clock"/></svg></span><div><strong>Vérification en cours</strong><span>Vos documents ont été envoyés et sont en cours de revue (24-48h).</span></div></div>`;
       formCard.style.display='none';
     }else if(status==='rejected'){
-      area.innerHTML=`<div class="status-banner rejected"><span class="icon"><svg><use href="#ic-alert"/></svg></span><div><strong>Document refusé</strong><span>${user.kyc_rejection_reason||'Document invalide.'} Vous pouvez soumettre un nouveau document ci-dessous.</span></div></div>`;
+      area.innerHTML=`<div class="status-banner rejected"><span class="icon"><svg><use href="#ic-alert"/></svg></span><div><strong>Document refusé</strong><span>${user.kyc_rejection_reason||'Document invalide.'} Vous pouvez soumettre de nouveaux documents ci-dessous.</span></div></div>`;
       formCard.style.display='block';
     }else{
       area.innerHTML='';
@@ -265,12 +333,14 @@ async function submitKyc(){
   const name=document.getElementById('kyc-name').value.trim();
   const type=document.getElementById('kyc-type').value;
   const number=document.getElementById('kyc-number').value.trim();
-  const file=document.getElementById('kyc-file').files[0];
+  const fileFront=document.getElementById('kyc-file-front').files[0];
+  const fileBack=document.getElementById('kyc-file-back').files[0];
+  const fileSelfie=document.getElementById('kyc-file-selfie').files[0];
   const err=document.getElementById('error-msg');
   err.style.display='none';
 
-  if(!name||!number||!file){
-    err.textContent='Remplissez tous les champs et choisissez un fichier.';
+  if(!name||!number||!fileFront||!fileBack||!fileSelfie){
+    err.textContent='Remplissez tous les champs et fournissez le recto, le verso et une photo de votre visage.';
     err.style.display='block';
     return;
   }
@@ -282,13 +352,15 @@ async function submitKyc(){
   fd.append('full_name', name);
   fd.append('id_type', type);
   fd.append('id_number', number);
-  fd.append('document', file);
+  fd.append('document_front', fileFront);
+  fd.append('document_back', fileBack);
+  fd.append('selfie', fileSelfie);
 
   try{
     const r=await fetch('/api/kyc/submit',{method:'POST', body:fd});
     const data=await r.json();
     if(data.ok){
-      toast('Document envoyé pour vérification !');
+      toast('Documents envoyés pour vérification !');
       loadStatus();
     }else{
       err.textContent=data.error||'Erreur lors de l\'envoi.';
