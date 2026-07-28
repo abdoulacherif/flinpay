@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -19,12 +18,18 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:800;margi
 .email{font-size:.8rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
 .meta{font-size:.8rem;color:var(--muted);margin-top:8px;line-height:1.7}
 .meta b{color:var(--text)}
-.actions{display:flex;gap:8px;flex-shrink:0}
+.actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.doc-buttons{display:flex;gap:8px;flex-wrap:wrap}
 .btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.82rem;padding:9px 16px;border-radius:9px;border:none;cursor:pointer}
 .btn-doc{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
 .btn-approve{background:var(--green);color:white}
 .btn-reject{background:var(--danger);color:white}
 .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.doc-thumbs{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.doc-thumb{display:flex;flex-direction:column;align-items:center;gap:6px}
+.doc-thumb img{width:110px;height:80px;object-fit:cover;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;background:var(--bg)}
+.doc-thumb span{font-size:.68rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.doc-missing{width:110px;height:80px;border-radius:8px;border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);text-align:center;padding:6px}
 </style>
 </head>
 <body>
@@ -46,9 +51,16 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:800;margi
           <b>Pays :</b> {{ u.country }} &nbsp; <b>Entreprise :</b> {{ u.company or '—' }}<br>
           <b>Soumis le :</b> {{ u.kyc_submitted_at }}
         </div>
+        <div class="doc-thumbs" id="thumbs-{{ u.id }}">
+          <div class="doc-missing">Chargement…</div>
+        </div>
       </div>
       <div class="actions">
-        <button class="btn btn-doc" onclick="viewDoc('{{ u.id }}')">📄 Voir le document</button>
+        <div class="doc-buttons">
+          <button class="btn btn-doc" onclick="viewDoc('{{ u.id }}','front')">📄 Recto</button>
+          <button class="btn btn-doc" onclick="viewDoc('{{ u.id }}','back')">📄 Verso</button>
+          <button class="btn btn-doc" onclick="viewDoc('{{ u.id }}','selfie')">🤳 Selfie</button>
+        </div>
         <button class="btn btn-approve" onclick="reviewKyc('{{ u.id }}','approve')">✅ Approuver</button>
         <button class="btn btn-reject" onclick="reviewKyc('{{ u.id }}','reject')">❌ Rejeter</button>
       </div>
@@ -58,14 +70,46 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:800;margi
 </div>
 
 <script>
-async function viewDoc(userId){
+const docUrlsCache={};
+const DOC_LABELS={front:'Recto',back:'Verso',selfie:'Selfie'};
+
+async function fetchDocUrls(userId){
+  if(docUrlsCache[userId]) return docUrlsCache[userId];
+  const r=await fetch('/api/admin/kyc/'+userId+'/document');
+  const data=await r.json();
+  if(!data.ok) throw new Error(data.error||'Erreur');
+  docUrlsCache[userId]=data.urls||{};
+  return docUrlsCache[userId];
+}
+
+async function loadThumbs(userId){
+  const box=document.getElementById('thumbs-'+userId);
   try{
-    const r=await fetch('/api/admin/kyc/'+userId+'/document');
-    const data=await r.json();
-    if(data.ok){ window.open(data.url,'_blank'); }
-    else{ alert(data.error||'Erreur'); }
+    const urls=await fetchDocUrls(userId);
+    box.innerHTML=['front','back','selfie'].map(key=>{
+      if(urls[key]){
+        return `<div class="doc-thumb">
+          <img src="${urls[key]}" onclick="window.open('${urls[key]}','_blank')">
+          <span>${DOC_LABELS[key]}</span>
+        </div>`;
+      }
+      return `<div class="doc-thumb">
+        <div class="doc-missing">${DOC_LABELS[key]} manquant</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    box.innerHTML='<div class="doc-missing">Erreur de chargement</div>';
+  }
+}
+
+async function viewDoc(userId, key){
+  try{
+    const urls=await fetchDocUrls(userId);
+    if(urls[key]){ window.open(urls[key],'_blank'); }
+    else{ alert(DOC_LABELS[key]+' introuvable pour cet utilisateur'); }
   }catch(e){ alert('Erreur de connexion'); }
 }
+
 async function reviewKyc(userId, action){
   let reason=null;
   if(action==='reject'){
@@ -88,6 +132,10 @@ async function reviewKyc(userId, action){
     }
   }catch(e){ alert('Erreur de connexion'); }
 }
+
+document.querySelectorAll('.card[data-user-id]').forEach(card=>{
+  loadThumbs(card.dataset.userId);
+});
 </script>
 </body>
 </html>
