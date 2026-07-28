@@ -585,36 +585,55 @@ def api_kyc_submit():
     full_name = (request.form.get('full_name') or '').strip()
     id_type = (request.form.get('id_type') or '').strip()
     id_number = (request.form.get('id_number') or '').strip()
-    file = request.files.get('document')
+    file_front = request.files.get('document_front')
+    file_back = request.files.get('document_back')
+    file_selfie = request.files.get('selfie')
 
-    if not full_name or not id_type or not id_number or not file or not file.filename:
-        return jsonify({'ok': False, 'error': 'Tous les champs et le document sont requis'}), 400
+    if not full_name or not id_type or not id_number \
+            or not file_front or not file_front.filename \
+            or not file_back or not file_back.filename \
+            or not file_selfie or not file_selfie.filename:
+        return jsonify({'ok': False, 'error': 'Tous les champs, le recto, le verso et la photo sont requis'}), 400
 
-    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-    if ext not in ('jpg', 'jpeg', 'png', 'pdf'):
-        return jsonify({'ok': False, 'error': 'Format non supporté (jpg, png ou pdf uniquement)'}), 400
+    def _upload(file, allowed_ext, max_bytes, subfolder):
+        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+        if ext not in allowed_ext:
+            return None, f'Format non supporté pour {subfolder} ({", ".join(allowed_ext)} uniquement)'
+        file_bytes = file.read()
+        if len(file_bytes) > max_bytes:
+            return None, f'Fichier {subfolder} trop volumineux ({max_bytes // (1024*1024)} Mo max)'
+        path = f"{request.user_id}/{subfolder}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.{ext}"
+        uploaded = sb_storage_upload('kyc-documents', path, file_bytes, file.mimetype or 'application/octet-stream')
+        if not uploaded['ok']:
+            return None, f"Erreur upload {subfolder}: {uploaded['detail']}"
+        return path, None
 
-    file_bytes = file.read()
-    if len(file_bytes) > 8 * 1024 * 1024:
-        return jsonify({'ok': False, 'error': 'Fichier trop volumineux (8 Mo max)'}), 400
+    front_path, err = _upload(file_front, ('jpg', 'jpeg', 'png', 'pdf'), 8 * 1024 * 1024, 'recto')
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
 
-    path = f"{request.user_id}/{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.{ext}"
-    uploaded = sb_storage_upload('kyc-documents', path, file_bytes, file.mimetype or 'application/octet-stream')
-    if not uploaded['ok']:
-        return jsonify({'ok': False, 'error': f"Erreur upload: {uploaded['detail']}"}), 500
+    back_path, err = _upload(file_back, ('jpg', 'jpeg', 'png', 'pdf'), 8 * 1024 * 1024, 'verso')
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
+
+    selfie_path, err = _upload(file_selfie, ('jpg', 'jpeg', 'png'), 8 * 1024 * 1024, 'selfie')
+    if err:
+        return jsonify({'ok': False, 'error': err}), 400
 
     updated = sb_patch('users', 'id', request.user_id, {
         'kyc_status': 'pending',
         'kyc_full_name': full_name,
         'kyc_id_type': id_type,
         'kyc_id_number': id_number,
-        'kyc_document_path': path,
+        'kyc_document_front_path': front_path,
+        'kyc_document_back_path': back_path,
+        'kyc_selfie_path': selfie_path,
         'kyc_submitted_at': datetime.utcnow().isoformat(),
         'kyc_rejection_reason': None
     })
     if not updated:
         return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour du profil'}), 500
-    return jsonify({'ok': True, 'message': 'Document envoyé. Vérification sous 24-48h.'})
+    return jsonify({'ok': True, 'message': 'Documents envoyés. Vérification sous 24-48h.'})
 
 # ── ADMIN : REVUE KYC ─────────────────────────────
 @app.route('/admin/kyc')
@@ -627,12 +646,22 @@ def admin_kyc_page():
 @admin_required
 def api_admin_kyc_document(user_id):
     users = sb_get('users', f'id=eq.{user_id}')
-    if not users or not users[0].get('kyc_document_path'):
-        return jsonify({'ok': False, 'error': 'Document introuvable'}), 404
-    url = sb_storage_sign('kyc-documents', users[0]['kyc_document_path'])
-    if not url:
-        return jsonify({'ok': False, 'error': 'Erreur de génération du lien'}), 500
-    return jsonify({'ok': True, 'url': url})
+    if not users:
+        return jsonify({'ok': False, 'error': 'Utilisateur introuvable'}), 404
+    u = users[0]
+    urls = {}
+    for key, path_field in [
+        ('front', 'kyc_document_front_path'),
+        ('back', 'kyc_document_back_path'),
+        ('selfie', 'kyc_selfie_path'),
+    ]:
+        if u.get(path_field):
+            signed = sb_storage_sign('kyc-documents', u[path_field])
+            if signed:
+                urls[key] = signed
+    if not urls:
+        return jsonify({'ok': False, 'error': 'Aucun document trouvé'}), 404
+    return jsonify({'ok': True, 'urls': urls})
 
 @app.route('/api/admin/kyc/<user_id>/approve', methods=['POST'])
 @admin_required
@@ -844,10 +873,51 @@ def api_create_payment_link():
 def api_update_payment_link(token):
     data = request.get_json() or {}
     allowed = {}
+
     if 'active' in data:
         allowed['active'] = bool(data['active'])
+    if 'name' in data and isinstance(data['name'], str) and data['name'].strip():
+        allowed['name'] = data['name'].strip()
+    if 'description' in data:
+        allowed['description'] = (data.get('description') or '').strip()
+    if 'redirect_url' in data:
+        allowed['redirect_url'] = (data.get('redirect_url') or '').strip() or None
+    if 'thank_you_message' in data:
+        allowed['thank_you_message'] = (data.get('thank_you_message') or '').strip() or None
+    if 'expires_at' in data:
+        allowed['expires_at'] = data.get('expires_at') or None
+    if 'usage_limit' in data:
+        raw_limit = data.get('usage_limit')
+        allowed['usage_limit'] = int(raw_limit) if raw_limit else None
+    if 'amount_type' in data and data['amount_type'] in ('fixed', 'flexible'):
+        allowed['amount_type'] = data['amount_type']
+        if data['amount_type'] == 'fixed':
+            if 'amount' in data:
+                try:
+                    amt = float(data.get('amount'))
+                except (TypeError, ValueError):
+                    return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+                if amt < SOLEASPAY_MIN_AMOUNT:
+                    return jsonify({'ok': False, 'error': f'Montant minimum : {SOLEASPAY_MIN_AMOUNT} XOF'}), 400
+                allowed['amount'] = amt
+            allowed['min_amount'] = None
+        else:
+            raw_min = data.get('min_amount')
+            if raw_min:
+                try:
+                    min_amt = float(raw_min)
+                except (TypeError, ValueError):
+                    return jsonify({'ok': False, 'error': 'Montant minimum invalide'}), 400
+                if min_amt < SOLEASPAY_MIN_AMOUNT:
+                    return jsonify({'ok': False, 'error': f'Montant minimum : {SOLEASPAY_MIN_AMOUNT} XOF'}), 400
+                allowed['min_amount'] = min_amt
+            else:
+                allowed['min_amount'] = None
+            allowed['amount'] = None
+
     if not allowed:
         return jsonify({'ok': False, 'error': 'Aucun champ à mettre à jour'}), 400
+
     ok = sb_patch_multi('payment_links', {'token': token, 'user_id': request.user_id}, allowed)
     if not ok:
         return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour'}), 500
