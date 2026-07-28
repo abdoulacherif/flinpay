@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -79,6 +78,10 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
 .btn-outline:hover{background:var(--blue-tint)}
 .btn-sm{padding:6px 12px;font-size:.76rem}
+.btn-toggle-on{background:transparent;color:var(--green);border:1.5px solid var(--green)}
+.btn-toggle-on:hover{background:var(--green-tint)}
+.btn-toggle-off{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-toggle-off:hover{background:var(--border-soft)}
 
 .form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%}
 .form-input:focus{border-color:var(--blue)}
@@ -88,6 +91,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 .link-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px;transition:all .2s}
 .link-card:hover{box-shadow:var(--shadow-md);border-color:var(--blue)}
+.link-card.is-inactive{opacity:.62}
 .link-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .link-name{font-weight:700;font-size:.95rem;margin-bottom:4px}
 .link-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.2rem;color:var(--blue)}
@@ -95,7 +99,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .link-stats{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
 .link-stat{font-size:.76rem;color:var(--muted);display:flex;align-items:center;gap:5px}
 .link-stat strong{color:var(--text);font-weight:700}
-.link-actions{display:flex;gap:8px;flex-shrink:0}
+.link-actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
 .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
 .b-active{background:var(--green-tint);color:#0A7A50}
 .b-inactive{background:var(--border-soft);color:var(--muted)}
@@ -119,6 +123,16 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .img-drop{border:2px dashed var(--border);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;background:var(--bg);font-size:.82rem;color:var(--muted)}
 .img-drop input{display:none}
 .img-preview{max-width:100%;max-height:120px;border-radius:10px;margin-top:8px;display:none}
+
+.status-toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:16px}
+.status-toggle-label{font-size:.83rem;font-weight:600}
+.status-toggle-sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+.switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background-color:var(--border);transition:.2s;border-radius:24px}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:.2s;border-radius:50%}
+input:checked + .slider{background-color:var(--green)}
+input:checked + .slider:before{transform:translateX(18px)}
 
 .empty{text-align:center;padding:42px 20px;color:var(--muted)}
 .empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
@@ -161,6 +175,8 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
     <symbol id="ic-check-count" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
     <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></symbol>
+    <symbol id="ic-power" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></symbol>
   </defs>
 </svg>
 
@@ -309,6 +325,83 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   </div>
 </div>
 
+<!-- MODAL ÉDITION -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <h3><span class="icon"><svg><use href="#ic-edit"/></svg></span> Modifier le lien</h3>
+
+    <div class="status-toggle-row">
+      <div>
+        <div class="status-toggle-label">Lien actif</div>
+        <div class="status-toggle-sub">Désactivez pour bloquer temporairement les paiements</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="ed-active">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Nom du produit / service *</label>
+        <input class="form-input" id="ed-name" type="text" oninput="updateEditPreview()">
+      </div>
+
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Type de montant</label>
+        <div class="amount-type-toggle">
+          <button type="button" class="amount-type-btn active" id="ed-btn-type-fixed" onclick="setEditAmountType('fixed')">💰 Montant fixe</button>
+          <button type="button" class="amount-type-btn" id="ed-btn-type-flexible" onclick="setEditAmountType('flexible')">✏️ Montant libre</button>
+        </div>
+      </div>
+
+      <div class="form-group" id="ed-fixed-amount-group">
+        <label class="form-label">Montant (XOF) *</label>
+        <input class="form-input" id="ed-amount" type="number" oninput="updateEditPreview()">
+      </div>
+      <div class="form-group" id="ed-min-amount-group" style="display:none">
+        <label class="form-label">Montant minimum (optionnel)</label>
+        <input class="form-input" id="ed-min-amount" type="number">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Limite d'utilisation</label>
+        <input class="form-input" id="ed-limit" type="number" placeholder="Illimité">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date d'expiration</label>
+        <input class="form-input" id="ed-expire" type="date">
+      </div>
+
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Description</label>
+        <input class="form-input" id="ed-desc" type="text" oninput="updateEditPreview()">
+      </div>
+
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">URL de redirection après paiement (optionnel)</label>
+        <input class="form-input" id="ed-redirect" type="url" placeholder="https://monsite.com/merci">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Message de remerciement (optionnel)</label>
+        <input class="form-input" id="ed-thankyou" type="text" placeholder="Merci pour votre achat !">
+      </div>
+    </div>
+
+    <div class="preview-box">
+      <div class="preview-logo">Flin<span>pay</span></div>
+      <div class="preview-amount" id="ed-prev-amount">0 XOF</div>
+      <div class="preview-desc" id="ed-prev-desc">Description du produit</div>
+      <button class="preview-btn">💳 Payer maintenant</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeEditModal()">Annuler</button>
+      <button class="btn btn-primary" id="btn-save-edit" onclick="saveEdit()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <script>
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
@@ -317,6 +410,7 @@ function toast(msg,ok=true){const t=document.getElementById('toast');t.textConte
 function openModal(){document.getElementById('modal').classList.add('show')}
 function closeModal(){document.getElementById('modal').classList.remove('show')}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal()})
+document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-modal'))closeEditModal()})
 
 let currentAmountType='fixed';
 function setAmountType(type){
@@ -376,6 +470,7 @@ async function loadLinks(){
       amountType:l.amount_type||'fixed', minAmount:l.min_amount,
       desc:l.description||'', limit:l.usage_limit||'∞', expire:l.expires_at||null,
       imageUrl:l.image_url||null,
+      redirect:l.redirect_url||'', thankyou:l.thank_you_message||'',
       url:`https://www.flinpay.cfd/pay/${l.token}`,
       active:l.active!==false, views:l.views||0, paid:l.paid_count||0
     }));
@@ -436,6 +531,110 @@ async function createLink(){
   btn.disabled=false; btn.textContent='Créer le lien';
 }
 
+// ── ÉDITION D'UN LIEN ──────────────────────────────
+let editingToken=null;
+let editAmountType='fixed';
+
+function setEditAmountType(type){
+  editAmountType=type;
+  document.getElementById('ed-btn-type-fixed').classList.toggle('active', type==='fixed');
+  document.getElementById('ed-btn-type-flexible').classList.toggle('active', type==='flexible');
+  document.getElementById('ed-fixed-amount-group').style.display=type==='fixed'?'block':'none';
+  document.getElementById('ed-min-amount-group').style.display=type==='flexible'?'block':'none';
+  updateEditPreview();
+}
+
+function updateEditPreview(){
+  const amount=document.getElementById('ed-amount').value;
+  const desc=document.getElementById('ed-desc').value||document.getElementById('ed-name').value||'Description du produit';
+  document.getElementById('ed-prev-amount').textContent = editAmountType==='flexible'
+    ? 'Montant libre'
+    : (parseInt(amount)||0).toLocaleString()+' XOF';
+  document.getElementById('ed-prev-desc').textContent=desc;
+}
+
+function openEditModal(token){
+  const l=links.find(x=>x.token===token);
+  if(!l) return;
+  editingToken=token;
+  document.getElementById('ed-name').value=l.name||'';
+  document.getElementById('ed-amount').value=l.amount||'';
+  document.getElementById('ed-min-amount').value=l.minAmount||'';
+  document.getElementById('ed-desc').value=l.desc||'';
+  document.getElementById('ed-limit').value=(l.limit==='∞'?'':l.limit)||'';
+  document.getElementById('ed-expire').value=l.expire||'';
+  document.getElementById('ed-redirect').value=l.redirect||'';
+  document.getElementById('ed-thankyou').value=l.thankyou||'';
+  document.getElementById('ed-active').checked=l.active;
+  setEditAmountType(l.amountType||'fixed');
+  updateEditPreview();
+  document.getElementById('edit-modal').classList.add('show');
+}
+function closeEditModal(){ document.getElementById('edit-modal').classList.remove('show'); editingToken=null; }
+
+async function saveEdit(){
+  if(!editingToken) return;
+  const name=document.getElementById('ed-name').value.trim();
+  const amount=document.getElementById('ed-amount').value;
+  if(!name){toast('Le nom est requis',false);return}
+  if(editAmountType==='fixed' && !amount){toast('Le montant est requis',false);return}
+
+  const btn=document.getElementById('btn-save-edit');
+  btn.disabled=true; btn.textContent='Enregistrement...';
+
+  const payload={
+    name,
+    amount_type: editAmountType,
+    description: document.getElementById('ed-desc').value.trim(),
+    usage_limit: document.getElementById('ed-limit').value || null,
+    expires_at: document.getElementById('ed-expire').value || null,
+    redirect_url: document.getElementById('ed-redirect').value.trim(),
+    thank_you_message: document.getElementById('ed-thankyou').value.trim(),
+    active: document.getElementById('ed-active').checked
+  };
+  if(editAmountType==='fixed') payload.amount=amount;
+  else payload.min_amount=document.getElementById('ed-min-amount').value || null;
+
+  try{
+    const r=await fetch('/api/payment-links/'+editingToken,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const data=await r.json();
+    if(data.ok){
+      closeEditModal();
+      toast('Lien mis à jour');
+      loadLinks();
+    }else{
+      toast(data.error||'Erreur lors de la mise à jour',false);
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+  btn.disabled=false; btn.textContent='Enregistrer';
+}
+
+// ── ACTIVER / DÉSACTIVER RAPIDE ────────────────────
+async function toggleActive(token, current){
+  try{
+    const r=await fetch('/api/payment-links/'+token,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ active: !current })
+    });
+    const data=await r.json();
+    if(data.ok){
+      toast(!current ? 'Lien activé' : 'Lien désactivé');
+      loadLinks();
+    }else{
+      toast(data.error||'Erreur lors du changement de statut',false);
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+}
+
 function renderLinks(){
   const el=document.getElementById('links-list');
   document.getElementById('links-count').textContent=links.length?`(${links.length})`:'';
@@ -444,7 +643,7 @@ function renderLinks(){
     return;
   }
   el.innerHTML=links.map((l,i)=>`
-    <div class="link-card">
+    <div class="link-card ${l.active?'':'is-inactive'}">
       <div class="link-top">
         ${l.imageUrl?`<img src="${l.imageUrl}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;flex-shrink:0">`:''}
         <div style="flex:1;min-width:0">
@@ -464,9 +663,11 @@ function renderLinks(){
           </div>
         </div>
         <div class="link-actions">
-          <button class="btn btn-outline btn-sm" onclick="copyLink('${l.url}')"><span class="icon"><svg><use href="#ic-copy"/></svg></span></button>
-          <button class="btn btn-outline btn-sm" onclick="shareLink('${l.url}',this)" data-name="${l.name.replace(/"/g,'&quot;')}"><span class="icon"><svg><use href="#ic-share"/></svg></span></button>
-          <button class="btn btn-danger btn-sm" onclick="deleteLink('${l.token}')"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
+          <button class="btn ${l.active?'btn-toggle-on':'btn-toggle-off'} btn-sm" onclick="toggleActive('${l.token}', ${l.active})" title="${l.active?'Désactiver':'Activer'}"><span class="icon"><svg><use href="#ic-power"/></svg></span></button>
+          <button class="btn btn-outline btn-sm" onclick="openEditModal('${l.token}')" title="Modifier"><span class="icon"><svg><use href="#ic-edit"/></svg></span></button>
+          <button class="btn btn-outline btn-sm" onclick="copyLink('${l.url}')" title="Copier"><span class="icon"><svg><use href="#ic-copy"/></svg></span></button>
+          <button class="btn btn-outline btn-sm" onclick="shareLink('${l.url}',this)" data-name="${l.name.replace(/"/g,'&quot;')}" title="Partager"><span class="icon"><svg><use href="#ic-share"/></svg></span></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLink('${l.token}')" title="Supprimer"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
         </div>
       </div>
     </div>
