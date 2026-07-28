@@ -1,56 +1,59 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0B0D17;--ink-soft:#141625;
   --bg:#F5F6FB;--surface:#FFFFFF;
   --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --blue:#1A3CFF;--blue-deep:#0A1FCC;--blue-tint:#EEF1FF;
   --gold:#FFB400;--gold-tint:#FFF6E0;
   --green:#00C48C;--green-tint:#E3FBF3;
   --danger:#FF4D4D;--danger-tint:#FFEAEA;
   --text:#12131C;--muted:#767A94;--muted-soft:#A6AABF;
-  --sidebar:264px;
-  --r-lg:16px;--r-md:12px;--r-sm:9px;
+  --r-lg:18px;--r-md:14px;--r-sm:9px;
   --shadow-sm:0 1px 2px rgba(15,17,32,.04);
   --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:#20222E;color:var(--text);-webkit-font-smoothing:antialiased}
 h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
-/* ── SIDEBAR ── */
-.sidebar{
-  position:fixed;top:0;left:0;bottom:0;
-  width:var(--sidebar);background:var(--ink);
-  display:flex;flex-direction:column;z-index:200;
+/* ── APP SHELL (mobile-first, centered on larger screens) ── */
+.app-shell{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;box-shadow:0 0 60px rgba(0,0,0,.35);overflow-x:hidden}
+
+/* ── OVERLAY / DRAWER ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:250;backdrop-filter:blur(2px)}
+.overlay.show{display:block}
+.drawer{
+  position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);
+  z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);
   transition:transform .3s cubic-bezier(.4,0,.2,1)
 }
-.sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
-.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
-.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
+.drawer.open{transform:translateX(0)}
+.drawer-top{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative}
+.drawer-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;text-decoration:none;letter-spacing:-.01em}
 .logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
-.close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
+.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
+.close-drawer{background:none;border:none;color:rgba(255,255,255,0.45);font-size:1.2rem;cursor:pointer;padding:4px}
 
-.corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
-.corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
+.corridor{margin:14px 20px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
+.corridor-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
 .corridor-label b{color:#8EA6FF;font-weight:700}
-.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.9rem;line-height:1}
 
-.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
-.nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
+.drawer-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-group{font-size:.6rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:14px 20px 6px}
 .nav-link{
-  display:flex;align-items:center;gap:12px;padding:9px 22px;color:rgba(255,255,255,0.5);
-  font-size:.855rem;font-weight:500;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:12px;padding:9px 20px;color:rgba(255,255,255,0.5);
+  font-size:.84rem;font-weight:500;cursor:pointer;transition:all .15s;
   border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left
 }
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
@@ -59,129 +62,125 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
 .nav-link.active .icon{color:#8EA6FF}
 
-.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
+.drawer-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
 .user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
-.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
-.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
+.user-email{font-size:.68rem;color:rgba(255,255,255,0.32);margin-top:1px}
+.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.76rem;padding:11px 20px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
 
-/* ── OVERLAY ── */
-.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
-.overlay.show{display:block}
+/* ── HEADER ── */
+.header-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 6px;position:relative;z-index:2}
+.header-logo{display:flex;align-items:center;gap:10px}
+.header-logo-mark{width:38px;height:38px;border-radius:11px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;color:var(--ink);font-size:1.05rem}
+.header-logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.2rem;color:white;letter-spacing:-.01em}
+.header-logo-text span{color:#FFD873}
+.burger-btn{background:rgba(255,255,255,0.14);border:none;cursor:pointer;padding:10px;border-radius:11px;display:flex;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
 
-/* ── MAIN ── */
-.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+/* ── HERO (gradient) ── */
+.hero{background:linear-gradient(135deg,var(--blue) 0%,var(--blue-deep) 55%,#3A1A8C 100%);border-radius:0 0 28px 28px;padding-bottom:26px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60px;right:-50px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,0.05)}
+.hero::after{content:'';position:absolute;bottom:-70px;left:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,180,0,0.09)}
 
-/* ── TOPBAR ── */
-.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.topbar-left{display:flex;align-items:center;gap:14px}
-.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em}
-.topbar-right{display:flex;align-items:center;gap:10px}
-.env-toggle{display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:7px 13px;font-size:.76rem;font-weight:600;cursor:pointer;transition:all .15s}
-.env-toggle:hover{border-color:var(--blue)}
-.env-dot{width:7px;height:7px;border-radius:50%;box-shadow:0 0 0 3px currentColor;opacity:.9}
-.notif-btn{width:37px;height:37px;border-radius:10px;color:var(--muted);background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
-.notif-dot{position:absolute;top:8px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 2px var(--surface)}
+.welcome-row{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 20px 4px;position:relative;z-index:1}
+.welcome-text{font-size:1.32rem;font-weight:700;color:white;font-family:'Space Grotesk',sans-serif}
+.welcome-sub{font-size:.78rem;color:rgba(255,255,255,.62);margin-top:4px}
+.loading-dots{display:flex;gap:5px;margin-top:12px}
+.loading-dots span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);animation:pulse 1.2s infinite ease-in-out}
+.loading-dots span:nth-child(2){animation-delay:.15s}
+.loading-dots span:nth-child(3){animation-delay:.3s}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:.9}}
+.loading-dots.hide{display:none}
 
-/* ── PAGE ── */
-.page{flex:1;padding:30px;animation:fadeUp .25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.kyc-quick-btn{width:56px;height:56px;border-radius:16px;background:var(--gold);display:flex;align-items:center;justify-content:center;color:var(--ink);text-decoration:none;box-shadow:0 8px 20px rgba(255,180,0,.25);flex-shrink:0}
+.kyc-quick-btn .icon{width:24px;height:24px}
+.kyc-quick-btn.verified{background:var(--green)}
 
-/* ── STATS ROW ── */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
-.stat-card{background:var(--surface);border-radius:var(--r-lg);padding:20px 20px 18px;border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:all .2s;position:relative;overflow:hidden}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,var(--blue))}
-.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
-.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-.stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--accent-tint,var(--blue-tint));color:var(--accent,var(--blue))}
-.stat-trend{font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:6px}
-.up{background:var(--green-tint);color:#0A7A50}
-.neutral{background:var(--border-soft);color:var(--muted)}
-.stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.68rem;letter-spacing:-.02em;margin-bottom:3px}
-.stat-lbl{font-size:.78rem;color:var(--muted)}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:18px 20px 0;position:relative;z-index:1}
+.hstat-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:var(--r-md);padding:14px 12px}
+.hstat-lbl{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px}
+.hstat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.28rem;color:white;letter-spacing:-.01em}
+.hstat-unit{font-size:.66rem;color:rgba(255,255,255,.45);margin-top:2px}
 
-/* ── GRID ── */
-.grid-3-1{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
+/* ── PAGE / SECTIONS ── */
+.page{padding:22px 20px 100px}
+.section-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.section-head h2{font-size:.72rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--muted-soft);white-space:nowrap}
+.section-head .rule{flex:1;height:1px;background:var(--border)}
 
-/* ── CARD ── */
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
-.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
-.card-title{font-size:.9rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
-.card-action{font-size:.78rem;color:var(--blue);font-weight:600;cursor:pointer;background:none;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+/* ── TX-BREAKDOWN (3 mini cards) ── */
+.breakdown-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:26px}
+.breakdown-card{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:18px 8px 14px;text-align:center;box-shadow:var(--shadow-sm)}
+.breakdown-icon{width:34px;height:34px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center}
+.breakdown-icon.ok{background:var(--green-tint);color:#0A7A50}
+.breakdown-icon.pend{background:var(--gold-tint);color:#8A5B00}
+.breakdown-icon.fail{background:var(--danger-tint);color:#B3271A}
+.breakdown-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;margin-bottom:2px}
+.breakdown-lbl{font-size:.68rem;color:var(--muted)}
+
+/* ── ACCÈS RAPIDE (big cards) ── */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px}
+.quick-card{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:16px;display:flex;align-items:center;gap:12px;text-decoration:none;box-shadow:var(--shadow-sm);transition:all .15s}
+.quick-card:hover{border-color:var(--blue);transform:translateY(-1px)}
+.quick-ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.quick-ic .icon{width:22px;height:22px}
+.quick-ic.blue{background:var(--blue-tint);color:var(--blue)}
+.quick-ic.gold{background:var(--gold-tint);color:#8A5B00}
+.quick-ic.green{background:var(--green-tint);color:#0A7A50}
+.quick-ic.ink{background:#EDEEF5;color:var(--ink-soft)}
+.quick-title{font-size:.86rem;font-weight:700;line-height:1.2}
+.quick-sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+
+/* ── CARD (transactions + plan) ── */
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:26px}
+.card-head{padding:16px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:.88rem;font-weight:700;letter-spacing:-.01em}
+.card-action{font-size:.76rem;color:var(--blue);font-weight:600;cursor:pointer;background:none;border:none;text-decoration:none}
 .card-action:hover{text-decoration:underline}
-.card-body{padding:22px}
 
-/* ── TABLE (aperçu dernières transactions) ── */
-.tbl{width:100%;border-collapse:collapse;font-size:.83rem}
-.tbl th{padding:10px 14px;text-align:left;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;background:#FAFBFF;border-bottom:1px solid var(--border-soft)}
-.tbl td{padding:13px 14px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+.tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+.tbl th{padding:9px 12px;text-align:left;font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFBFF;border-bottom:1px solid var(--border-soft)}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:#FAFBFF}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.66rem;font-weight:700}
 .b-success{background:var(--green-tint);color:#0A7A50}
 .b-pending{background:var(--gold-tint);color:#8A5B00}
 .b-failed{background:var(--danger-tint);color:#B3271A}
 .tx-amt{font-family:'Space Grotesk',sans-serif;font-weight:700}
+.empty{text-align:center;padding:36px 16px;color:var(--muted)}
+.empty-icon{font-size:2rem;margin-bottom:8px;opacity:.7}
+.empty-text{font-size:.82rem;line-height:1.6}
 
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
-.btn-gold{background:var(--gold);color:var(--ink);text-decoration:none}
-.btn-gold:hover{filter:brightness(1.05)}
-.btn-sm{padding:6px 12px;font-size:.76rem}
-
-/* ── PLAN CARD ── */
-.plan-hero{background:linear-gradient(135deg,var(--blue) 0%,#0A1FCC 60%,#5B2CFF 100%);border-radius:var(--r-lg);padding:24px;color:white;position:relative;overflow:hidden;margin-bottom:18px}
+/* ── PLAN BANNER ── */
+.plan-hero{background:linear-gradient(135deg,var(--blue) 0%,var(--blue-deep) 60%,#5B2CFF 100%);border-radius:var(--r-lg);padding:20px;color:white;position:relative;overflow:hidden;margin-bottom:26px}
 .plan-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.07)}
-.plan-hero::after{content:'';position:absolute;bottom:-40px;left:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,180,0,0.09)}
-.plan-badge-inline{display:inline-block;background:rgba(255,255,255,0.16);font-size:.66rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 10px;border-radius:5px;margin-bottom:12px;position:relative;z-index:1}
+.plan-badge-inline{display:inline-block;background:rgba(255,255,255,0.16);font-size:.64rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 10px;border-radius:5px;margin-bottom:10px;position:relative;z-index:1}
 .plan-progress{height:6px;background:rgba(255,255,255,0.16);border-radius:3px;margin:10px 0 6px;position:relative;z-index:1}
 .plan-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.82rem;padding:9px 16px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-gold{background:var(--gold);color:var(--ink);text-decoration:none}
+.btn-gold:hover{filter:brightness(1.05)}
+.btn-sm{padding:6px 12px;font-size:.75rem}
 
-/* ── QUICK ACTIONS (liens réels vers les pages) ── */
-.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.quick-btn{padding:15px 10px;border-radius:var(--r-md);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;transition:all .15s;text-decoration:none}
-.quick-btn:hover{border-color:var(--blue);background:var(--blue-tint)}
-.quick-btn .icon{width:20px;height:20px;color:var(--blue)}
-.quick-btn span{font-size:.72rem;font-weight:600;color:var(--text)}
+/* ── KYC INLINE NOTE ── */
+.kyc-note{display:none;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r-md);margin-bottom:20px;background:var(--gold-tint);border:1px solid rgba(255,180,0,.3)}
+.kyc-note.show{display:flex}
+.kyc-note strong{display:block;font-size:.82rem;color:#8A5B00}
+.kyc-note span{font-size:.74rem;color:#8A5B00;opacity:.85}
+.kyc-note .btn{margin-left:auto;flex-shrink:0}
 
-/* ── KYC BANNER ── */
-.kyc-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-radius:var(--r-lg);margin-bottom:20px;flex-wrap:wrap}
-.kyc-banner.warn{background:var(--gold-tint);border:1px solid rgba(255,180,0,.3)}
-.kyc-banner.info{background:var(--gold-tint);border:1px solid rgba(255,180,0,.3)}
-.kyc-banner-text{display:flex;align-items:center;gap:12px}
-.kyc-banner-text strong{display:block;font-size:.88rem;color:#8A5B00}
-.kyc-banner-text span{font-size:.8rem;color:#8A5B00;opacity:.85}
-
-/* ── EMPTY ── */
-.empty{text-align:center;padding:42px 20px;color:var(--muted)}
-.empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
-.empty-text{font-size:.85rem;line-height:1.65}
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:sticky;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:5}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 12px;text-decoration:none;color:var(--muted-soft);transition:color .15s}
+.bnav-item .icon{width:20px;height:20px}
+.bnav-item span{font-size:.64rem;font-weight:600}
+.bnav-item.active{color:var(--blue)}
 
 /* ── TOAST ── */
-#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
-#toast.show{transform:translateY(0);opacity:1}
-
-/* ── RESPONSIVE ── */
-@media(max-width:900px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
-  .main{margin-left:0}
-  .burger-btn{display:flex}
-  .close-sidebar{display:block}
-  .stats-row{grid-template-columns:1fr 1fr}
-  .grid-3-1{grid-template-columns:1fr}
-}
-@media(max-width:520px){
-  .stats-row{grid-template-columns:1fr 1fr}
-  .page{padding:16px}
-  .topbar{padding:0 16px}
-  .corridor{margin:12px 16px 4px}
-  .sidebar-logo,.nav-group,.nav-link,.sidebar-user{padding-left:16px;padding-right:16px}
-}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.83rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
 </head>
 <body>
@@ -199,21 +198,22 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
     <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
     <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
-    <symbol id="ic-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
     <symbol id="ic-check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+    <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="ic-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
     <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
   </defs>
 </svg>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
 
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
+<aside class="drawer" id="drawer">
+  <div class="drawer-top">
     <div>
       <a href="/" class="logo-text">Flin<span>pay</span></a>
       <div class="plan-badge-pill">🚀 Starter</div>
     </div>
-    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+    <button class="close-drawer" onclick="closeDrawer()">✕</button>
   </div>
 
   <div class="corridor">
@@ -223,7 +223,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     </div>
   </div>
 
-  <nav class="sidebar-nav">
+  <nav class="drawer-nav">
     <div class="nav-group">Principal</div>
     <a class="nav-link active" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
     <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
@@ -242,7 +242,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
 
-  <div class="sidebar-user">
+  <div class="drawer-user">
     <div class="user-row">
       <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
       <div>
@@ -254,111 +254,135 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
 </aside>
 
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <button class="burger-btn" id="burger" onclick="openSidebar()">
+<div class="app-shell">
+
+  <div class="hero">
+    <div class="header-bar">
+      <div class="header-logo">
+        <div class="header-logo-mark">F</div>
+        <div class="header-logo-text">Flin<span>pay</span></div>
+      </div>
+      <button class="burger-btn" onclick="openDrawer()">
         <span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span>
       </button>
-      <div class="topbar-title">Vue d'ensemble</div>
     </div>
-    <div class="topbar-right">
-      <div class="env-toggle" onclick="toggleEnv()">
-        <div class="env-dot" id="env-dot" style="color:var(--gold)"></div>
-        <span id="env-label">Sandbox</span>
+
+    <div class="welcome-row">
+      <div>
+        <div class="welcome-text">Bienvenue 👋</div>
+        <div class="welcome-sub" id="welcome-sub">Voici l'activité de votre compte</div>
+        <div class="loading-dots" id="loading-dots"><span></span><span></span><span></span></div>
       </div>
-      <div class="notif-btn"><span class="icon"><svg><use href="#ic-bell"/></svg></span><div class="notif-dot"></div></div>
+      <a class="kyc-quick-btn" id="kyc-quick-btn" href="/kyc" title="Statut de vérification">
+        <span class="icon"><svg><use href="#ic-shield-check"/></svg></span>
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hstat-card">
+        <div class="hstat-lbl">Transactions</div>
+        <div class="hstat-val" id="ov-tx-count">0</div>
+        <div class="hstat-unit">ce mois</div>
+      </div>
+      <div class="hstat-card">
+        <div class="hstat-lbl">Volume</div>
+        <div class="hstat-val" id="ov-volume">0</div>
+        <div class="hstat-unit">XOF encaissés</div>
+      </div>
+      <div class="hstat-card">
+        <div class="hstat-lbl">Succès</div>
+        <div class="hstat-val" id="ov-success">0%</div>
+        <div class="hstat-unit">taux global</div>
+      </div>
     </div>
   </div>
 
   <div class="page">
-    <div id="kyc-banner"></div>
-    <div class="stats-row">
-      <div class="stat-card" style="--accent:var(--blue);--accent-tint:var(--blue-tint)">
-        <div class="stat-top">
-          <div class="stat-icon"><span class="icon"><svg><use href="#ic-card"/></svg></span></div>
-          <span class="stat-trend neutral" id="ov-tx-trend">—</span>
-        </div>
-        <div class="stat-val" id="ov-tx-count">0</div>
-        <div class="stat-lbl">Transactions ce mois</div>
+
+    <div class="kyc-note" id="kyc-note"></div>
+
+    <div class="section-head"><h2>Statistiques transactions</h2><div class="rule"></div></div>
+    <div class="breakdown-grid">
+      <div class="breakdown-card">
+        <div class="breakdown-icon ok"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-check"/></svg></span></div>
+        <div class="breakdown-val" id="bd-success">0</div>
+        <div class="breakdown-lbl">Réussies</div>
       </div>
-      <div class="stat-card" style="--accent:var(--green);--accent-tint:var(--green-tint)">
-        <div class="stat-top">
-          <div class="stat-icon"><span class="icon"><svg><use href="#ic-wallet"/></svg></span></div>
-          <span class="stat-trend neutral" id="ov-vol-trend">—</span>
-        </div>
-        <div class="stat-val" id="ov-volume">0</div>
-        <div class="stat-lbl">Volume encaissé (XOF)</div>
+      <div class="breakdown-card">
+        <div class="breakdown-icon pend"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-clock"/></svg></span></div>
+        <div class="breakdown-val" id="bd-pending">0</div>
+        <div class="breakdown-lbl">En attente</div>
       </div>
-      <div class="stat-card" style="--accent:var(--green);--accent-tint:var(--green-tint)">
-        <div class="stat-top">
-          <div class="stat-icon"><span class="icon"><svg><use href="#ic-check"/></svg></span></div>
-          <span class="stat-trend neutral">—</span>
-        </div>
-        <div class="stat-val" id="ov-success">0%</div>
-        <div class="stat-lbl">Taux de succès</div>
-      </div>
-      <div class="stat-card" style="--accent:var(--gold);--accent-tint:var(--gold-tint)">
-        <div class="stat-top">
-          <div class="stat-icon"><span class="icon"><svg><use href="#ic-zap"/></svg></span></div>
-          <span class="stat-trend up">99.9%</span>
-        </div>
-        <div class="stat-val">~1.2s</div>
-        <div class="stat-lbl">Temps de réponse</div>
+      <div class="breakdown-card">
+        <div class="breakdown-icon fail"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-x"/></svg></span></div>
+        <div class="breakdown-val" id="bd-failed">0</div>
+        <div class="breakdown-lbl">Échouées</div>
       </div>
     </div>
 
-    <div class="grid-3-1">
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title">Dernières transactions</div>
-          <a class="card-action" href="/transactions">Voir tout →</a>
-        </div>
-        <div id="ov-tx-list">
-          <div class="empty">
-            <div class="empty-icon">💳</div>
-            <div class="empty-text">Chargement...</div>
-          </div>
-        </div>
+    <div class="section-head"><h2>Accès rapide</h2><div class="rule"></div></div>
+    <div class="quick-grid">
+      <a class="quick-card" href="/api-keys">
+        <div class="quick-ic blue"><span class="icon"><svg><use href="#ic-key"/></svg></span></div>
+        <div><div class="quick-title">Clés API</div><div class="quick-sub">Intégration</div></div>
+      </a>
+      <a class="quick-card" href="/payment-links">
+        <div class="quick-ic gold"><span class="icon"><svg><use href="#ic-link"/></svg></span></div>
+        <div><div class="quick-title">Liens</div><div class="quick-sub">de paiement</div></div>
+      </a>
+      <a class="quick-card" href="/payouts">
+        <div class="quick-ic green"><span class="icon"><svg><use href="#ic-send"/></svg></span></div>
+        <div><div class="quick-title">Payouts</div><div class="quick-sub">Envoyer des fonds</div></div>
+      </a>
+      <a class="quick-card" href="/webhooks">
+        <div class="quick-ic ink"><span class="icon"><svg><use href="#ic-zap"/></svg></span></div>
+        <div><div class="quick-title">Webhooks</div><div class="quick-sub">Événements</div></div>
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Dernières transactions</div>
+        <a class="card-action" href="/transactions">Voir tout →</a>
       </div>
-
-      <div>
-        <div class="plan-hero">
-          <div class="plan-badge-inline">🚀 Plan Starter</div>
-          <div style="font-size:1.28rem;font-weight:800;position:relative;z-index:1">Plan actuel</div>
-          <div style="font-size:.8rem;color:rgba(255,255,255,.65);margin-top:4px;position:relative;z-index:1">Transactions utilisées</div>
-          <div style="font-size:1.55rem;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:1" id="plan-usage">0 / 100</div>
-          <div class="plan-progress"><div class="plan-fill" id="plan-bar" style="width:0%"></div></div>
-          <a href="/billing" class="btn btn-gold btn-sm" style="margin-top:14px">⬆ Passer au Pro</a>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><div class="card-title">Actions rapides</div></div>
-          <div class="card-body">
-            <div class="quick-grid">
-              <a class="quick-btn" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span><span>Clés API</span></a>
-              <a class="quick-btn" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span><span>Webhooks</span></a>
-              <a class="quick-btn" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span><span>Sandbox</span></a>
-              <a class="quick-btn" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span><span>Profil</span></a>
-            </div>
-          </div>
+      <div id="ov-tx-list">
+        <div class="empty">
+          <div class="empty-icon">💳</div>
+          <div class="empty-text">Chargement...</div>
         </div>
       </div>
     </div>
+
+    <div class="plan-hero">
+      <div class="plan-badge-inline">🚀 Plan Starter</div>
+      <div style="font-size:1.15rem;font-weight:800;position:relative;z-index:1">Transactions utilisées</div>
+      <div style="font-size:1.4rem;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:1" id="plan-usage">0 / 100</div>
+      <div class="plan-progress"><div class="plan-fill" id="plan-bar" style="width:0%"></div></div>
+      <a href="/billing" class="btn btn-gold btn-sm" style="margin-top:12px">⬆ Passer au Pro</a>
+    </div>
+
   </div>
+
+  <nav class="bottom-nav">
+    <a class="bnav-item active" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span><span>Accueil</span></a>
+    <a class="bnav-item" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span><span>Transactions</span></a>
+    <a class="bnav-item" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span><span>Payouts</span></a>
+    <a class="bnav-item" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span><span>Profil</span></a>
+  </nav>
+
 </div>
 
 <div id="toast"></div>
 
 <script>
-// ── SIDEBAR ──────────────────────────────────────
-function openSidebar(){
-  document.getElementById('sidebar').classList.add('open');
+// ── DRAWER ──────────────────────────────────────
+function openDrawer(){
+  document.getElementById('drawer').classList.add('open');
   document.getElementById('overlay').classList.add('show');
   document.body.style.overflow='hidden';
 }
-function closeSidebar(){
-  document.getElementById('sidebar').classList.remove('open');
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
   document.body.style.overflow='';
 }
@@ -372,16 +396,7 @@ function toast(msg, ok=true){
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-// ── ENV TOGGLE ───────────────────────────────────
-let isSandbox=true;
-function toggleEnv(){
-  isSandbox=!isSandbox;
-  document.getElementById('env-dot').style.color=isSandbox?'var(--gold)':'var(--green)';
-  document.getElementById('env-label').textContent=isSandbox?'Sandbox':'Production';
-  toast(isSandbox?'Mode Sandbox activé':'Mode Production activé');
-}
-
-// ── PROFIL (sidebar) — via /api/me ────────────────
+// ── PROFIL (drawer + KYC quick icon) — via /api/me ────
 async function loadProfile(){
   try{
     const r=await fetch('/api/me');
@@ -392,29 +407,28 @@ async function loadProfile(){
     document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
     document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
     document.getElementById('user-email').textContent=user.email||'';
+    document.getElementById('welcome-sub').textContent='Bonjour '+(user.firstname||'')+', voici votre activité';
 
     const kyc=user.kyc_status||'unverified';
-    const banner=document.getElementById('kyc-banner');
-    if(kyc==='unverified' || kyc==='rejected'){
-      banner.innerHTML=`<div class="kyc-banner warn">
-        <div class="kyc-banner-text">
-          <span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-          <div><strong>${kyc==='rejected' ? "Vérification refusée" : "Vérifiez votre identité"}</strong><span>${kyc==='rejected' ? "Soumettez un nouveau document pour débloquer les clés API." : "Requis avant de générer des clés API et d'encaisser de vrais paiements."}</span></div>
-        </div>
-        <a href="/kyc" class="btn btn-gold btn-sm">Vérifier maintenant</a>
-      </div>`;
+    const kycBtn=document.getElementById('kyc-quick-btn');
+    const note=document.getElementById('kyc-note');
+    if(kyc==='verified'){
+      kycBtn.classList.add('verified');
+      note.classList.remove('show');
     }else if(kyc==='pending'){
-      banner.innerHTML=`<div class="kyc-banner info">
-        <div class="kyc-banner-text">
-          <span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-          <div><strong>Vérification en cours</strong><span>Votre document est en cours de revue (24-48h).</span></div>
-        </div>
-      </div>`;
+      note.innerHTML=`<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        <div><strong>Vérification en cours</strong><span>Document en cours de revue (24-48h).</span></div>`;
+      note.classList.add('show');
+    }else{
+      note.innerHTML=`<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+        <div><strong>${kyc==='rejected' ? "Vérification refusée" : "Vérifiez votre identité"}</strong><span>${kyc==='rejected' ? "Soumettez un nouveau document." : "Requis pour générer des clés API."}</span></div>
+        <a href="/kyc" class="btn btn-gold btn-sm">Vérifier</a>`;
+      note.classList.add('show');
     }
   }catch(e){}
 }
 
-// ── TRANSACTIONS (aperçu) — via /api/transactions ─
+// ── TRANSACTIONS (aperçu + répartition) — via /api/transactions ─
 async function loadTransactions(){
   try{
     const r=await fetch('/api/transactions');
@@ -424,6 +438,8 @@ async function loadTransactions(){
     updateOverviewStats(txs);
   }catch(e){
     updateOverviewStats([]);
+  }finally{
+    document.getElementById('loading-dots').classList.add('hide');
   }
 }
 function updateOverviewStats(rawTxs){
@@ -433,11 +449,18 @@ function updateOverviewStats(rawTxs){
     status:tx.status||'pending'
   }));
   const paid=txs.filter(t=>t.status==='paid');
+  const pending=txs.filter(t=>t.status==='pending');
+  const failed=txs.filter(t=>t.status!=='paid'&&t.status!=='pending');
   const vol=paid.reduce((s,t)=>s+t.amount,0);
   const rate=txs.length?Math.round(paid.length/txs.length*100):0;
+
   document.getElementById('ov-tx-count').textContent=txs.length;
   document.getElementById('ov-volume').textContent=vol.toLocaleString();
   document.getElementById('ov-success').textContent=rate+'%';
+  document.getElementById('bd-success').textContent=paid.length;
+  document.getElementById('bd-pending').textContent=pending.length;
+  document.getElementById('bd-failed').textContent=failed.length;
+
   const usage=Math.min(txs.length,100);
   document.getElementById('plan-usage').textContent=usage+' / 100';
   document.getElementById('plan-bar').style.width=usage+'%';
