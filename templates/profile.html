@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -6,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Profil</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -81,6 +81,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
 .btn-danger:hover{background:#e03e3e}
+.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
 .btn-sm{padding:7px 14px;font-size:.76rem}
 .avatar-big{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2rem;margin:0 auto 16px}
 .profile-header{text-align:center;padding:26px;border-bottom:1px solid var(--border-soft)}
@@ -89,6 +90,23 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .plan-pill{display:inline-block;background:var(--blue-tint);color:var(--blue);font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px;margin-top:10px}
 .strength-bar{height:4px;background:var(--border-soft);border-radius:2px;margin-top:6px;overflow:hidden}
 .strength-fill{height:100%;border-radius:2px;transition:all .3s;width:0%}
+
+.twofa-status{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.twofa-badge{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;padding:5px 11px;border-radius:20px}
+.twofa-badge.on{background:var(--green-tint);color:#0A7A50}
+.twofa-badge.off{background:var(--border-soft);color:var(--muted)}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border-radius:20px;padding:28px;width:100%;max-width:420px;margin:20px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:9px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.qr-box{display:flex;justify-content:center;padding:16px;background:white;border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:14px}
+.secret-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:.82rem;text-align:center;word-break:break-all;margin-bottom:14px;user-select:all}
+.step-text{font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.code-input{letter-spacing:.4em;text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.1rem}
+.error-msg{background:var(--danger-tint);color:#B3271A;border-radius:9px;padding:9px 13px;font-size:.8rem;margin-bottom:12px;display:none}
+
 #toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
 #toast.show{transform:translateY(0);opacity:1}
 @media(max-width:900px){
@@ -244,10 +262,15 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
         </div>
 
         <div class="card">
-          <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-shield"/></svg></span> Authentification 2FA</div></div>
+          <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-shield"/></svg></span> Authentification à deux facteurs</div></div>
           <div class="card-body">
-            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px">Ajoutez une couche de sécurité supplémentaire à votre compte.</div>
-            <button class="btn btn-primary btn-sm" onclick="toast('Fonctionnalité bientôt disponible')">Activer le 2FA</button>
+            <div class="twofa-status">
+              <span class="twofa-badge off" id="twofa-badge">Désactivé</span>
+            </div>
+            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px" id="twofa-desc">
+              Protégez votre compte avec un code à usage unique généré par Google Authenticator (ou une app compatible TOTP), en plus de votre mot de passe.
+            </div>
+            <button class="btn btn-primary btn-sm" id="twofa-btn" onclick="startTwofaSetup()">Activer le 2FA</button>
           </div>
         </div>
 
@@ -262,12 +285,53 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     </div>
   </div>
 </div>
+
+<!-- MODAL ACTIVATION 2FA -->
+<div class="modal-bg" id="twofa-setup-modal">
+  <div class="modal">
+    <h3><span class="icon"><svg><use href="#ic-shield"/></svg></span> Activer le 2FA</h3>
+    <div class="error-msg" id="twofa-setup-error"></div>
+    <div class="step-text">1. Scannez ce QR code avec Google Authenticator (ou une app compatible TOTP).</div>
+    <div class="qr-box" id="twofa-qr"></div>
+    <div class="step-text">Ou entrez ce code manuellement dans l'app :</div>
+    <div class="secret-box" id="twofa-secret">—</div>
+    <div class="step-text">2. Entrez le code à 6 chiffres généré par l'app pour confirmer.</div>
+    <input class="form-input code-input" id="twofa-setup-code" maxlength="6" placeholder="000000" inputmode="numeric">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeTwofaSetupModal()">Annuler</button>
+      <button class="btn btn-primary" id="btn-confirm-twofa" onclick="confirmTwofaSetup()">Confirmer et activer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DÉSACTIVATION 2FA -->
+<div class="modal-bg" id="twofa-disable-modal">
+  <div class="modal">
+    <h3><span class="icon"><svg><use href="#ic-shield"/></svg></span> Désactiver le 2FA</h3>
+    <div class="error-msg" id="twofa-disable-error"></div>
+    <div class="form-group" style="margin-bottom:12px">
+      <div class="form-label">Mot de passe</div>
+      <input class="form-input" id="twofa-disable-password" type="password" placeholder="••••••••">
+    </div>
+    <div class="form-group" style="margin-bottom:4px">
+      <div class="form-label">Code de l'app d'authentification</div>
+      <input class="form-input code-input" id="twofa-disable-code" maxlength="6" placeholder="000000" inputmode="numeric">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeTwofaDisableModal()">Annuler</button>
+      <button class="btn btn-danger" id="btn-confirm-disable" onclick="confirmTwofaDisable()">Désactiver</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <script>
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
 function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 function checkStr(v){const f=document.getElementById('str-fill');let s=0;if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;const c=['#FF4444','#FF8C00','#FFB400','#00C48C'][s-1]||'';f.style.width=s*25+'%';f.style.background=c}
+
+let twofaEnabled=false;
 
 // ── PROFIL — via /api/me ──────────────────────────
 async function loadProfile(){
@@ -290,10 +354,35 @@ async function loadProfile(){
     document.getElementById('user-av').textContent=initial;
     document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
     document.getElementById('user-email').textContent=user.email||'';
+
+    twofaEnabled=!!user.totp_enabled;
+    renderTwofaStatus();
   }catch(e){
     toast('Impossible de charger le profil',false);
   }
 }
+
+function renderTwofaStatus(){
+  const badge=document.getElementById('twofa-badge');
+  const btn=document.getElementById('twofa-btn');
+  const desc=document.getElementById('twofa-desc');
+  if(twofaEnabled){
+    badge.textContent='Activé';
+    badge.className='twofa-badge on';
+    desc.textContent='Votre compte est protégé par un code à usage unique en plus de votre mot de passe.';
+    btn.textContent='Désactiver le 2FA';
+    btn.className='btn btn-danger btn-sm';
+    btn.onclick=openTwofaDisableModal;
+  }else{
+    badge.textContent='Désactivé';
+    badge.className='twofa-badge off';
+    desc.textContent='Protégez votre compte avec un code à usage unique généré par Google Authenticator (ou une app compatible TOTP), en plus de votre mot de passe.';
+    btn.textContent='Activer le 2FA';
+    btn.className='btn btn-primary btn-sm';
+    btn.onclick=startTwofaSetup;
+  }
+}
+
 async function saveProfile(){
   const payload={
     firstname:document.getElementById('p-firstname').value.trim(),
@@ -338,6 +427,105 @@ async function deleteAccount(){
     else{ toast(data.error||'Erreur lors de la suppression',false); }
   }catch(e){ toast('Erreur de connexion',false); }
 }
+
+// ── 2FA — ACTIVATION ───────────────────────────────
+let twofaQrInstance=null;
+
+async function startTwofaSetup(){
+  const errEl=document.getElementById('twofa-setup-error');
+  errEl.style.display='none';
+  document.getElementById('twofa-setup-code').value='';
+  try{
+    const r=await fetch('/api/2fa/setup',{method:'POST'});
+    const data=await r.json();
+    if(!data.ok){ toast(data.error||'Erreur lors de la génération du code',false); return; }
+
+    document.getElementById('twofa-secret').textContent=data.secret;
+    const qrBox=document.getElementById('twofa-qr');
+    qrBox.innerHTML='';
+    twofaQrInstance=new QRCode(qrBox, { text: data.otpauth_url, width: 190, height: 190 });
+
+    document.getElementById('twofa-setup-modal').classList.add('show');
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+}
+function closeTwofaSetupModal(){
+  document.getElementById('twofa-setup-modal').classList.remove('show');
+}
+async function confirmTwofaSetup(){
+  const code=document.getElementById('twofa-setup-code').value.trim();
+  const errEl=document.getElementById('twofa-setup-error');
+  errEl.style.display='none';
+  if(!/^\d{6}$/.test(code)){
+    errEl.textContent='Entrez un code à 6 chiffres.';
+    errEl.style.display='block';
+    return;
+  }
+  const btn=document.getElementById('btn-confirm-twofa');
+  btn.disabled=true; btn.textContent='Vérification...';
+  try{
+    const r=await fetch('/api/2fa/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+    const data=await r.json();
+    if(data.ok){
+      closeTwofaSetupModal();
+      toast('Authentification à deux facteurs activée');
+      twofaEnabled=true;
+      renderTwofaStatus();
+    }else{
+      errEl.textContent=data.error||'Code invalide';
+      errEl.style.display='block';
+    }
+  }catch(e){
+    errEl.textContent='Erreur de connexion';
+    errEl.style.display='block';
+  }
+  btn.disabled=false; btn.textContent='Confirmer et activer';
+}
+
+// ── 2FA — DÉSACTIVATION ────────────────────────────
+function openTwofaDisableModal(){
+  document.getElementById('twofa-disable-password').value='';
+  document.getElementById('twofa-disable-code').value='';
+  document.getElementById('twofa-disable-error').style.display='none';
+  document.getElementById('twofa-disable-modal').classList.add('show');
+}
+function closeTwofaDisableModal(){
+  document.getElementById('twofa-disable-modal').classList.remove('show');
+}
+async function confirmTwofaDisable(){
+  const password=document.getElementById('twofa-disable-password').value;
+  const code=document.getElementById('twofa-disable-code').value.trim();
+  const errEl=document.getElementById('twofa-disable-error');
+  errEl.style.display='none';
+  if(!password || !/^\d{6}$/.test(code)){
+    errEl.textContent='Mot de passe et code à 6 chiffres requis.';
+    errEl.style.display='block';
+    return;
+  }
+  const btn=document.getElementById('btn-confirm-disable');
+  btn.disabled=true; btn.textContent='Vérification...';
+  try{
+    const r=await fetch('/api/2fa/disable',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password,code})});
+    const data=await r.json();
+    if(data.ok){
+      closeTwofaDisableModal();
+      toast('Authentification à deux facteurs désactivée');
+      twofaEnabled=false;
+      renderTwofaStatus();
+    }else{
+      errEl.textContent=data.error||'Erreur lors de la désactivation';
+      errEl.style.display='block';
+    }
+  }catch(e){
+    errEl.textContent='Erreur de connexion';
+    errEl.style.display='block';
+  }
+  btn.disabled=false; btn.textContent='Désactiver';
+}
+
+document.getElementById('twofa-setup-modal').addEventListener('click',e=>{if(e.target===document.getElementById('twofa-setup-modal'))closeTwofaSetupModal()});
+document.getElementById('twofa-disable-modal').addEventListener('click',e=>{if(e.target===document.getElementById('twofa-disable-modal'))closeTwofaDisableModal()});
 
 loadProfile();
 </script>
