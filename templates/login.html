@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Connexion</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{
@@ -55,6 +55,10 @@ input{
 }
 input:focus{border-color:#1A3CFF}
 input::placeholder{color:rgba(255,255,255,0.2)}
+.code-input{letter-spacing:.5em;text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.15rem}
+.forgot-row{display:flex;justify-content:flex-end;margin:-6px 0 16px}
+.forgot-row a{font-size:.78rem;color:rgba(255,255,255,0.4);text-decoration:none}
+.forgot-row a:hover{color:white}
 .btn-login{
   width:100%;padding:14px;
   background:#1A3CFF;color:white;
@@ -66,6 +70,14 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 }
 .btn-login:hover{background:#1430e0;transform:translateY(-1px)}
 .btn-login:active{transform:translateY(0)}
+.btn-back-step{
+  width:100%;padding:12px;
+  background:transparent;color:rgba(255,255,255,0.5);
+  border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;
+  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.85rem;
+  cursor:pointer;margin-top:10px
+}
+.btn-back-step:hover{color:white;border-color:rgba(255,255,255,0.25)}
 .error{
   background:rgba(255,68,68,0.1);
   border:1px solid rgba(255,68,68,0.3);
@@ -86,34 +98,55 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 .signup-link a{color:#1A3CFF;text-decoration:none;font-weight:600}
 .signup-link a:hover{text-decoration:underline}
 .loading{opacity:0.6;pointer-events:none}
+.step2-desc{color:rgba(255,255,255,0.4);font-size:.83rem;line-height:1.6;margin-bottom:18px;text-align:center}
+#step2{display:none}
 </style>
 </head>
 <body>
 <div class="box">
   <div class="logo">Flin<span>pay</span></div>
-  <div class="subtitle">Connexion à votre compte</div>
+  <div class="subtitle" id="subtitle">Connexion à votre compte</div>
 
-  <div class="field">
-    <label>Email</label>
-    <input type="email" id="email" placeholder="vous@entreprise.com" autocomplete="email"
-      onkeydown="if(event.key==='Enter') doLogin()">
+  <div id="step1">
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="vous@entreprise.com" autocomplete="email"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <div class="forgot-row"><a href="/forgot-password">Mot de passe oublié ?</a></div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">
+      Se connecter →
+    </button>
+    <div class="signup-link">
+      Pas encore de compte ? <a href="/register">Créer un compte</a>
+    </div>
   </div>
-  <div class="field">
-    <label>Mot de passe</label>
-    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
-      onkeydown="if(event.key==='Enter') doLogin()">
+
+  <div id="step2">
+    <div class="step2-desc">Entrez le code à 6 chiffres généré par votre application d'authentification (Google Authenticator ou équivalent).</div>
+    <div class="field">
+      <label>Code de vérification</label>
+      <input type="text" id="twofa-code" class="code-input" maxlength="6" inputmode="numeric" placeholder="000000"
+        onkeydown="if(event.key==='Enter') doVerify2fa()">
+    </div>
+    <button class="btn-login" id="btn-verify" onclick="doVerify2fa()">
+      Vérifier →
+    </button>
+    <button class="btn-back-step" onclick="backToStep1()">← Retour</button>
   </div>
-  <button class="btn-login" id="btn-login" onclick="doLogin()">
-    Se connecter →
-  </button>
+
   <div class="error" id="error-msg"></div>
-  <div class="signup-link">
-    Pas encore de compte ? <a href="/register">Créer un compte</a>
-  </div>
   <div class="back"><a href="/">← Retour au site</a></div>
 </div>
 
 <script>
+let pendingToken=null;
+
 async function doLogin() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
@@ -136,7 +169,10 @@ async function doLogin() {
       body: JSON.stringify({email, password})
     });
     const data = await r.json();
-    if (data.ok) {
+    if (data.ok && data.requires_2fa) {
+      pendingToken = data.pending_token;
+      goToStep2();
+    } else if (data.ok) {
       window.location.href = '/dashboard';
     } else {
       showError(data.error || 'Identifiants incorrects');
@@ -146,6 +182,60 @@ async function doLogin() {
   }
 
   btn.textContent = 'Se connecter →';
+  btn.classList.remove('loading');
+}
+
+function goToStep2(){
+  document.getElementById('step1').style.display='none';
+  document.getElementById('step2').style.display='block';
+  document.getElementById('subtitle').textContent='Vérification en deux étapes';
+  document.getElementById('error-msg').style.display='none';
+  document.getElementById('twofa-code').value='';
+  document.getElementById('twofa-code').focus();
+}
+function backToStep1(){
+  pendingToken=null;
+  document.getElementById('step1').style.display='block';
+  document.getElementById('step2').style.display='none';
+  document.getElementById('subtitle').textContent='Connexion à votre compte';
+  document.getElementById('error-msg').style.display='none';
+  document.getElementById('password').value='';
+}
+
+async function doVerify2fa(){
+  const code=document.getElementById('twofa-code').value.trim();
+  const btn=document.getElementById('btn-verify');
+  if(!/^\d{6}$/.test(code)){
+    showError('Entrez un code à 6 chiffres');
+    return;
+  }
+  if(!pendingToken){
+    showError('Session expirée, reconnectez-vous');
+    backToStep1();
+    return;
+  }
+
+  btn.textContent='Vérification...';
+  btn.classList.add('loading');
+  document.getElementById('error-msg').style.display='none';
+
+  try{
+    const r=await fetch('/api/login/2fa',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pending_token:pendingToken, code})
+    });
+    const data=await r.json();
+    if(data.ok){
+      window.location.href='/dashboard';
+    }else{
+      showError(data.error||'Code invalide');
+    }
+  }catch(e){
+    showError('Erreur de connexion. Réessayez.');
+  }
+
+  btn.textContent='Vérifier →';
   btn.classList.remove('loading');
 }
 
