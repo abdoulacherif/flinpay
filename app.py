@@ -5,6 +5,7 @@ import bcrypt
 import hashlib
 import hmac
 import secrets
+import pyotp
 import requests
 from datetime import datetime, timedelta
 from functools import wraps
@@ -170,6 +171,15 @@ def generate_user_token(user_id, email):
     }
     return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
 
+def generate_pending_2fa_token(user_id):
+    payload = {
+        'sub': str(user_id),
+        'type': 'pending_2fa',
+        'iat': datetime.utcnow(),
+        'exp': datetime.utcnow() + timedelta(minutes=10)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+
 def user_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -183,6 +193,21 @@ def user_required(f):
         request.user_email = payload.get('email')
         return f(*args, **kwargs)
     return decorated
+
+def _login_success_response(user):
+    """Construit la réponse de connexion réussie (cookie + payload utilisateur)."""
+    token = generate_user_token(user['id'], user['email'])
+    resp = make_response(jsonify({'ok': True, 'user': {
+        'firstname': user['firstname'],
+        'lastname': user['lastname'],
+        'email': user['email'],
+        'company': user.get('company',''),
+        'phone': user.get('phone',''),
+        'country': user.get('country',''),
+        'plan': user.get('plan','starter')
+    }}))
+    resp.set_cookie('fp_user_token', token, httponly=True, samesite='Lax', max_age=7*24*3600)
+    return resp
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
@@ -204,18 +229,39 @@ def api_login():
     if not user.get('is_active', True):
         return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
 
-    token = generate_user_token(user['id'], user['email'])
-    resp = make_response(jsonify({'ok': True, 'user': {
-        'firstname': user['firstname'],
-        'lastname': user['lastname'],
-        'email': user['email'],
-        'company': user.get('company',''),
-        'phone': user.get('phone',''),
-        'country': user.get('country',''),
-        'plan': user.get('plan','starter')
-    }}))
-    resp.set_cookie('fp_user_token', token, httponly=True, samesite='Lax', max_age=7*24*3600)
-    return resp
+    # Si le 2FA est activé, on ne connecte pas tout de suite : on renvoie un
+    # token temporaire (10 min) que le front doit renvoyer avec le code TOTP
+    # via /api/login/2fa pour obtenir la vraie session.
+    if user.get('totp_enabled'):
+        pending_token = generate_pending_2fa_token(user['id'])
+        return jsonify({'ok': True, 'requires_2fa': True, 'pending_token': pending_token})
+
+    return _login_success_response(user)
+
+@app.route('/api/login/2fa', methods=['POST'])
+def api_login_2fa():
+    data = request.get_json() or {}
+    pending_token = (data.get('pending_token') or '').strip()
+    code = (data.get('code') or '').strip()
+    if not pending_token or not code:
+        return jsonify({'ok': False, 'error': 'Code requis'}), 400
+
+    payload = verify_token(pending_token)
+    if not payload or payload.get('type') != 'pending_2fa':
+        return jsonify({'ok': False, 'error': 'Session expirée, reconnectez-vous'}), 401
+
+    user = get_user_by_id(payload.get('sub'))
+    if not user or not user.get('totp_enabled') or not user.get('totp_secret'):
+        return jsonify({'ok': False, 'error': "2FA non configurée pour ce compte"}), 400
+
+    if not user.get('is_active', True):
+        return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
+
+    totp = pyotp.TOTP(user['totp_secret'])
+    if not totp.verify(code, valid_window=1):
+        return jsonify({'ok': False, 'error': 'Code invalide'}), 401
+
+    return _login_success_response(user)
 
 @app.route('/api/logout')
 def api_logout():
@@ -243,7 +289,8 @@ def api_me():
         'kyc_rejection_reason': user.get('kyc_rejection_reason'),
         'usage_this_month': get_monthly_transaction_count(request.user_id),
         'monthly_limit': FREE_PLAN_MONTHLY_LIMIT,
-        'available_balance': user.get('available_balance', 0)
+        'available_balance': user.get('available_balance', 0),
+        'totp_enabled': user.get('totp_enabled', False)
     }})
 
 @app.route('/api/billing/subscribe', methods=['POST'])
@@ -421,6 +468,70 @@ def api_delete_account():
     resp = make_response(jsonify({'ok': True}))
     resp.delete_cookie('fp_user_token')
     return resp
+
+# ── 2FA (Google Authenticator / TOTP) ─────────────
+@app.route('/api/2fa/setup', methods=['POST'])
+@user_required
+def api_2fa_setup():
+    user = get_current_user()
+    if user.get('totp_enabled'):
+        return jsonify({'ok': False, 'error': 'Le 2FA est déjà activé'}), 400
+
+    secret = pyotp.random_base32()
+    ok = sb_patch('users', 'id', request.user_id, {'totp_secret': secret, 'totp_enabled': False})
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la génération du secret'}), 500
+
+    otpauth_url = pyotp.totp.TOTP(secret).provisioning_uri(name=user.get('email', ''), issuer_name='Flinpay')
+    return jsonify({'ok': True, 'secret': secret, 'otpauth_url': otpauth_url})
+
+@app.route('/api/2fa/verify', methods=['POST'])
+@user_required
+def api_2fa_verify():
+    data = request.get_json() or {}
+    code = (data.get('code') or '').strip()
+    if not code:
+        return jsonify({'ok': False, 'error': 'Code requis'}), 400
+
+    user = get_current_user()
+    secret = user.get('totp_secret')
+    if not secret:
+        return jsonify({'ok': False, 'error': "Aucune configuration 2FA en cours. Relancez l'activation."}), 400
+
+    totp = pyotp.TOTP(secret)
+    if not totp.verify(code, valid_window=1):
+        return jsonify({'ok': False, 'error': 'Code invalide'}), 401
+
+    ok = sb_patch('users', 'id', request.user_id, {'totp_enabled': True})
+    if not ok:
+        return jsonify({'ok': False, 'error': "Erreur lors de l'activation"}), 500
+    return jsonify({'ok': True, 'message': 'Authentification à deux facteurs activée'})
+
+@app.route('/api/2fa/disable', methods=['POST'])
+@user_required
+def api_2fa_disable():
+    data = request.get_json() or {}
+    password = data.get('password') or ''
+    code = (data.get('code') or '').strip()
+    if not password or not code:
+        return jsonify({'ok': False, 'error': 'Mot de passe et code requis'}), 400
+
+    user = get_current_user()
+    if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+        return jsonify({'ok': False, 'error': 'Mot de passe incorrect'}), 401
+
+    secret = user.get('totp_secret')
+    if not secret or not user.get('totp_enabled'):
+        return jsonify({'ok': False, 'error': "Le 2FA n'est pas activé"}), 400
+
+    totp = pyotp.TOTP(secret)
+    if not totp.verify(code, valid_window=1):
+        return jsonify({'ok': False, 'error': 'Code invalide'}), 401
+
+    ok = sb_patch('users', 'id', request.user_id, {'totp_enabled': False, 'totp_secret': None})
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la désactivation'}), 500
+    return jsonify({'ok': True, 'message': 'Authentification à deux facteurs désactivée'})
 
 # ── API TRANSACTIONS ──────────────────────────────
 @app.route('/api/transactions', methods=['GET'])
