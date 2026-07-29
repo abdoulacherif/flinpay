@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -93,6 +92,18 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 .empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:.85rem}
 
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border-radius:20px;padding:28px;width:100%;max-width:420px;margin:20px;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:16px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.form-group{margin-bottom:14px}
+.form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
+.form-input,select.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none}
+.form-input:focus{border-color:var(--blue)}
+.error-msg{background:var(--danger-tint);color:#B3271A;border-radius:9px;padding:9px 13px;font-size:.8rem;margin-bottom:12px;display:none}
+.pending-msg{background:var(--gold-tint);color:#8A5B00;border-radius:9px;padding:12px 16px;font-size:.83rem;margin-bottom:16px;display:none;text-align:center}
+
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
@@ -177,6 +188,8 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   </div>
 
   <div class="page">
+    <div class="pending-msg" id="pending-msg">⏳ Une demande de confirmation a été envoyée sur votre téléphone. Confirmez le paiement, puis revenez sur cette page — votre plan Pro s'activera automatiquement.</div>
+
     <div class="plan-hero" id="plan-hero">
       <div class="plan-badge-inline">Plan actuel</div>
       <div class="plan-hero-name" id="hero-plan-name">—</div>
@@ -199,7 +212,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
             <div class="plan-name">Pro</div>
             <div class="plan-price">8 500<span> FCFA/mois</span></div>
             <div class="plan-feat">Transactions illimitées<br>Toutes les fonctionnalités<br>Support prioritaire</div>
-            <button class="btn btn-gold" id="btn-upgrade" onclick="upgrade()">⬆ Passer au Pro</button>
+            <button class="btn btn-gold" id="btn-upgrade" onclick="openUpgradeModal()">⬆ Passer au Pro</button>
             <div class="current-tag" id="tag-pro" style="display:none">✓ PLAN ACTUEL</div>
           </div>
         </div>
@@ -212,11 +225,42 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     </div>
   </div>
 </div>
+
+<!-- MODAL UPGRADE -->
+<div class="modal-bg" id="upgrade-modal">
+  <div class="modal">
+    <h3>⬆ Passer au plan Pro</h3>
+    <div class="error-msg" id="upgrade-error"></div>
+    <div class="form-group">
+      <label class="form-label">Numéro de téléphone (mobile money)</label>
+      <input class="form-input" id="up-phone" type="tel" placeholder="07xxxxxxxx">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Opérateur</label>
+      <select class="form-input" id="up-operator">
+        <option value="">Chargement...</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeUpgradeModal()">Annuler</button>
+      <button class="btn btn-gold" id="btn-confirm-upgrade" onclick="upgrade()">Envoyer la demande</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <script>
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-function toast(msg,ok=true){const t=document.getElementById('toast');if(!t)return;t.textContent=(ok?'✅ ':'❌ ')+msg}
+function toast(msg,ok=true){
+  const t=document.getElementById('toast');
+  if(!t) return;
+  t.textContent=(ok?'✅ ':'❌ ')+msg;
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:#0B0D17;color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);z-index:9999;border-left:4px solid '+(ok?'#00C48C':'#FF4D4D');
+  setTimeout(()=>{t.style.cssText='display:none'},3500);
+}
+
+let currentUser=null;
 
 async function loadBilling(){
   try{
@@ -225,6 +269,7 @@ async function loadBilling(){
     const data=await r.json();
     if(!data.ok) return;
     const user=data.user;
+    currentUser=user;
     document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
     document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
     document.getElementById('user-email').textContent=user.email||'';
@@ -240,6 +285,7 @@ async function loadBilling(){
       document.getElementById('usage-text').textContent='Transactions illimitées';
       document.getElementById('tag-pro').style.display='block';
       document.getElementById('btn-upgrade').style.display='none';
+      document.getElementById('pending-msg').style.display='none';
     }else{
       const used=user.usage_this_month||0;
       const limit=user.monthly_limit||300;
@@ -252,22 +298,70 @@ async function loadBilling(){
   }catch(e){}
 }
 
-async function upgrade(){
-  const btn=document.getElementById('btn-upgrade');
-  btn.disabled=true; btn.textContent='Redirection...';
+async function openUpgradeModal(){
+  document.getElementById('upgrade-error').style.display='none';
+  document.getElementById('up-phone').value=(currentUser && currentUser.phone) || '';
+  const select=document.getElementById('up-operator');
+  select.innerHTML='<option value="">Chargement...</option>';
+  document.getElementById('upgrade-modal').classList.add('show');
+
   try{
-    const r=await fetch('/api/billing/subscribe',{method:'POST'});
+    const r=await fetch('/api/operators');
     const data=await r.json();
-    if(data.ok && data.payment_url){
-      window.location.href=data.payment_url;
+    if(data.ok && data.operators && data.operators.length){
+      select.innerHTML=data.operators.map(o=>`<option value="${o.key}">${o.label}</option>`).join('');
     }else{
-      toast(data.error||'Erreur lors de la création du paiement',false);
-      btn.disabled=false; btn.textContent='⬆ Passer au Pro';
+      select.innerHTML='<option value="">Aucun opérateur disponible pour votre pays</option>';
     }
   }catch(e){
-    toast('Erreur de connexion',false);
-    btn.disabled=false; btn.textContent='⬆ Passer au Pro';
+    select.innerHTML='<option value="">Erreur de chargement</option>';
   }
+}
+function closeUpgradeModal(){
+  document.getElementById('upgrade-modal').classList.remove('show');
+}
+document.getElementById('upgrade-modal').addEventListener('click',e=>{if(e.target===document.getElementById('upgrade-modal'))closeUpgradeModal()});
+
+async function upgrade(){
+  const phone=document.getElementById('up-phone').value.trim();
+  const operator=document.getElementById('up-operator').value;
+  const errEl=document.getElementById('upgrade-error');
+  errEl.style.display='none';
+
+  if(!phone){
+    errEl.textContent='Le numéro de téléphone est requis.';
+    errEl.style.display='block';
+    return;
+  }
+  if(!operator){
+    errEl.textContent="Sélectionnez un opérateur.";
+    errEl.style.display='block';
+    return;
+  }
+
+  const btn=document.getElementById('btn-confirm-upgrade');
+  btn.disabled=true; btn.textContent='Envoi...';
+
+  try{
+    const r=await fetch('/api/billing/subscribe',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phone, operator})
+    });
+    const data=await r.json();
+    if(data.ok){
+      closeUpgradeModal();
+      document.getElementById('pending-msg').style.display='block';
+      toast(data.message || 'Confirmation envoyée sur votre téléphone');
+    }else{
+      errEl.textContent=data.error||'Erreur lors de la création du paiement';
+      errEl.style.display='block';
+    }
+  }catch(e){
+    errEl.textContent='Erreur de connexion';
+    errEl.style.display='block';
+  }
+  btn.disabled=false; btn.textContent='Envoyer la demande';
 }
 
 loadBilling();
