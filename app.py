@@ -292,6 +292,17 @@ def api_me():
         'available_balance': user.get('available_balance', 0),
         'totp_enabled': user.get('totp_enabled', False)
     }})
+@app.route('/api/operators', methods=['GET'])
+@user_required
+def api_get_operators():
+    user = get_current_user()
+    country = user.get('country', '')
+    ops = get_country_operators(country)
+    return jsonify({
+        'ok': True,
+        'country': country,
+        'operators': [{'key': k, 'label': v[1]} for k, v in ops.items()]
+    })
 
 @app.route('/api/billing/subscribe', methods=['POST'])
 @user_required
