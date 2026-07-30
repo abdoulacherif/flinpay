@@ -7,64 +7,104 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--muted:#8A8FA8}
+html{height:100%}
 body{
-  font-family:'Inter',sans-serif;background:#0D0D0D;min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:40px 20px;position:relative;overflow:hidden
+  font-family:'Inter',sans-serif;background:#0D0D0D;min-height:100%;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;
+  padding:40px 20px;position:relative;
+  overflow-x:hidden;overflow-y:auto
 }
 body::before{
-  content:'';position:absolute;inset:0;
+  content:'';position:fixed;inset:0;
   background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.18) 0%,transparent 70%);
-  pointer-events:none
+  pointer-events:none;animation:glowPulse 6s ease-in-out infinite
+}
+@keyframes glowPulse{0%,100%{opacity:.8}50%{opacity:1}}
+@media (min-height:640px){
+  body{justify-content:center}
 }
 .box{
   background:#141420;border:1px solid rgba(255,255,255,0.08);
   border-radius:24px;padding:40px 36px;width:100%;max-width:440px;
-  position:relative;z-index:1;box-shadow:0 32px 64px rgba(0,0,0,0.4);text-align:center
+  position:relative;z-index:1;box-shadow:0 32px 64px rgba(0,0,0,0.4);text-align:center;
+  margin:auto;
+  animation:boxIn .45s cubic-bezier(.16,1,.3,1)
 }
+@keyframes boxIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.6rem;color:white;margin-bottom:22px}
-.logo span{color:var(--blue)}
-.icon-big{font-size:2.6rem;margin-bottom:14px}
-.amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.4rem;color:white;letter-spacing:-0.02em}
+.logo span{color:var(--blue,#1A3CFF)}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--muted:#8A8FA8}
+.icon-big{font-size:2.6rem;margin-bottom:14px;display:inline-block;animation:iconFloat 2.4s ease-in-out infinite}
+@keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.4rem;color:white;letter-spacing:-0.02em;transition:all .2s}
 .desc{color:rgba(255,255,255,0.45);font-size:0.88rem;margin-top:6px;margin-bottom:26px}
-.field{margin-bottom:14px;text-align:left}
+.field{margin-bottom:14px;text-align:left;animation:fieldIn .35s ease both}
+.field:nth-of-type(1){animation-delay:.02s}
+.field:nth-of-type(2){animation-delay:.05s}
+.field:nth-of-type(3){animation-delay:.08s}
+.field:nth-of-type(4){animation-delay:.11s}
+@keyframes fieldIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .product-img{width:100%;max-height:180px;object-fit:cover;border-radius:14px;margin-bottom:18px}
 .amount-input-wrap{text-align:left;margin-bottom:6px}
 label{display:block;font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:7px}
 input{
   width:100%;padding:12px 15px;background:rgba(255,255,255,0.05);
   border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:white;
-  font-size:0.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s
+  font-size:0.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s,background .2s
 }
-input:focus{border-color:var(--blue)}
+input:focus{border-color:var(--blue);background:rgba(255,255,255,0.08)}
 input::placeholder{color:rgba(255,255,255,0.2)}
 .btn-pay{
   width:100%;padding:14px;background:var(--blue);color:white;border:none;
   border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;
   font-size:0.95rem;cursor:pointer;transition:all .2s;margin-top:6px
 }
-.btn-pay:hover{background:#1430e0}
+.btn-pay:hover:not(:disabled){background:#1430e0;transform:translateY(-1px);box-shadow:0 8px 20px rgba(26,60,255,0.35)}
+.btn-pay:active:not(:disabled){transform:translateY(0)}
 .btn-pay:disabled{opacity:0.5;pointer-events:none}
 .secure-note{color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:16px}
 .error-msg{
   background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.3);
   color:#ff7070;border-radius:8px;padding:10px 14px;font-size:0.83rem;
-  margin-bottom:14px;display:none
+  margin-bottom:14px;display:none;animation:shake .35s ease
 }
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .state-title{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;margin-bottom:8px}
 .state-text{color:rgba(255,255,255,0.45);font-size:0.88rem;line-height:1.6}
 .back{margin-top:22px;font-size:0.8rem}
 .back a{color:rgba(255,255,255,0.3);text-decoration:none}
 .back a:hover{color:white}
 .op-toggle{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-select#pay-country{width:100%;padding:12px 15px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:white;font-size:0.9rem;font-family:'Inter',sans-serif;outline:none}
+select#pay-country{width:100%;padding:12px 15px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:white;font-size:0.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+select#pay-country:focus{border-color:var(--blue)}
 select#pay-country option{background:#1a1a2e;color:white}
-.op-btn{flex:1;padding:10px;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);cursor:pointer;font-size:0.82rem;font-weight:600;text-align:center}
+.op-btn{flex:1;padding:10px;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);cursor:pointer;font-size:0.82rem;font-weight:600;text-align:center;transition:all .15s}
+.op-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
 .op-btn.active{border-color:var(--blue);background:rgba(26,60,255,0.15);color:white}
-.check-note{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:14px;line-height:1.6}
-.btn-verify{background:transparent;border:1.5px solid rgba(255,255,255,0.2);color:white;border-radius:10px;padding:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;margin-top:14px;width:100%}
+.check-note{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:14px;line-height:1.6;min-height:1.2em}
+.btn-verify{background:transparent;border:1.5px solid rgba(255,255,255,0.2);color:white;border-radius:10px;padding:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;margin-top:14px;width:100%;transition:all .15s}
+.btn-verify:hover:not(:disabled){border-color:rgba(255,255,255,0.4)}
 .btn-verify:disabled{opacity:0.5;pointer-events:none}
+
+#success-view, #pay-view{animation:fadeSwap .35s ease both}
+@keyframes fadeSwap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.spinner-ring{
+  width:56px;height:56px;border-radius:50%;margin:0 auto 16px;
+  border:3px solid rgba(255,255,255,0.12);border-top-color:var(--gold);
+  animation:spin 1s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pulse-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-right:6px;animation:pulseDot 1.2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+.success-check{
+  width:64px;height:64px;border-radius:50%;background:rgba(0,196,140,0.12);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 16px;
+  animation:popIn .4s cubic-bezier(.34,1.56,.64,1)
+}
+@keyframes popIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+.success-check svg{width:30px;height:30px}
 </style>
 </head>
 <body>
@@ -135,11 +175,11 @@ select#pay-country option{background:#1a1a2e;color:white}
     </div>
 
     <div id="success-view" style="display:none">
-      <div class="icon-big">📲</div>
+      <div class="spinner-ring" id="wait-spinner"></div>
       <div class="state-title">Vérifiez votre téléphone</div>
       <div class="state-text">Une demande de confirmation a été envoyée sur votre mobile money. Composez votre code pour valider le paiement.</div>
-      <button class="btn-verify" id="btn-verify" onclick="checkStatus()">🔄 J'ai confirmé, vérifier</button>
-      <div class="check-note" id="check-note"></div>
+      <button class="btn-verify" id="btn-verify" onclick="checkStatus(true)">🔄 J'ai confirmé, vérifier</button>
+      <div class="check-note" id="check-note"><span class="pulse-dot"></span>Vérification automatique en cours…</div>
     </div>
   {% endif %}
 
@@ -151,6 +191,7 @@ select#pay-country option{background:#1a1a2e;color:white}
 const COUNTRY_OPERATORS = {{ countries_operators | tojson }};
 let currentOperator='';
 let currentTxToken=null;
+let autoPollTimer=null;
 
 function onCountryChange(){
   const country=document.getElementById('pay-country').value;
@@ -220,6 +261,7 @@ async function doPay(){
       currentTxToken=data.tx_token;
       document.getElementById('pay-view').style.display='none';
       document.getElementById('success-view').style.display='block';
+      startAutoPoll();
     }else{
       err.textContent='⚠ '+(data.error||'Erreur lors du paiement.');
       err.style.display='block';
@@ -234,32 +276,45 @@ async function doPay(){
   }
 }
 
-async function checkStatus(){
+function startAutoPoll(){
+  if(autoPollTimer) clearInterval(autoPollTimer);
+  autoPollTimer=setInterval(()=>checkStatus(false), 4000);
+}
+function stopAutoPoll(){
+  if(autoPollTimer){ clearInterval(autoPollTimer); autoPollTimer=null; }
+}
+
+async function checkStatus(manual){
   if(!currentTxToken) return;
   const btn=document.getElementById('btn-verify');
   const note=document.getElementById('check-note');
-  btn.disabled=true; btn.textContent='Vérification...';
+  if(manual){ btn.disabled=true; btn.textContent='Vérification...'; }
+
   try{
     const r=await fetch('/api/pay-status/'+currentTxToken);
     const data=await r.json();
     if(data.ok && data.status==='paid'){
+      stopAutoPoll();
       document.getElementById('success-view').innerHTML=`
-        <div class="icon-big">✅</div>
+        <div class="success-check"><svg viewBox="0 0 24 24" fill="none" stroke="#00C48C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
         <div class="state-title">Paiement confirmé</div>
         <div class="state-text">${data.message||'Merci pour votre paiement !'}</div>`;
       if(data.redirect_url){
         setTimeout(()=>{ window.location.href=data.redirect_url; }, 2000);
       }
     }else if(data.ok && data.status==='failed'){
+      stopAutoPoll();
       note.textContent='❌ Le paiement a échoué ou a été annulé.';
-      btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier";
+      if(manual){ btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier"; }
     }else{
-      note.textContent='⏳ Toujours en attente. Réessayez dans quelques secondes.';
-      btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier";
+      note.innerHTML='<span class="pulse-dot"></span>Toujours en attente…';
+      if(manual){ btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier"; }
     }
   }catch(e){
-    note.textContent='⚠ Erreur de connexion.';
-    btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier";
+    if(manual){
+      note.textContent='⚠ Erreur de connexion.';
+      btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier";
+    }
   }
 }
 </script>
