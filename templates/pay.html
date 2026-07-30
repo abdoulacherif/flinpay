@@ -106,6 +106,14 @@ select#pay-country option{background:#1a1a2e;color:white}
 @keyframes popIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
 .success-check svg{width:30px;height:30px}
 </style>
+<script>
+if(new URLSearchParams(window.location.search).get('embed')==='1'){
+  document.addEventListener('DOMContentLoaded', function(){
+    var back=document.querySelector('.back');
+    if(back) back.style.display='none';
+  });
+}
+</script>
 </head>
 <body>
 <div class="box">
@@ -299,6 +307,11 @@ async function checkStatus(manual){
         <div class="success-check"><svg viewBox="0 0 24 24" fill="none" stroke="#00C48C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
         <div class="state-title">Paiement confirmé</div>
         <div class="state-text">${data.message||'Merci pour votre paiement !'}</div>`;
+      try{
+        if(window.parent && window.parent!==window){
+          window.parent.postMessage({flinpay:'payment_success', tx_token: currentTxToken}, '*');
+        }
+      }catch(e){}
       if(data.redirect_url){
         setTimeout(()=>{ window.location.href=data.redirect_url; }, 2000);
       }
