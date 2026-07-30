@@ -628,6 +628,11 @@ def api_pay():
         'environment': env_label,
         'user_id': user_id,
         'operator': operator,
+        # Si le marchand transmet les infos de SON client (navigateur/IP côté client), on les
+        # garde ; sinon on capture ce qu'on voit nous-mêmes (souvent le serveur du marchand).
+        'user_agent': (data.get('customer_user_agent') or request.headers.get('User-Agent') or '')[:500],
+        'ip_address': (data.get('customer_ip') or request.headers.get('x-forwarded-for', request.remote_addr or ''))[:100],
+        'referer_url': (data.get('customer_referrer') or request.headers.get('Referer') or '')[:500],
         'created_at': datetime.utcnow().isoformat()
     }
 
@@ -1276,6 +1281,18 @@ def get_user_by_id(user_id):
     users = sb_get('users', f'id=eq.{user_id}')
     return users[0] if users else {}
 
+def get_request_client_info():
+    """Capture les infos du visiteur qui déclenche le paiement (navigateur, IP, page d'origine),
+    pour affichage dans l'historique des transactions."""
+    ip = request.headers.get('x-forwarded-for', request.remote_addr or '')
+    if ip and ',' in ip:
+        ip = ip.split(',')[0].strip()
+    return {
+        'user_agent': (request.headers.get('User-Agent') or '')[:500],
+        'ip_address': (ip or '')[:100],
+        'referer_url': (request.headers.get('Referer') or '')[:500]
+    }
+
 def get_monthly_transaction_count(user_id):
     first_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
     return sb_count('transactions', f'user_id=eq.{user_id}&created_at=gte.{first_of_month}')
@@ -1589,6 +1606,7 @@ def api_pay_link(token):
         'operator': operator,
         'gateway_reference': collect['data'].get('reference'),
         'payment_link_token': token,
+        **get_request_client_info(),
         'created_at': datetime.utcnow().isoformat()
     })
     if not tx or (isinstance(tx, dict) and tx.get('_error')):
