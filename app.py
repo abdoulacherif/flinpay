@@ -1138,7 +1138,7 @@ def soleaspay_collect(wallet, amount, currency, order_id, description, payer, pa
             'wallet': wallet,
             'amount': amount,
             'currency': currency,
-            'orderId': order_id,
+            'order_id': order_id,
             'description': description,
             'payer': payer,
             'payerEmail': payer_email or '',
@@ -1147,6 +1147,7 @@ def soleaspay_collect(wallet, amount, currency, order_id, description, payer, pa
         }
         r = requests.post(f'{SOLEASPAY_BASE}/api/agent/bills/v3', headers=headers, json=payload, timeout=20)
         data = r.json()
+        print(f'[soleaspay_collect] RAW RESPONSE status={r.status_code} body={r.text[:800]}')  # TEMPORAIRE — à retirer après debug
         if data.get('success'):
             return {'ok': True, 'data': data.get('data', {})}
         print(f'[soleaspay_collect] status={r.status_code} body={r.text[:300]}')
@@ -1158,13 +1159,17 @@ def soleaspay_collect(wallet, amount, currency, order_id, description, payer, pa
 def soleaspay_verify(order_id, pay_id):
     try:
         headers = {'x-api-key': SOLEASPAY_API_KEY, 'Content-Type': 'application/json'}
+        params = {'orderId': order_id, 'payId': pay_id}
+        print(f'[soleaspay_verify] SENDING params={params}')  # TEMPORAIRE — à retirer après debug
         r = requests.get(f'{SOLEASPAY_BASE}/api/agent/verif-pay',
-                          headers=headers, params={'orderId': order_id, 'payId': pay_id}, timeout=15)
+                          headers=headers, params=params, timeout=15)
         data = r.json()
+        print(f'[soleaspay_verify] RAW RESPONSE status={r.status_code} body={r.text[:800]}')  # TEMPORAIRE — à retirer après debug
         if data.get('success'):
             return {'ok': True, 'status': data.get('status'), 'data': data.get('data', {})}
         return {'ok': False, 'detail': data.get('message', 'Erreur inconnue')}
     except Exception as e:
+        print(f'[soleaspay_verify] error: {e}')  # TEMPORAIRE — à retirer après debug
         return {'ok': False, 'detail': str(e)}
 
 def soleaspay_verify_callback_signature(header_value):
