@@ -99,6 +99,17 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
 .empty-text{font-size:.85rem;line-height:1.65}
 
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border-radius:20px;padding:26px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;font-size:1.1rem;color:var(--muted);cursor:pointer;padding:4px}
+.detail-row{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-soft);font-size:.83rem}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:var(--muted);font-weight:600}
+.detail-val{word-break:break-word}
+@media(max-width:520px){.detail-row{grid-template-columns:1fr;gap:2px}}
+
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
@@ -227,6 +238,14 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     </div>
   </div>
 </div>
+
+<div class="modal-bg" id="details-modal">
+  <div class="modal">
+    <h3>Détails de la transaction <button class="modal-close" onclick="closeDetails()">✕</button></h3>
+    <div id="details-body"></div>
+  </div>
+</div>
+
 <script>
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
@@ -261,13 +280,22 @@ async function loadTransactions(){
     if(!data.ok){ allTx=[]; renderTx(allTx); return; }
     allTx=(data.transactions||[]).map(tx=>({
       id:tx.token||'',
+      orderId:tx.order_id||'',
       client:tx.client_name||'—',
       amount:Number(tx.amount)||0,
       status:tx.status||'pending',
       phone:tx.client_phone||'—',
       country:tx.country||'',
+      operator:tx.operator||'',
+      environment:tx.environment||'',
       hasGatewayRef:!!tx.gateway_reference,
-      date:tx.created_at?new Date(tx.created_at).toLocaleString('fr-FR'):''
+      gatewayRef:tx.gateway_reference||'',
+      paymentLinkToken:tx.payment_link_token||'',
+      userAgent:tx.user_agent||'',
+      ipAddress:tx.ip_address||'',
+      refererUrl:tx.referer_url||'',
+      date:tx.created_at?new Date(tx.created_at).toLocaleString('fr-FR'):'',
+      paidAt:tx.paid_at?new Date(tx.paid_at).toLocaleString('fr-FR'):''
     }));
     renderTx(allTx);
   }catch(e){
@@ -291,9 +319,67 @@ function renderTx(txs){
       </span></td>
       <td>${tx.phone}</td>
       <td style="font-size:.76rem;color:var(--muted)">${tx.date}</td>
-      <td>${tx.status==='pending'&&tx.hasGatewayRef?`<button class="btn btn-outline btn-sm" onclick="syncTx('${tx.id}',this)">🔄 Vérifier</button>`:''}</td>
+      <td style="white-space:nowrap;display:flex;gap:6px">
+        ${tx.status==='pending'&&tx.hasGatewayRef?`<button class="btn btn-outline btn-sm" onclick="syncTx('${tx.id}',this)">🔄 Vérifier</button>`:''}
+        <button class="btn btn-outline btn-sm" onclick="viewDetails('${tx.id}')">🔍 Détails</button>
+      </td>
     </tr>
   `).join('');
+}
+
+function viewDetails(id){
+  const tx=allTx.find(t=>t.id===id);
+  if(!tx) return;
+
+  const linkUrl=tx.paymentLinkToken ? `https://www.flinpay.cfd/pay/${tx.paymentLinkToken}` : null;
+  const source=linkUrl
+    ? `Lien de paiement (<a href="${linkUrl}" target="_blank" style="color:var(--blue)">${linkUrl}</a>)`
+    : 'Paiement API directe (intégration marchand)';
+
+  const ua=tx.userAgent||'';
+  let browser='Inconnu', os='Inconnu';
+  if(ua){
+    if(/Chrome/i.test(ua) && !/Edg|OPR/i.test(ua)) browser='Chrome';
+    else if(/Firefox/i.test(ua)) browser='Firefox';
+    else if(/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser='Safari';
+    else if(/Edg/i.test(ua)) browser='Edge';
+    else if(/OPR/i.test(ua)) browser='Opera';
+    if(/Android/i.test(ua)) os='Android';
+    else if(/iPhone|iPad|iOS/i.test(ua)) os='iOS';
+    else if(/Windows/i.test(ua)) os='Windows';
+    else if(/Mac OS/i.test(ua)) os='macOS';
+    else if(/Linux/i.test(ua)) os='Linux';
+  }
+
+  const rows=[
+    ['ID transaction', `<span class="tx-id">${tx.id}</span>`],
+    ['ID commande', tx.orderId||'—'],
+    ['Client', tx.client],
+    ['Téléphone', tx.phone],
+    ['Montant', tx.amount.toLocaleString()+' XOF'],
+    ['Statut', tx.status],
+    ['Pays', tx.country||'—'],
+    ['Opérateur', tx.operator||'—'],
+    ['Environnement', tx.environment||'—'],
+    ['Réf. passerelle (SoleasPay)', tx.gatewayRef||'—'],
+    ['Créée le', tx.date||'—'],
+    ['Payée le', tx.paidAt||'—'],
+    ['Origine du paiement', source],
+    ['Navigateur détecté', ua ? `${browser} — ${os}` : 'Non disponible (paiement API sans info transmise)'],
+    ['Adresse IP', tx.ipAddress||'Non disponible'],
+    ['Page d\'origine (referer)', tx.refererUrl ? `<a href="${tx.refererUrl}" target="_blank" style="color:var(--blue)">${tx.refererUrl}</a>` : 'Non disponible'],
+  ];
+
+  document.getElementById('details-body').innerHTML=rows.map(([label,val])=>`
+    <div class="detail-row">
+      <div class="detail-label">${label}</div>
+      <div class="detail-val">${val}</div>
+    </div>
+  `).join('');
+  document.getElementById('details-modal').classList.add('show');
+}
+function closeDetails(){
+  document.getElementById('details-modal').classList.remove('show');
 }
 async function syncTx(token, btn){
   btn.disabled=true; btn.textContent='...';
@@ -339,6 +425,7 @@ function exportTx(){
 
 loadProfile();
 loadTransactions();
+document.getElementById('details-modal').addEventListener('click',e=>{if(e.target===document.getElementById('details-modal'))closeDetails()});
 </script>
 </body>
 </html>
