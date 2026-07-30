@@ -25,10 +25,8 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
-/* ── APP SHELL (mobile-first, centered on larger screens) ── */
 .app-shell{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;box-shadow:0 0 60px rgba(0,0,0,.35);overflow-x:hidden}
 
-/* ── OVERLAY / DRAWER ── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:250;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
 .drawer{
@@ -70,7 +68,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.76rem;padding:11px 20px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
 
-/* ── HEADER ── */
 .header-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 6px;position:relative;z-index:2}
 .header-logo{display:flex;align-items:center;gap:10px}
 .header-logo-mark{width:38px;height:38px;border-radius:11px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;color:var(--ink);font-size:1.05rem}
@@ -79,7 +76,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .burger-btn{background:rgba(255,255,255,0.14);border:none;cursor:pointer;padding:10px;border-radius:11px;display:flex;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center}
 .burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
 
-/* ── HERO (gradient) ── */
 .hero{background:linear-gradient(135deg,var(--blue) 0%,var(--blue-deep) 55%,#3A1A8C 100%);border-radius:0 0 28px 28px;padding-bottom:26px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;top:-60px;right:-50px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,0.05)}
 .hero::after{content:'';position:absolute;bottom:-70px;left:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,180,0,0.09)}
@@ -104,13 +100,11 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .hstat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.28rem;color:white;letter-spacing:-.01em}
 .hstat-unit{font-size:.66rem;color:rgba(255,255,255,.45);margin-top:2px}
 
-/* ── PAGE / SECTIONS ── */
 .page{padding:22px 20px 100px}
 .section-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .section-head h2{font-size:.72rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--muted-soft);white-space:nowrap}
 .section-head .rule{flex:1;height:1px;background:var(--border)}
 
-/* ── TX-BREAKDOWN (3 mini cards) ── */
 .breakdown-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:26px}
 .breakdown-card{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:18px 8px 14px;text-align:center;box-shadow:var(--shadow-sm)}
 .breakdown-icon{width:34px;height:34px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center}
@@ -120,7 +114,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .breakdown-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;margin-bottom:2px}
 .breakdown-lbl{font-size:.68rem;color:var(--muted)}
 
-/* ── ACCÈS RAPIDE (big cards) ── */
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px}
 .quick-card{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:16px;display:flex;align-items:center;gap:12px;text-decoration:none;box-shadow:var(--shadow-sm);transition:all .15s}
 .quick-card:hover{border-color:var(--blue);transform:translateY(-1px)}
@@ -133,7 +126,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .quick-title{font-size:.86rem;font-weight:700;line-height:1.2}
 .quick-sub{font-size:.72rem;color:var(--muted);margin-top:2px}
 
-/* ── CARD (transactions + plan) ── */
 .card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:26px}
 .card-head{padding:16px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
 .card-title{font-size:.88rem;font-weight:700;letter-spacing:-.01em}
@@ -153,7 +145,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .empty-icon{font-size:2rem;margin-bottom:8px;opacity:.7}
 .empty-text{font-size:.82rem;line-height:1.6}
 
-/* ── PLAN BANNER ── */
 .plan-hero{background:linear-gradient(135deg,var(--blue) 0%,var(--blue-deep) 60%,#5B2CFF 100%);border-radius:var(--r-lg);padding:20px;color:white;position:relative;overflow:hidden;margin-bottom:26px}
 .plan-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.07)}
 .plan-badge-inline{display:inline-block;background:rgba(255,255,255,0.16);font-size:.64rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 10px;border-radius:5px;margin-bottom:10px;position:relative;z-index:1}
@@ -164,21 +155,18 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .btn-gold:hover{filter:brightness(1.05)}
 .btn-sm{padding:6px 12px;font-size:.75rem}
 
-/* ── KYC INLINE NOTE ── */
 .kyc-note{display:none;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r-md);margin-bottom:20px;background:var(--gold-tint);border:1px solid rgba(255,180,0,.3)}
 .kyc-note.show{display:flex}
 .kyc-note strong{display:block;font-size:.82rem;color:#8A5B00}
 .kyc-note span{font-size:.74rem;color:#8A5B00;opacity:.85}
 .kyc-note .btn{margin-left:auto;flex-shrink:0}
 
-/* ── BOTTOM NAV ── */
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:120;box-shadow:0 -4px 16px rgba(15,17,32,.06)}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 12px;text-decoration:none;color:var(--muted-soft);transition:color .15s}
 .bnav-item .icon{width:20px;height:20px}
 .bnav-item span{font-size:.64rem;font-weight:600}
 .bnav-item.active{color:var(--blue)}
 
-/* ── TOAST ── */
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.83rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 </style>
@@ -356,7 +344,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     <div class="plan-hero">
       <div class="plan-badge-inline">🚀 Plan Starter</div>
       <div style="font-size:1.15rem;font-weight:800;position:relative;z-index:1">Transactions utilisées</div>
-      <div style="font-size:1.4rem;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:1" id="plan-usage">0 / 100</div>
+      <div style="font-size:1.4rem;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:1" id="plan-usage">0 / 300</div>
       <div class="plan-progress"><div class="plan-fill" id="plan-bar" style="width:0%"></div></div>
       <a href="/billing" class="btn btn-gold btn-sm" style="margin-top:12px">⬆ Passer au Pro</a>
     </div>
@@ -375,7 +363,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 <div id="toast"></div>
 
 <script>
-// ── DRAWER ──────────────────────────────────────
 function openDrawer(){
   document.getElementById('drawer').classList.add('open');
   document.getElementById('overlay').classList.add('show');
@@ -387,7 +374,6 @@ function closeDrawer(){
   document.body.style.overflow='';
 }
 
-// ── TOAST ────────────────────────────────────────
 function toast(msg, ok=true){
   const t=document.getElementById('toast');
   t.textContent=(ok?'✅ ':'❌ ')+msg;
@@ -396,7 +382,6 @@ function toast(msg, ok=true){
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-// ── PROFIL (drawer + KYC quick icon) — via /api/me ────
 async function loadProfile(){
   try{
     const r=await fetch('/api/me');
@@ -408,6 +393,14 @@ async function loadProfile(){
     document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
     document.getElementById('user-email').textContent=user.email||'';
     document.getElementById('welcome-sub').textContent='Bonjour '+(user.firstname||'')+', voici votre activité';
+
+    // Utilisation du plan — basée sur la vraie limite renvoyée par le backend
+    // (300/mois sur Starter), pas sur un plafond fixe côté frontend.
+    const limit=user.monthly_limit||300;
+    const used=user.usage_this_month||0;
+    const pct=limit>0?Math.min(100, Math.round(used/limit*100)):0;
+    document.getElementById('plan-usage').textContent=used+' / '+limit;
+    document.getElementById('plan-bar').style.width=pct+'%';
 
     const kyc=user.kyc_status||'unverified';
     const kycBtn=document.getElementById('kyc-quick-btn');
@@ -428,7 +421,6 @@ async function loadProfile(){
   }catch(e){}
 }
 
-// ── TRANSACTIONS (aperçu + répartition) — via /api/transactions ─
 async function loadTransactions(){
   try{
     const r=await fetch('/api/transactions');
@@ -461,10 +453,6 @@ function updateOverviewStats(rawTxs){
   document.getElementById('bd-pending').textContent=pending.length;
   document.getElementById('bd-failed').textContent=failed.length;
 
-  const usage=Math.min(txs.length,100);
-  document.getElementById('plan-usage').textContent=usage+' / 100';
-  document.getElementById('plan-bar').style.width=usage+'%';
-
   const ovList=document.getElementById('ov-tx-list');
   if(!txs.length){
     ovList.innerHTML='<div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction.<br>Intégrez l\'API pour commencer.</div></div>';
@@ -479,7 +467,6 @@ function updateOverviewStats(rawTxs){
   </tbody></table>`;
 }
 
-// ── INIT ─────────────────────────────────────────
 loadProfile();
 loadTransactions();
 </script>
