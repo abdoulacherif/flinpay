@@ -1256,7 +1256,7 @@ def get_markup_percent():
             return float(rows[0]['value'])
         except (TypeError, ValueError):
             pass
-    return 2.0
+    return 2.5
 
 def get_subscription_price():
     rows = sb_get('site_config', 'key=eq.subscription_price')
