@@ -292,17 +292,6 @@ def api_me():
         'available_balance': user.get('available_balance', 0),
         'totp_enabled': user.get('totp_enabled', False)
     }})
-@app.route('/api/operators', methods=['GET'])
-@user_required
-def api_get_operators():
-    user = get_current_user()
-    country = user.get('country', '')
-    ops = get_country_operators(country)
-    return jsonify({
-        'ok': True,
-        'country': country,
-        'operators': [{'key': k, 'label': v[1]} for k, v in ops.items()]
-    })
 
 @app.route('/api/billing/subscribe', methods=['POST'])
 @user_required
@@ -1543,10 +1532,12 @@ def pay_thank_you(token):
 @app.route('/webhook/soleaspay', methods=['POST'])
 def webhook_soleaspay():
     signature = request.headers.get('x-private-key', '')
+    print(f'[webhook_soleaspay] headers={dict(request.headers)}')  # TEMPORAIRE — à retirer après debug
+    payload = request.get_json(silent=True) or {}
+    print(f'[webhook_soleaspay] payload={payload}')  # TEMPORAIRE — à retirer après debug
     if not soleaspay_verify_callback_signature(signature):
         return jsonify({'ok': False, 'error': 'Signature invalide'}), 401
 
-    payload = request.get_json(silent=True) or {}
     remote_status = payload.get('status')  # SUCCESS | RECEIVED | REFUND
     tx_data = payload.get('data', {})
     external_reference = tx_data.get('external_reference')  # notre order_id = notre token
