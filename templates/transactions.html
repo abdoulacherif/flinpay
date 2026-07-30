@@ -201,10 +201,13 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       </select>
       <select class="filter-select" id="tx-country" onchange="filterTx()">
         <option value="">Tous les pays</option>
-        <option value="CI">🇨🇮 Côte d'Ivoire</option>
         <option value="CM">🇨🇲 Cameroun</option>
-        <option value="SN">🇸🇳 Sénégal</option>
+        <option value="CI">🇨🇮 Côte d'Ivoire</option>
+        <option value="BF">🇧🇫 Burkina Faso</option>
         <option value="BJ">🇧🇯 Bénin</option>
+        <option value="TG">🇹🇬 Togo</option>
+        <option value="CD">🇨🇩 RDC</option>
+        <option value="GA">🇬🇦 Gabon</option>
       </select>
       <button class="btn btn-outline btn-sm" onclick="exportTx()"><span class="icon"><svg><use href="#ic-download"/></svg></span> Exporter CSV</button>
     </div>
@@ -243,6 +246,10 @@ async function loadProfile(){
 }
 
 // ── TRANSACTIONS — via /api/transactions ──────────
+// NOTE: le gateway utilisé pour la collecte mobile money est SoleasPay, pas LeekPay.
+// Le backend stocke la référence de collecte dans `gateway_reference` (voir sb_post('transactions', ...)
+// dans app.py). Le bouton "Vérifier" doit donc se baser sur ce champ, pas sur un
+// `leekpay_checkout_id` qui n'existe pas dans la réponse de l'API.
 let allTx=[];
 async function loadTransactions(){
   const tbody=document.getElementById('tx-tbody');
@@ -251,7 +258,7 @@ async function loadTransactions(){
     const r=await fetch('/api/transactions');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     const data=await r.json();
-    if(!data.ok){ toast&&toast(data.error||'Erreur de chargement',false); allTx=[]; renderTx(allTx); return; }
+    if(!data.ok){ allTx=[]; renderTx(allTx); return; }
     allTx=(data.transactions||[]).map(tx=>({
       id:tx.token||'',
       client:tx.client_name||'—',
@@ -259,7 +266,7 @@ async function loadTransactions(){
       status:tx.status||'pending',
       phone:tx.client_phone||'—',
       country:tx.country||'',
-      hasCheckout:!!tx.leekpay_checkout_id,
+      hasGatewayRef:!!tx.gateway_reference,
       date:tx.created_at?new Date(tx.created_at).toLocaleString('fr-FR'):''
     }));
     renderTx(allTx);
@@ -284,7 +291,7 @@ function renderTx(txs){
       </span></td>
       <td>${tx.phone}</td>
       <td style="font-size:.76rem;color:var(--muted)">${tx.date}</td>
-      <td>${tx.status==='pending'&&tx.hasCheckout?`<button class="btn btn-outline btn-sm" onclick="syncTx('${tx.id}',this)">🔄 Vérifier</button>`:''}</td>
+      <td>${tx.status==='pending'&&tx.hasGatewayRef?`<button class="btn btn-outline btn-sm" onclick="syncTx('${tx.id}',this)">🔄 Vérifier</button>`:''}</td>
     </tr>
   `).join('');
 }
@@ -293,13 +300,13 @@ async function syncTx(token, btn){
   try{
     const r=await fetch('/api/transactions/'+token+'/sync',{method:'POST'});
     if(r.status===404){
-      alert('Route introuvable (404) — le backend n\'a probablement pas été redéployé avec la dernière version.');
+      alert("Route introuvable (404) — le backend n'a probablement pas été redéployé avec la dernière version.");
       btn.disabled=false; btn.textContent='🔄 Vérifier';
       return;
     }
     const data=await r.json();
     if(data.ok){
-      alert('Statut actuel : '+data.status);
+      alert('Statut actuel (SoleasPay) : '+data.status);
       loadTransactions();
     }else{
       alert('Erreur : '+(data.error||'inconnue'));
