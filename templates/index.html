@@ -9,7 +9,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#0B0D17;--ink-2:#05060C;--bg:#F5F6FB;--surface:#FFFFFF;
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
   --border:#E7E9F3;--border-soft:#F0F1F8;
   --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
   --gold:#FFB400;--gold-tint:#FFF6E0;
@@ -22,16 +22,6 @@ body{font-family:'Inter',sans-serif;background:var(--surface);color:var(--text);
 h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .icon{width:20px;height:20px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-a:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
-
-@media (prefers-reduced-motion:reduce){
-  *{animation-duration:0.001ms !important;animation-iteration-count:1 !important;transition-duration:0.001ms !important;scroll-behavior:auto !important}
-}
-
-/* reveal on scroll */
-.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
-.reveal.in{opacity:1;transform:translateY(0)}
-.reveal-stagger.in > *{transition-delay:calc(var(--i,0) * 70ms)}
 
 .announce{background:var(--ink);color:rgba(255,255,255,.85);text-align:center;padding:9px 20px;font-size:.82rem;font-weight:500}
 
@@ -43,101 +33,49 @@ nav{
 .nav-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:var(--ink);text-decoration:none}
 .nav-logo span{color:var(--blue)}
 .nav-links{display:flex;gap:30px;list-style:none}
-.nav-links a{text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:500;transition:color .2s;position:relative}
-.nav-links a::after{content:'';position:absolute;left:0;bottom:-6px;width:0;height:1.5px;background:var(--blue);transition:width .25s}
+.nav-links a{text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:500;transition:color .2s}
 .nav-links a:hover{color:var(--text)}
-.nav-links a:hover::after{width:100%}
 .nav-cta{display:flex;gap:10px;align-items:center}
 
 .btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.86rem;padding:10px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s}
 .btn-ghost{background:transparent;color:var(--text)}
 .btn-ghost:hover{color:var(--blue)}
-.btn-primary{background:var(--blue);color:white;box-shadow:0 1px 0 rgba(255,255,255,.15) inset}
-.btn-primary:hover{background:var(--blue-deep);transform:translateY(-2px);box-shadow:0 10px 24px rgba(26,60,255,.28)}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:var(--blue-deep);transform:translateY(-1px)}
 .btn-gold{background:var(--gold);color:var(--ink)}
-.btn-gold:hover{filter:brightness(1.06);transform:translateY(-2px)}
+.btn-gold:hover{filter:brightness(1.06)}
 .btn-lg{padding:14px 28px;font-size:.95rem;border-radius:12px}
 
-/* ============ HERO — cinematic split, phone mockup as signature ============ */
+/* HERO */
 .hero{
-  position:relative;background:var(--ink-2);min-height:96vh;overflow:hidden;
-  padding:64px 6% 0;
-  display:grid;grid-template-columns:1.05fr .95fr;align-items:center;gap:40px
+  background:var(--ink);min-height:90vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:100px 6% 70px;
+  position:relative;overflow:hidden
 }
-.hero-noise{position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E")}
-.hero-glow-a{position:absolute;width:900px;height:900px;left:-320px;top:-360px;border-radius:50%;
-  background:radial-gradient(circle,rgba(26,60,255,.38) 0%,transparent 68%);filter:blur(10px);animation:drift 16s ease-in-out infinite alternate}
-.hero-glow-b{position:absolute;width:640px;height:640px;right:-220px;bottom:-260px;border-radius:50%;
-  background:radial-gradient(circle,rgba(0,196,140,.22) 0%,transparent 70%);filter:blur(10px);animation:drift 20s ease-in-out infinite alternate-reverse}
-@keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(30px,20px)}}
-
-.hero-copy{position:relative;z-index:2;padding:60px 0 90px}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% -5%,rgba(26,60,255,.28) 0%,transparent 70%);pointer-events:none}
+.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 45% 40% at 90% 100%,rgba(0,196,140,.1) 0%,transparent 60%);pointer-events:none}
 .hero-eyebrow{
   display:inline-flex;align-items:center;gap:8px;background:rgba(26,60,255,.16);
-  border:1px solid rgba(26,60,255,.32);color:#9DB0FF;border-radius:30px;padding:7px 16px;
-  font-size:.76rem;font-weight:600;letter-spacing:.05em;margin-bottom:26px
+  border:1px solid rgba(26,60,255,.3);color:#8EA6FF;border-radius:30px;padding:7px 16px;
+  font-size:.76rem;font-weight:600;letter-spacing:.05em;margin-bottom:28px;position:relative;z-index:1
 }
 .hero h1{
-  font-size:clamp(2.3rem,4vw,3.8rem);font-weight:800;color:white;line-height:1.08;
-  letter-spacing:-.03em;max-width:560px;margin-bottom:22px
+  font-size:clamp(2.4rem,5.4vw,4.6rem);font-weight:800;color:white;line-height:1.06;
+  letter-spacing:-.03em;max-width:880px;margin-bottom:22px;position:relative;z-index:1
 }
-.hero h1 .accent{background:linear-gradient(120deg,#7C93FF 10%,var(--green) 90%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{font-size:1.05rem;color:rgba(255,255,255,.56);max-width:460px;line-height:1.7;margin-bottom:36px}
-.hero-btns{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:52px}
-.hero-trust{display:flex;align-items:center;gap:14px;font-size:.78rem;color:rgba(255,255,255,.4)}
-.hero-trust .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px 1px rgba(0,196,140,.7)}
+.hero h1 .accent{background:linear-gradient(120deg,var(--blue) 10%,var(--green) 90%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:1.08rem;color:rgba(255,255,255,.55);max-width:600px;line-height:1.7;margin-bottom:38px;position:relative;z-index:1}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1;margin-bottom:56px}
 
-/* phone mockup */
-.hero-visual{position:relative;z-index:2;display:flex;justify-content:center;align-items:center;padding:40px 0}
-.phone{
-  width:270px;height:552px;border-radius:40px;background:linear-gradient(160deg,#181B2C,#0A0C16);
-  border:1px solid rgba(255,255,255,.08);box-shadow:0 40px 90px -20px rgba(0,0,0,.7),0 0 0 8px rgba(255,255,255,.02);
-  position:relative;padding:14px;transform:rotate(2deg)
-}
-.phone-notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:90px;height:22px;background:#0A0C16;border-radius:14px;z-index:3}
-.phone-screen{
-  width:100%;height:100%;border-radius:28px;background:linear-gradient(175deg,#0F1424,#080A12);
-  position:relative;overflow:hidden;padding:46px 16px 20px
-}
-.phone-status{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:rgba(255,255,255,.3);margin-bottom:26px;padding:0 4px}
-.phone-app-label{font-size:.72rem;color:rgba(255,255,255,.35);text-align:center;margin-bottom:18px;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
-
-.notif{
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px;
-  display:flex;gap:12px;align-items:flex-start;backdrop-filter:blur(6px);
-  animation:notifIn 5s cubic-bezier(.2,.8,.2,1) infinite;position:relative
-}
-.notif-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--green),#00967A);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white}
-.notif-icon .icon{width:18px;height:18px}
-.notif-title{font-size:.76rem;font-weight:700;color:white;margin-bottom:2px}
-.notif-body{font-size:.68rem;color:rgba(255,255,255,.5);line-height:1.5}
-.notif-amount{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--green);font-weight:600;margin-top:6px}
-@keyframes notifIn{
-  0%{opacity:0;transform:translateY(18px) scale(.96)}
-  8%{opacity:1;transform:translateY(0) scale(1)}
-  78%{opacity:1;transform:translateY(0) scale(1)}
-  92%{opacity:0;transform:translateY(-6px) scale(.99)}
-  100%{opacity:0}
-}
-.phone-keypad{margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;opacity:.18}
-.keypad-dot{aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.4)}
-.phone-glow{position:absolute;inset:-40px;background:radial-gradient(circle at 50% 40%,rgba(0,196,140,.25),transparent 65%);filter:blur(30px);z-index:-1}
-
-/* thin corridor ticker beneath hero */
-.corridor-band{position:relative;z-index:2;grid-column:1 / -1;border-top:1px solid rgba(255,255,255,.08);padding:20px 0;overflow:hidden}
-.corridor-track{display:flex;gap:46px;width:max-content;animation:scrollTicker 26s linear infinite}
-.corridor-track span{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:rgba(255,255,255,.38);display:flex;align-items:center;gap:8px;white-space:nowrap}
-.corridor-track span .flag{font-size:1rem}
-@keyframes scrollTicker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-
-@media(max-width:960px){
-  .hero{grid-template-columns:1fr;text-align:left;padding-top:40px}
-  .hero-copy{padding:20px 0 30px}
-  .hero h1,.hero p{max-width:100%}
-  .hero-visual{padding:0 0 40px}
-  .phone{transform:none}
-}
+/* SIGNATURE : ligne de corridors avec pulsation */
+.corridor-line{position:relative;z-index:1;width:100%;max-width:720px}
+.corridor-track{position:relative;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18) 12%,rgba(255,255,255,.18) 88%,transparent);margin:0 10px 22px}
+.corridor-pulse{position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px 2px rgba(0,196,140,.7);animation:travel 4.5s linear infinite}
+@keyframes travel{0%{left:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:100%;opacity:0}}
+.corridor-chips{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.corridor-chip{display:flex;flex-direction:column;align-items:center;gap:6px}
+.chip-flag{font-size:1.5rem}
+.chip-label{font-size:.68rem;color:rgba(255,255,255,.4);font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
 
 /* STATS */
 .stats-strip{background:#07080F;padding:44px 6%;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
@@ -149,43 +87,37 @@ nav{
 .stat-label{font-size:.78rem;color:rgba(255,255,255,.4);margin-top:5px}
 
 /* SECTIONS */
-section{padding:110px 6%}
+section{padding:100px 6%}
 .section-head{max-width:640px;margin:0 auto 56px;text-align:center}
-.eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:8px;justify-content:center}
-.eyebrow::before{content:'';width:16px;height:1.5px;background:var(--blue)}
-.eyebrow::after{content:'';width:16px;height:1.5px;background:var(--blue)}
+.eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:12px}
 .section-title{font-size:clamp(1.7rem,3.2vw,2.5rem);font-weight:800;letter-spacing:-.02em;margin-bottom:14px;line-height:1.15}
 .section-sub{font-size:.98rem;color:var(--muted);line-height:1.7}
 
 /* FEATURES */
 .features-section{background:var(--bg)}
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px;margin:0 auto}
-.feature-card{background:var(--surface);border-radius:var(--r-lg);padding:30px;border:1px solid var(--border);transition:all .3s cubic-bezier(.2,.8,.2,1)}
-.feature-card:hover{transform:translateY(-6px);box-shadow:0 24px 50px rgba(15,17,32,.1);border-color:var(--blue)}
-.feature-icon{width:46px;height:46px;border-radius:12px;background:var(--blue-tint);color:var(--blue);display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:transform .3s}
-.feature-card:hover .feature-icon{transform:scale(1.08) rotate(-4deg)}
+.feature-card{background:var(--surface);border-radius:var(--r-lg);padding:30px;border:1px solid var(--border);transition:all .25s}
+.feature-card:hover{transform:translateY(-4px);box-shadow:0 20px 44px rgba(15,17,32,.08);border-color:var(--blue)}
+.feature-icon{width:46px;height:46px;border-radius:12px;background:var(--blue-tint);color:var(--blue);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
 .feature-card:nth-child(3n+2) .feature-icon{background:var(--green-tint);color:#0A7A50}
 .feature-card:nth-child(3n) .feature-icon{background:var(--gold-tint);color:#8A5B00}
 .feature-card h3{font-size:1rem;font-weight:700;margin-bottom:9px}
 .feature-card p{font-size:.85rem;color:var(--muted);line-height:1.65}
 
-/* HOW — real sequence, numbering justified */
-.how-section{background:var(--ink);position:relative;overflow:hidden}
-.how-section .section-title,.how-section .eyebrow{color:white}
-.how-section .eyebrow::before,.how-section .eyebrow::after{background:#8EA6FF}
-.how-section .section-sub{color:rgba(255,255,255,.5)}
-.how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;max-width:1060px;margin:0 auto;background:rgba(255,255,255,.08);border-radius:var(--r-lg);overflow:hidden;border:1px solid rgba(255,255,255,.08)}
-.how-step{position:relative;background:#0E1120;padding:34px 26px}
-.how-num{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:rgba(255,255,255,.28);margin-bottom:20px}
-.how-icon{width:44px;height:44px;border-radius:12px;background:rgba(26,60,255,.16);color:#9DB0FF;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
-.how-step h4{font-size:.94rem;font-weight:700;margin-bottom:8px;color:white}
-.how-step p{font-size:.83rem;color:rgba(255,255,255,.45);line-height:1.6}
+/* HOW */
+.how-section{background:var(--surface)}
+.how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;max-width:1060px;margin:0 auto}
+.how-step{position:relative}
+.how-icon{width:52px;height:52px;border-radius:14px;background:var(--ink);color:#8EA6FF;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.how-step h4{font-size:.94rem;font-weight:700;margin-bottom:8px}
+.how-step p{font-size:.83rem;color:var(--muted);line-height:1.6}
+.how-connector{position:absolute;top:26px;left:100%;width:22px;height:2px;background:var(--border)}
 
 /* COUNTRIES */
 .countries-section{background:var(--bg)}
 .countries-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1000px;margin:0 auto}
-.country-card{background:var(--surface);border-radius:var(--r-md);padding:22px 20px;border:1px solid var(--border);transition:all .25s}
-.country-card:hover{border-color:var(--blue);box-shadow:0 14px 30px rgba(15,17,32,.08);transform:translateY(-3px)}
+.country-card{background:var(--surface);border-radius:var(--r-md);padding:22px 20px;border:1px solid var(--border);transition:all .2s}
+.country-card:hover{border-color:var(--blue);box-shadow:0 10px 26px rgba(15,17,32,.06)}
 .country-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .country-flag{font-size:1.6rem}
 .country-name{font-weight:700;font-size:.92rem}
@@ -196,8 +128,7 @@ section{padding:110px 6%}
 /* PRICING */
 .pricing-section{background:var(--surface)}
 .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto;align-items:start}
-.pricing-card{background:var(--bg);border-radius:var(--r-lg);padding:34px 28px;border:2px solid var(--border);position:relative;transition:transform .3s,box-shadow .3s}
-.pricing-card:hover{transform:translateY(-4px);box-shadow:0 20px 44px rgba(15,17,32,.08)}
+.pricing-card{background:var(--bg);border-radius:var(--r-lg);padding:34px 28px;border:2px solid var(--border);position:relative}
 .pricing-card.popular{background:var(--ink);border-color:var(--ink);color:white}
 .popular-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 16px;border-radius:20px}
 .plan-name{font-size:.76rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
@@ -218,8 +149,7 @@ section{padding:110px 6%}
 /* TESTIMONIALS */
 .testimonials-section{background:var(--bg)}
 .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px;margin:0 auto}
-.testi-card{background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border);transition:transform .3s,box-shadow .3s}
-.testi-card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(15,17,32,.08)}
+.testi-card{background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border)}
 .testi-quote{font-size:.9rem;color:var(--text);line-height:1.75;margin-bottom:20px}
 .testi-author{display:flex;align-items:center;gap:12px}
 .author-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1rem;flex-shrink:0}
@@ -227,8 +157,8 @@ section{padding:110px 6%}
 .author-role{font-size:.76rem;color:var(--muted);margin-top:1px}
 
 /* CTA */
-.cta-section{background:var(--ink-2);padding:120px 6%;text-align:center;position:relative;overflow:hidden}
-.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 75% at 50% 50%,rgba(26,60,255,.24) 0%,transparent 70%)}
+.cta-section{background:var(--ink);padding:110px 6%;text-align:center;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 75% at 50% 50%,rgba(26,60,255,.22) 0%,transparent 70%)}
 .cta-section h2{font-size:clamp(1.9rem,3.6vw,3rem);color:white;font-weight:800;letter-spacing:-.02em;margin-bottom:16px;position:relative}
 .cta-section p{color:rgba(255,255,255,.5);font-size:.98rem;margin-bottom:34px;position:relative;max-width:480px;margin-left:auto;margin-right:auto}
 .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative}
@@ -249,17 +179,18 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
 
 @media(max-width:960px){
   .nav-links{display:none}
-  .features-grid,.pricing-grid,.testi-grid{grid-template-columns:1fr}
-  .how-grid{grid-template-columns:1fr 1fr}
+  .features-grid,.pricing-grid,.testi-grid,.how-grid{grid-template-columns:1fr}
+  .how-connector{display:none}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .countries-grid{grid-template-columns:repeat(2,1fr)}
   .footer-grid{grid-template-columns:1fr 1fr}
+  .corridor-chips{gap:10px}
+  .chip-label{display:none}
 }
 @media(max-width:520px){
-  .hero-btns,.cta-btns{flex-direction:column;align-items:stretch}
+  .hero-btns,.cta-btns{flex-direction:column;align-items:center}
   .stats-grid{grid-template-columns:1fr 1fr}
-  .how-grid{grid-template-columns:1fr}
-  section{padding:76px 6%}
+  section{padding:70px 6%}
 }
 </style>
 </head>
@@ -303,65 +234,38 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
 </nav>
 
 <section class="hero">
-  <div class="hero-noise"></div>
-  <div class="hero-glow-a"></div>
-  <div class="hero-glow-b"></div>
+  <div class="hero-eyebrow"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-smartphone"/></svg></span> Confirmation directe sur le téléphone du client</div>
 
-  <div class="hero-copy">
-    <div class="hero-eyebrow"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-smartphone"/></svg></span> Confirmation directe sur le téléphone du client</div>
+  <h1>Encaissez du mobile<br><span class="accent">money, sans redirection.</span></h1>
 
-    <h1>Encaissez du mobile<br><span class="accent">money, sans redirection.</span></h1>
+  <p>{{ cfg.get('hero_subtitle', "Une API, des liens de paiement, et une confirmation envoyée directement sur le téléphone du client — pas de page tierce, pas de friction.") }}</p>
 
-    <p>{{ cfg.get('hero_subtitle', "Une API, des liens de paiement, et une confirmation envoyée directement sur le téléphone du client — pas de page tierce, pas de friction.") }}</p>
-
-    <div class="hero-btns">
-      <a href="/register" class="btn btn-primary btn-lg">{{ cfg.get('hero_cta_primary', 'Créer un compte gratuit') }}</a>
-      <a href="/docs" class="btn btn-lg" style="border:1.5px solid rgba(255,255,255,.25);color:white;background:transparent">
-        <span class="icon" style="width:16px;height:16px"><svg><use href="#ic-code"/></svg></span> {{ cfg.get('hero_cta_secondary', 'Voir la documentation') }}
-      </a>
-    </div>
-
-    <div class="hero-trust"><span class="dot"></span> Aucune redirection · confirmation en moins de 3 secondes</div>
+  <div class="hero-btns">
+    <a href="/register" class="btn btn-primary btn-lg">{{ cfg.get('hero_cta_primary', 'Créer un compte gratuit') }}</a>
+    <a href="/docs" class="btn btn-lg" style="border:1.5px solid rgba(255,255,255,.25);color:white;background:transparent">
+      <span class="icon" style="width:16px;height:16px"><svg><use href="#ic-code"/></svg></span> {{ cfg.get('hero_cta_secondary', 'Voir la documentation') }}
+    </a>
   </div>
 
-  <div class="hero-visual">
-    <div class="phone">
-      <div class="phone-glow"></div>
-      <div class="phone-notch"></div>
-      <div class="phone-screen">
-        <div class="phone-status"><span>09:41</span><span>●●● Orange</span></div>
-        <div class="phone-app-label">Confirmation de paiement</div>
-        <div class="notif">
-          <div class="notif-icon"><span class="icon"><svg><use href="#ic-check-circle"/></svg></span></div>
-          <div>
-            <div class="notif-title">Paiement reçu</div>
-            <div class="notif-body">Boutique Aïcha · via Flinpay</div>
-            <div class="notif-amount">+ 15 000 XOF</div>
-          </div>
-        </div>
-        <div class="phone-keypad">
-          {% for i in range(9) %}<div class="keypad-dot"></div>{% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="corridor-band">
+  <div class="corridor-line">
     <div class="corridor-track">
+      <div class="corridor-pulse"></div>
+    </div>
+    <div class="corridor-chips">
       {% for c in countries %}
-      <span><span class="flag">{{ c.flag }}</span>{{ c.code }}</span>
-      {% endfor %}
-      {% for c in countries %}
-      <span><span class="flag">{{ c.flag }}</span>{{ c.code }}</span>
+      <div class="corridor-chip">
+        <span class="chip-flag">{{ c.flag }}</span>
+        <span class="chip-label">{{ c.code }}</span>
+      </div>
       {% endfor %}
     </div>
   </div>
 </section>
 
 <div class="stats-strip">
-  <div class="stats-grid reveal-stagger">
+  <div class="stats-grid">
     {% for s in stats %}
-    <div class="stat-item reveal" style="--i:{{ loop.index0 }}">
+    <div class="stat-item">
       <div class="stat-icon-wrap"><span class="icon"><svg><use href="#ic-check-circle"/></svg></span></div>
       <div class="stat-value">{{ s.value }}</div>
       <div class="stat-label">{{ s.label }}</div>
@@ -371,15 +275,15 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
 </div>
 
 <section class="features-section" id="features">
-  <div class="section-head reveal">
+  <div class="section-head">
     <div class="eyebrow">Fonctionnalités</div>
     <h2 class="section-title">Construit pour le mobile money africain</h2>
     <p class="section-sub">Pas une adaptation d'un système occidental — pensé pour la manière dont vos clients paient réellement.</p>
   </div>
-  <div class="features-grid reveal-stagger">
+  <div class="features-grid">
     {% set icons = ['ic-smartphone','ic-link','ic-key','ic-zap','ic-globe','ic-gift'] %}
     {% for f in features %}
-    <div class="feature-card reveal" style="--i:{{ loop.index0 }}">
+    <div class="feature-card">
       <div class="feature-icon"><span class="icon"><svg><use href="#{{ icons[loop.index0 % icons|length] }}"/></svg></span></div>
       <h3>{{ f.title }}</h3>
       <p>{{ f.description }}</p>
@@ -389,32 +293,31 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
 </section>
 
 <section class="how-section" id="how">
-  <div class="section-head reveal">
+  <div class="section-head">
     <div class="eyebrow">Fonctionnement</div>
     <h2 class="section-title">Quatre étapes, aucune redirection</h2>
     <p class="section-sub">Du compte créé au premier encaissement confirmé sur le téléphone du client.</p>
   </div>
-  <div class="how-grid reveal-stagger">
-    <div class="how-step reveal" style="--i:0">
-      <div class="how-num">01</div>
+  <div class="how-grid">
+    <div class="how-step">
       <div class="how-icon"><span class="icon"><svg><use href="#ic-user-plus"/></svg></span></div>
       <h4>Créez votre compte</h4>
       <p>Inscription gratuite, plan Starter avec 300 transactions/mois inclus.</p>
+      <div class="how-connector"></div>
     </div>
-    <div class="how-step reveal" style="--i:1">
-      <div class="how-num">02</div>
+    <div class="how-step">
       <div class="how-icon"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span></div>
       <h4>Vérifiez votre identité</h4>
       <p>Une pièce d'identité suffit — nécessaire avant de générer une clé API.</p>
+      <div class="how-connector"></div>
     </div>
-    <div class="how-step reveal" style="--i:2">
-      <div class="how-num">03</div>
+    <div class="how-step">
       <div class="how-icon"><span class="icon"><svg><use href="#ic-key"/></svg></span></div>
       <h4>Intégrez ou créez un lien</h4>
       <p>Un appel API, ou un lien de paiement partageable sans écrire de code.</p>
+      <div class="how-connector"></div>
     </div>
-    <div class="how-step reveal" style="--i:3">
-      <div class="how-num">04</div>
+    <div class="how-step">
       <div class="how-icon"><span class="icon"><svg><use href="#ic-smartphone"/></svg></span></div>
       <h4>Le client confirme</h4>
       <p>Il choisit son opérateur et valide directement depuis son téléphone.</p>
@@ -423,53 +326,53 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
 </section>
 
 <section class="countries-section" id="countries">
-  <div class="section-head reveal">
+  <div class="section-head">
     <div class="eyebrow">Couverture</div>
     <h2 class="section-title">{{ countries|length }} pays, chacun avec ses vrais opérateurs</h2>
     <p class="section-sub">Pas une liste générique — les opérateurs mobile money réellement actifs, pays par pays.</p>
   </div>
-  <div class="countries-grid reveal-stagger">
-    <div class="country-card reveal" style="--i:0">
+  <div class="countries-grid">
+    <div class="country-card">
       <div class="country-top"><span class="country-flag">🇨🇲</span><span class="country-name">Cameroun</span></div>
       <div class="country-ops"><span class="op-tag">MTN MoMo</span><span class="op-tag">Orange Money</span></div>
     </div>
-    <div class="country-card reveal" style="--i:1">
+    <div class="country-card">
       <div class="country-top"><span class="country-flag">🇨🇮</span><span class="country-name">Côte d'Ivoire</span></div>
       <div class="country-ops"><span class="op-tag">Orange</span><span class="op-tag">MTN</span><span class="op-tag">Moov</span><span class="op-tag">Wave</span></div>
     </div>
-    <div class="country-card reveal" style="--i:2">
+    <div class="country-card">
       <div class="country-top"><span class="country-flag">🇧🇫</span><span class="country-name">Burkina Faso</span></div>
       <div class="country-ops"><span class="op-tag">Moov</span><span class="op-tag">Orange</span></div>
     </div>
-    <div class="country-card reveal" style="--i:3">
+    <div class="country-card">
       <div class="country-top"><span class="country-flag">🇧🇯</span><span class="country-name">Bénin</span></div>
       <div class="country-ops"><span class="op-tag">MTN</span><span class="op-tag">Moov</span></div>
     </div>
-    <div class="country-card reveal" style="--i:4">
+    <div class="country-card">
       <div class="country-top"><span class="country-flag">🇹🇬</span><span class="country-name">Togo</span></div>
       <div class="country-ops"><span class="op-tag">T-Money</span><span class="op-tag">Moov</span></div>
     </div>
-    <div class="country-card reveal" style="--i:5">
+    <div class="country-card">
       <div class="country-top"><span class="country-flag">🇨🇩</span><span class="country-name">RDC</span></div>
       <div class="country-ops"><span class="op-tag">Vodacom</span><span class="op-tag">Airtel</span><span class="op-tag">Orange</span></div>
     </div>
-    <div class="country-card reveal" style="--i:6">
+    <div class="country-card">
       <div class="country-top"><span class="country-flag">🇬🇦</span><span class="country-name">Gabon</span></div>
       <div class="country-ops"><span class="op-tag">Airtel</span></div>
     </div>
   </div>
-  <p class="countries-note reveal">D'autres corridors ouvrent progressivement. La devise de facturation suit le pays de chaque marchand ; le client paie toujours dans sa propre devise locale.</p>
+  <p class="countries-note">D'autres corridors ouvrent progressivement. La devise de facturation suit le pays de chaque marchand ; le client paie toujours dans sa propre devise locale.</p>
 </section>
 
 <section class="pricing-section" id="pricing">
-  <div class="section-head reveal">
+  <div class="section-head">
     <div class="eyebrow">Tarifs</div>
     <h2 class="section-title">Simple, sans frais cachés</h2>
     <p class="section-sub">Commencez gratuitement. Passez au Pro quand le volume grandit.</p>
   </div>
-  <div class="pricing-grid reveal-stagger">
+  <div class="pricing-grid">
     {% for p in plans %}
-    <div class="pricing-card reveal {% if p.is_popular %}popular{% endif %}" style="--i:{{ loop.index0 }}">
+    <div class="pricing-card {% if p.is_popular %}popular{% endif %}">
       {% if p.is_popular %}<div class="popular-badge">Recommandé</div>{% endif %}
       <div class="plan-name">{{ p.name }}</div>
       <div class="plan-price">{{ p.price }}<span class="plan-period"> {{ p.period or '' }}</span></div>
@@ -491,13 +394,13 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
 
 {% if testimonials %}
 <section class="testimonials-section" id="testimonials">
-  <div class="section-head reveal">
+  <div class="section-head">
     <div class="eyebrow">Témoignages</div>
     <h2 class="section-title">Ils encaissent déjà avec Flinpay</h2>
   </div>
-  <div class="testi-grid reveal-stagger">
+  <div class="testi-grid">
     {% for t in testimonials %}
-    <div class="testi-card reveal" style="--i:{{ loop.index0 }}">
+    <div class="testi-card">
       <p class="testi-quote">{{ t.content }}</p>
       <div class="testi-author">
         <div class="author-av">{{ t.avatar_letter or t.name[0] }}</div>
@@ -513,9 +416,9 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
 {% endif %}
 
 <section class="cta-section">
-  <h2 class="reveal">Prêt à encaisser votre<br>premier paiement ?</h2>
-  <p class="reveal">Gratuit jusqu'à 300 transactions par mois. Aucune carte bancaire requise pour démarrer.</p>
-  <div class="cta-btns reveal">
+  <h2>Prêt à encaisser votre<br>premier paiement ?</h2>
+  <p>Gratuit jusqu'à 300 transactions par mois. Aucune carte bancaire requise pour démarrer.</p>
+  <div class="cta-btns">
     <a href="/register" class="btn btn-primary btn-lg">Créer un compte gratuit</a>
     <a href="/docs" class="btn btn-gold btn-lg">Lire la documentation</a>
   </div>
@@ -556,19 +459,6 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
     <div class="footer-copy">© {{ current_year }} Flinpay. Tous droits réservés.</div>
   </div>
 </footer>
-
-<script>
-(function(){
-  var els = document.querySelectorAll('.reveal');
-  if(!('IntersectionObserver' in window)){ els.forEach(function(e){e.classList.add('in')}); return; }
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(entry){
-      if(entry.isIntersecting){ entry.target.classList.add('in'); io.unobserve(entry.target); }
-    });
-  }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
-  els.forEach(function(e){ io.observe(e); });
-})();
-</script>
 
 </body>
 </html>
