@@ -386,9 +386,16 @@ def api_request_payout():
     if amount > balance:
         return jsonify({'ok': False, 'error': f'Solde insuffisant (disponible: {balance:,.0f} XOF)'}), 400
 
+    # Frais de retrait manuel : 3.5% du montant demandé, déduits du solde du marchand.
+    # Le montant net (envoyé sur son mobile money) est amount - fee.
+    fee = round(amount * PAYOUT_FEE_PERCENT / 100, 2)
+    net_amount = round(amount - fee, 2)
+
     row = sb_post('payouts', {
         'user_id': request.user_id,
         'amount': amount,
+        'fee': fee,
+        'net_amount': net_amount,
         'phone': phone,
         'operator': (data.get('operator') or '').strip(),
         'country': user.get('country', ''),
@@ -1236,6 +1243,8 @@ def leekpay_verify_signature(raw_body, signature):
     return hmac.compare_digest(expected, signature)
 
 FREE_PLAN_MONTHLY_LIMIT = 300
+
+PAYOUT_FEE_PERCENT = 3.5  # frais prélevés sur chaque retrait manuel
 
 REFERRAL_COMMISSION_RATE = 0.10  # 10% de l'abonnement du filleul
 
