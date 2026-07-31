@@ -574,6 +574,8 @@ def api_sync_transaction(token):
             links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
             if links:
                 sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+        if new_status == 'paid':
+            mark_invoice_paid_if_applicable(tx)
         if new_status == 'paid' and tx.get('user_id'):
             merchant = get_user_by_id(tx['user_id'])
             new_balance = (merchant.get('available_balance') or 0) + float(tx.get('amount') or 0)
@@ -910,7 +912,250 @@ def api_test_webhook(wid):
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 502
 
-# ── API PAYMENT LINKS ─────────────────────────────
+# ── FACTURATION ────────────────────────────────────
+def generate_invoice_number(user_id):
+    """Numérotation simple et séquentielle par marchand : INV-0001, INV-0002, ..."""
+    existing = sb_get('invoices', f'user_id=eq.{user_id}&order=id.desc&limit=1')
+    next_num = 1
+    if existing:
+        last_num = existing[0].get('invoice_number', '')
+        try:
+            next_num = int(last_num.split('-')[-1]) + 1
+        except (ValueError, IndexError):
+            next_num = len(sb_get('invoices', f'user_id=eq.{user_id}')) + 1
+    return f'INV-{next_num:04d}'
+
+def mark_invoice_paid_if_applicable(tx):
+    """Si la transaction est liée à une facture et vient de passer à 'paid',
+    marque la facture correspondante comme payée."""
+    invoice_token = tx.get('invoice_token')
+    if not invoice_token:
+        return
+    invoices = sb_get('invoices', f'token=eq.{invoice_token}')
+    if invoices and invoices[0].get('status') != 'paid':
+        sb_patch_multi('invoices', {'token': invoice_token}, {
+            'status': 'paid',
+            'paid_at': datetime.utcnow().isoformat()
+        })
+
+def _compute_invoice_amount(items):
+    total = 0.0
+    for it in items:
+        try:
+            total += float(it.get('quantity', 1)) * float(it.get('unit_price', 0))
+        except (TypeError, ValueError):
+            continue
+    return round(total, 2)
+
+@app.route('/api/invoices', methods=['GET'])
+@user_required
+def api_get_invoices():
+    invoices = sb_get('invoices', f'user_id=eq.{request.user_id}&order=created_at.desc')
+    return jsonify({'ok': True, 'invoices': invoices})
+
+@app.route('/api/invoices', methods=['POST'])
+@user_required
+def api_create_invoice():
+    data = request.get_json() or {}
+    client_name = (data.get('client_name') or '').strip()
+    if not client_name:
+        return jsonify({'ok': False, 'error': 'Le nom du client est requis'}), 400
+
+    items = data.get('items') or []
+    if not isinstance(items, list) or not items:
+        return jsonify({'ok': False, 'error': 'Ajoutez au moins un article'}), 400
+    cleaned_items = []
+    for it in items:
+        desc = (it.get('description') or '').strip()
+        try:
+            qty = float(it.get('quantity', 1))
+            price = float(it.get('unit_price', 0))
+        except (TypeError, ValueError):
+            return jsonify({'ok': False, 'error': 'Quantité ou prix invalide'}), 400
+        if not desc or qty <= 0 or price < 0:
+            return jsonify({'ok': False, 'error': 'Article invalide (description, quantité ou prix)'}), 400
+        cleaned_items.append({'description': desc, 'quantity': qty, 'unit_price': price})
+
+    amount = _compute_invoice_amount(cleaned_items)
+    if amount < SOLEASPAY_MIN_AMOUNT:
+        return jsonify({'ok': False, 'error': f'Montant total minimum : {SOLEASPAY_MIN_AMOUNT} XOF'}), 400
+
+    import uuid
+    token = 'inv_' + uuid.uuid4().hex[:12]
+
+    row = sb_post('invoices', {
+        'token': token,
+        'user_id': request.user_id,
+        'invoice_number': generate_invoice_number(request.user_id),
+        'client_name': client_name,
+        'client_email': (data.get('client_email') or '').strip() or None,
+        'client_phone': (data.get('client_phone') or '').strip() or None,
+        'items': cleaned_items,
+        'currency': 'XOF',
+        'amount': amount,
+        'status': 'draft',
+        'due_date': data.get('due_date') or None,
+        'notes': (data.get('notes') or '').strip() or None,
+        'created_at': datetime.utcnow().isoformat()
+    })
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'invoice': row[0] if isinstance(row, list) else row})
+
+@app.route('/api/invoices/<token>', methods=['PUT'])
+@user_required
+def api_update_invoice(token):
+    matches = sb_get('invoices', f'token=eq.{token}&user_id=eq.{request.user_id}')
+    if not matches:
+        return jsonify({'ok': False, 'error': 'Introuvable'}), 404
+    invoice = matches[0]
+    if invoice.get('status') == 'paid':
+        return jsonify({'ok': False, 'error': 'Une facture payée ne peut plus être modifiée'}), 400
+
+    data = request.get_json() or {}
+    allowed = {}
+    if 'status' in data and data['status'] in ('draft', 'sent', 'cancelled'):
+        allowed['status'] = data['status']
+        if data['status'] == 'sent' and not invoice.get('sent_at'):
+            allowed['sent_at'] = datetime.utcnow().isoformat()
+    if 'client_name' in data and (data.get('client_name') or '').strip():
+        allowed['client_name'] = data['client_name'].strip()
+    if 'client_email' in data:
+        allowed['client_email'] = (data.get('client_email') or '').strip() or None
+    if 'client_phone' in data:
+        allowed['client_phone'] = (data.get('client_phone') or '').strip() or None
+    if 'due_date' in data:
+        allowed['due_date'] = data.get('due_date') or None
+    if 'notes' in data:
+        allowed['notes'] = (data.get('notes') or '').strip() or None
+    if 'items' in data:
+        items = data.get('items') or []
+        cleaned_items = []
+        for it in items:
+            desc = (it.get('description') or '').strip()
+            try:
+                qty = float(it.get('quantity', 1))
+                price = float(it.get('unit_price', 0))
+            except (TypeError, ValueError):
+                return jsonify({'ok': False, 'error': 'Quantité ou prix invalide'}), 400
+            if not desc or qty <= 0 or price < 0:
+                return jsonify({'ok': False, 'error': 'Article invalide'}), 400
+            cleaned_items.append({'description': desc, 'quantity': qty, 'unit_price': price})
+        if not cleaned_items:
+            return jsonify({'ok': False, 'error': 'Ajoutez au moins un article'}), 400
+        allowed['items'] = cleaned_items
+        allowed['amount'] = _compute_invoice_amount(cleaned_items)
+
+    if not allowed:
+        return jsonify({'ok': False, 'error': 'Aucun champ à mettre à jour'}), 400
+
+    ok = sb_patch_multi('invoices', {'token': token, 'user_id': request.user_id}, allowed)
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour'}), 500
+    return jsonify({'ok': True})
+
+@app.route('/api/invoices/<token>', methods=['DELETE'])
+@user_required
+def api_delete_invoice(token):
+    ok = sb_delete_multi('invoices', {'token': token, 'user_id': request.user_id})
+    if not ok:
+        return jsonify({'ok': False, 'error': 'Erreur lors de la suppression'}), 500
+    return jsonify({'ok': True})
+
+@app.route('/invoices')
+@user_required
+def invoices_page():
+    return render_template('invoices.html', user=get_current_user())
+
+# ── PAGE PUBLIQUE : FACTURE ────────────────────────
+@app.route('/invoice/<token>')
+def invoice_view(token):
+    matches = sb_get('invoices', f'token=eq.{token}')
+    invoice = matches[0] if matches else None
+    merchant = get_user_by_id(invoice['user_id']) if invoice else {}
+    return render_template('invoice_view.html', invoice=invoice, merchant=merchant, token=token,
+                            countries_operators=SOLEASPAY_SERVICES, available_countries=COUNTRIES)
+
+@app.route('/api/invoice-pay/<token>', methods=['POST'])
+def api_invoice_pay(token):
+    matches = sb_get('invoices', f'token=eq.{token}')
+    invoice = matches[0] if matches else None
+    if not invoice:
+        return jsonify({'ok': False, 'error': 'Facture introuvable'}), 404
+    if invoice.get('status') == 'paid':
+        return jsonify({'ok': False, 'error': 'Cette facture est déjà payée'}), 400
+    if invoice.get('status') == 'cancelled':
+        return jsonify({'ok': False, 'error': 'Cette facture a été annulée'}), 400
+
+    allowed, quota_error = check_quota(invoice['user_id'])
+    if not allowed:
+        return jsonify({'ok': False, 'error': quota_error}), 403
+
+    data = request.get_json() or {}
+    phone = (data.get('phone') or invoice.get('client_phone') or '').strip()
+    operator = data.get('operator', '')
+    customer_country = data.get('country', '')
+    if not phone:
+        return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
+
+    amount = invoice['amount']
+    merchant = get_user_by_id(invoice['user_id'])
+    merchant_currency = next((c['currency'] for c in COUNTRIES if c['code'] == merchant.get('country')), 'XOF')
+
+    service_id = get_service_id(customer_country, operator)
+    if not service_id:
+        return jsonify({'ok': False, 'error': "Opérateur indisponible pour ce pays"}), 400
+
+    markup_amount = amount_with_markup(amount)
+    xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
+    if xaf_amount < SOLEASPAY_MIN_AMOUNT:
+        return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} XOF)"}), 400
+
+    import uuid
+    tx_token = 'fp_tx_' + uuid.uuid4().hex[:20]
+    customer_name = invoice.get('client_name') or 'Client'
+
+    collect = soleaspay_collect(
+        wallet=phone,
+        amount=xaf_amount,
+        currency='XAF',
+        order_id=tx_token,
+        description=f"Facture {invoice['invoice_number']}",
+        payer=customer_name,
+        payer_email=invoice.get('client_email') or '',
+        success_url=f'https://www.flinpay.cfd/invoice/{token}',
+        failure_url=f'https://www.flinpay.cfd/invoice/{token}',
+        service_id=service_id
+    )
+    if not collect['ok']:
+        return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
+
+    tx = sb_post('transactions', {
+        'token': tx_token,
+        'order_id': invoice['invoice_number'],
+        'amount': amount,
+        'client_name': customer_name,
+        'client_phone': phone,
+        'country': merchant.get('country', ''),
+        'status': 'pending',
+        'environment': 'production',
+        'user_id': invoice['user_id'],
+        'operator': operator,
+        'gateway_reference': collect['data'].get('reference'),
+        'invoice_token': token,
+        **get_request_client_info(),
+        'created_at': datetime.utcnow().isoformat()
+    })
+    if not tx or (isinstance(tx, dict) and tx.get('_error')):
+        return jsonify({'ok': False, 'error': 'Erreur lors de la création du paiement'}), 500
+
+    return jsonify({
+        'ok': True,
+        'tx_token': tx_token,
+        'message': 'Une confirmation de paiement a été envoyée sur le téléphone du client.'
+    })
+
 @app.route('/api/payment-links', methods=['GET'])
 @user_required
 def api_get_payment_links():
@@ -1649,6 +1894,8 @@ def api_pay_status(tx_token):
                     links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
                     if links:
                         sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+                if new_status == 'paid':
+                    mark_invoice_paid_if_applicable(tx)
                 if new_status == 'paid' and tx.get('user_id'):
                     merchant = get_user_by_id(tx['user_id'])
                     new_balance = (merchant.get('available_balance') or 0) + float(tx.get('amount') or 0)
@@ -1737,6 +1984,9 @@ def webhook_soleaspay():
         links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
         if links:
             sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+
+    if new_status == 'paid':
+        mark_invoice_paid_if_applicable(tx)
 
     if new_status == 'paid' and tx.get('user_id'):
         # Le marchand reçoit le montant plein : notre marge a déjà été prise en
