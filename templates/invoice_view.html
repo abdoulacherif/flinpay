@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if invoice %}Facture {{ invoice.invoice_number }}{% else %}Facture indisponible{% endif %} — Flinpay</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--ink:#0D0D0D;--muted:#8A8FA8;--danger:#FF4D4D}
+body{
+  font-family:'Inter',sans-serif;background:#0D0D0D;min-height:100%;
+  display:flex;flex-direction:column;align-items:center;padding:40px 20px;
+  overflow-x:hidden;overflow-y:auto;position:relative
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.16) 0%,transparent 70%);
+  pointer-events:none
+}
+@media(min-height:760px){ body{justify-content:center} }
+.box{
+  background:#141420;border:1px solid rgba(255,255,255,0.08);border-radius:24px;
+  padding:36px 32px;width:100%;max-width:480px;position:relative;z-index:1;
+  box-shadow:0 32px 64px rgba(0,0,0,0.4);margin:auto
+}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;margin-bottom:4px}
+.logo span{color:var(--blue)}
+.inv-badge{font-size:.72rem;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-bottom:24px}
+.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap;gap:10px}
+.inv-number{font-family:'JetBrains Mono',monospace;color:var(--blue);font-size:.85rem;font-weight:700}
+.inv-status{font-size:.7rem;font-weight:700;padding:4px 11px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
+.st-draft{background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)}
+.st-sent{background:rgba(26,60,255,.15);color:#8EA6FF}
+.st-paid{background:rgba(0,196,140,.15);color:#3EE0B0}
+.st-cancelled{background:rgba(255,77,77,.15);color:#ff7070}
+
+.client-line{color:rgba(255,255,255,.85);font-size:.95rem;font-weight:600;margin-bottom:4px}
+.due-line{color:rgba(255,255,255,.4);font-size:.78rem;margin-bottom:20px}
+
+.items-table{width:100%;border-collapse:collapse;margin-bottom:18px}
+.items-table th{text-align:left;font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.35);padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.items-table td{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.85rem;color:rgba(255,255,255,.85)}
+.items-table td.num{text-align:right;font-family:'JetBrains Mono',monospace}
+
+.total-row{display:flex;justify-content:space-between;align-items:center;padding-top:14px;margin-bottom:22px}
+.total-label{color:rgba(255,255,255,.5);font-size:.85rem}
+.total-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.7rem;color:white}
+
+.notes-box{background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;font-size:.8rem;color:rgba(255,255,255,.5);margin-bottom:22px;line-height:1.5}
+
+.field{margin-bottom:14px;text-align:left}
+label{display:block;font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:7px}
+input,select{
+  width:100%;padding:12px 15px;background:rgba(255,255,255,0.05);
+  border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:white;
+  font-size:0.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s
+}
+input:focus,select:focus{border-color:var(--blue)}
+select option{background:#1a1a2e;color:white}
+.op-toggle{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.op-btn{flex:1;padding:10px;border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);cursor:pointer;font-size:0.82rem;font-weight:600;text-align:center}
+.op-btn.active{border-color:var(--blue);background:rgba(26,60,255,0.15);color:white}
+
+.btn-pay{
+  width:100%;padding:14px;background:var(--blue);color:white;border:none;
+  border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:0.95rem;cursor:pointer;transition:all .2s;margin-top:6px
+}
+.btn-pay:hover:not(:disabled){background:#1430e0}
+.btn-pay:disabled{opacity:0.5;pointer-events:none}
+.error-msg{background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.3);color:#ff7070;border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-bottom:14px;display:none}
+.secure-note{color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:16px;text-align:center}
+
+.state-title{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;margin-bottom:8px;text-align:center}
+.state-text{color:rgba(255,255,255,0.45);font-size:0.88rem;line-height:1.6;text-align:center}
+.icon-big{font-size:2.6rem;margin-bottom:14px;text-align:center}
+.back{margin-top:22px;font-size:0.8rem;text-align:center}
+.back a{color:rgba(255,255,255,0.3);text-decoration:none}
+.check-note{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:14px;line-height:1.6;text-align:center}
+.btn-verify{background:transparent;border:1.5px solid rgba(255,255,255,0.2);color:white;border-radius:10px;padding:11px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;margin-top:14px;width:100%}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">Flin<span>pay</span></div>
+
+  {% if not invoice %}
+    <div class="icon-big">🧾</div>
+    <div class="state-title">Facture introuvable</div>
+    <div class="state-text">Ce lien de facture n'existe pas ou a été supprimé.</div>
+  {% else %}
+    <div class="inv-badge">Facture</div>
+    <div class="inv-header">
+      <div class="inv-number">{{ invoice.invoice_number }}</div>
+      <div class="inv-status st-{{ invoice.status }}">
+        {% if invoice.status == 'paid' %}Payée{% elif invoice.status == 'cancelled' %}Annulée{% elif invoice.status == 'sent' %}En attente{% else %}Brouillon{% endif %}
+      </div>
+    </div>
+    <div class="client-line">Facturé à {{ invoice.client_name }}</div>
+    {% if invoice.due_date %}<div class="due-line">Échéance : {{ invoice.due_date }}</div>{% endif %}
+
+    <table class="items-table">
+      <thead><tr><th>Article</th><th style="text-align:right">Qté</th><th style="text-align:right">Total</th></tr></thead>
+      <tbody>
+        {% for it in invoice.items %}
+        <tr>
+          <td>{{ it.description }}</td>
+          <td class="num">{{ it.quantity|int if it.quantity == it.quantity|int else it.quantity }}</td>
+          <td class="num">{{ '{:,.0f}'.format(it.quantity * it.unit_price).replace(',', ' ') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="total-row">
+      <div class="total-label">Total à payer</div>
+      <div class="total-amount">{{ '{:,.0f}'.format(invoice.amount).replace(',', ' ') }} XOF</div>
+    </div>
+
+    {% if invoice.notes %}<div class="notes-box">{{ invoice.notes }}</div>{% endif %}
+
+    {% if invoice.status == 'paid' %}
+      <div class="icon-big">✅</div>
+      <div class="state-title">Facture réglée</div>
+      <div class="state-text">Cette facture a déjà été payée. Merci !</div>
+    {% elif invoice.status == 'cancelled' %}
+      <div class="icon-big">🚫</div>
+      <div class="state-title">Facture annulée</div>
+      <div class="state-text">Cette facture n'est plus valide. Contactez l'émetteur pour plus d'informations.</div>
+    {% else %}
+      <div id="pay-view">
+        <div id="error-msg" class="error-msg"></div>
+        <div class="field">
+          <label>Pays du numéro mobile money</label>
+          <select id="pay-country" onchange="onCountryChange()">
+            <option value="">— Sélectionnez —</option>
+            {% for c in available_countries %}
+            <option value="{{ c.code }}">{{ c.flag }} {{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field" id="op-field" style="display:none">
+          <label>Opérateur mobile money</label>
+          <div class="op-toggle" id="op-toggle"></div>
+        </div>
+        <div class="field">
+          <label>Numéro mobile money</label>
+          <input type="tel" id="pay-phone" placeholder="+225 0700000000" value="{{ invoice.client_phone or '' }}">
+        </div>
+        <button class="btn-pay" id="btn-pay" onclick="doPay()">💳 Payer {{ '{:,.0f}'.format(invoice.amount).replace(',', ' ') }} XOF</button>
+        <div class="secure-note">🔒 Paiement sécurisé via Flinpay</div>
+      </div>
+
+      <div id="success-view" style="display:none">
+        <div class="icon-big">📲</div>
+        <div class="state-title">Vérifiez votre téléphone</div>
+        <div class="state-text">Une demande de confirmation a été envoyée sur votre mobile money. Composez votre code pour valider le paiement.</div>
+        <button class="btn-verify" id="btn-verify" onclick="checkStatus(true)">🔄 J'ai confirmé, vérifier</button>
+        <div class="check-note" id="check-note">Vérification automatique en cours…</div>
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <div class="back"><a href="/">← Propulsé par Flinpay</a></div>
+</div>
+
+{% if invoice and invoice.status not in ['paid','cancelled'] %}
+<script>
+const COUNTRY_OPERATORS = {{ countries_operators | tojson }};
+let currentOperator='';
+let currentTxToken=null;
+let autoPollTimer=null;
+
+function onCountryChange(){
+  const country=document.getElementById('pay-country').value;
+  const ops=COUNTRY_OPERATORS[country] || {};
+  const wrap=document.getElementById('op-toggle');
+  const field=document.getElementById('op-field');
+  const keys=Object.keys(ops);
+  if(!keys.length){ field.style.display='none'; currentOperator=''; return; }
+  wrap.innerHTML=keys.map((k,i)=>`<button type="button" class="op-btn${i===0?' active':''}" id="op-${k}" onclick="setOperator('${k}')">${ops[k][1]}</button>`).join('');
+  currentOperator=keys[0];
+  field.style.display='block';
+}
+function setOperator(op){
+  currentOperator=op;
+  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('op-'+op).classList.add('active');
+}
+
+async function doPay(){
+  const phone=document.getElementById('pay-phone').value.trim();
+  const country=document.getElementById('pay-country').value;
+  const err=document.getElementById('error-msg');
+  const btn=document.getElementById('btn-pay');
+  err.style.display='none';
+
+  if(!country){ err.textContent='⚠ Sélectionnez le pays de votre numéro.'; err.style.display='block'; return; }
+  if(!currentOperator){ err.textContent='⚠ Sélectionnez un opérateur.'; err.style.display='block'; return; }
+  if(!phone){ err.textContent='⚠ Le numéro mobile money est requis.'; err.style.display='block'; return; }
+
+  btn.textContent='Envoi en cours...';
+  btn.disabled=true;
+
+  try{
+    const r=await fetch('/api/invoice-pay/{{ token }}',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phone, operator: currentOperator, country})
+    });
+    const data=await r.json();
+    if(data.ok){
+      currentTxToken=data.tx_token;
+      document.getElementById('pay-view').style.display='none';
+      document.getElementById('success-view').style.display='block';
+      startAutoPoll();
+    }else{
+      err.textContent='⚠ '+(data.error||'Erreur lors du paiement.');
+      err.style.display='block';
+      btn.textContent='💳 Payer {{ "{:,.0f}".format(invoice.amount).replace(",", " ") if invoice else "" }} XOF';
+      btn.disabled=false;
+    }
+  }catch(e){
+    err.textContent='⚠ Erreur de connexion. Réessayez.';
+    err.style.display='block';
+    btn.disabled=false;
+  }
+}
+
+function startAutoPoll(){
+  if(autoPollTimer) clearInterval(autoPollTimer);
+  autoPollTimer=setInterval(()=>checkStatus(false), 4000);
+}
+function stopAutoPoll(){ if(autoPollTimer){ clearInterval(autoPollTimer); autoPollTimer=null; } }
+
+async function checkStatus(manual){
+  if(!currentTxToken) return;
+  const btn=document.getElementById('btn-verify');
+  const note=document.getElementById('check-note');
+  if(manual){ btn.disabled=true; btn.textContent='Vérification...'; }
+  try{
+    const r=await fetch('/api/pay-status/'+currentTxToken);
+    const data=await r.json();
+    if(data.ok && data.status==='paid'){
+      stopAutoPoll();
+      document.getElementById('success-view').innerHTML=`
+        <div class="icon-big">✅</div>
+        <div class="state-title">Facture réglée</div>
+        <div class="state-text">Merci pour votre paiement !</div>`;
+    }else if(data.ok && data.status==='failed'){
+      stopAutoPoll();
+      note.textContent='❌ Le paiement a échoué ou a été annulé.';
+      if(manual){ btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier"; }
+    }else{
+      note.textContent='⏳ Toujours en attente…';
+      if(manual){ btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier"; }
+    }
+  }catch(e){
+    if(manual){ note.textContent='⚠ Erreur de connexion.'; btn.disabled=false; btn.textContent="🔄 J'ai confirmé, vérifier"; }
+  }
+}
+</script>
+{% endif %}
+</body>
+</html>
