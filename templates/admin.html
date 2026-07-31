@@ -431,7 +431,7 @@ function renderUsers(list){
   const el=document.getElementById('users-list');
   if(!list.length){ el.innerHTML='<div class="empty">Aucun utilisateur.</div>'; return; }
   el.innerHTML=`<table class="tbl"><thead><tr>
-    <th>Nom</th><th>Email</th><th>Pays</th><th>Plan</th><th>KYC</th><th>Actif</th><th>Admin</th><th></th>
+    <th>Nom</th><th>Email</th><th>Pays</th><th>Plan</th><th>KYC</th><th>En ligne</th><th>Actif</th><th>Admin</th><th></th>
   </tr></thead><tbody>
   ${list.map(u=>`
     <tr>
@@ -440,9 +440,11 @@ function renderUsers(list){
       <td>${u.country||''}</td>
       <td><input class="mini-input" id="u-plan-${u.id}" value="${u.plan||''}"></td>
       <td><span class="badge ${u.kyc_status==='verified'?'b-success':u.kyc_status==='pending'?'b-pending':'b-failed'}">${u.kyc_status||'unverified'}</span></td>
+      <td><span class="badge ${u.is_online?'b-success':''}" style="${u.is_online?'':'background:var(--border-soft);color:var(--muted)'}">${u.is_online?'🟢 En ligne':'⚪ Hors ligne'}</span></td>
       <td><input type="checkbox" id="u-active-${u.id}" ${u.is_active!==false?'checked':''}></td>
       <td><input type="checkbox" id="u-admin-${u.id}" ${u.is_admin?'checked':''}></td>
       <td style="white-space:nowrap">
+        <a class="btn btn-outline btn-sm" href="/admin/users/${u.id}" style="text-decoration:none">🔍 Voir tout</a>
         <button class="btn btn-primary btn-sm" data-id="${u.id}" onclick="saveUserFromBtn(this)">💾</button>
         <button class="btn btn-danger btn-sm" data-id="${u.id}" onclick="deleteUserFromBtn(this)">🗑</button>
       </td>
