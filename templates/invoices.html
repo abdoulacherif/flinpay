@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Factures</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --muted-tint:#F0F1F8;
+  --text:#12131C;--muted:#767A94;
+  --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+  --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.icon{width:18px;height:18px;flex-shrink:0}
+.icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
+.logo-text span{color:#5B7CFF}
+.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
+.corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
+.corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
+.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:9px 22px;color:rgba(255,255,255,0.5);font-size:.855rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
+.nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
+.nav-link:hover .icon{color:rgba(255,255,255,0.7)}
+.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
+.nav-link.active .icon{color:#8EA6FF}
+.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
+.user-row{display:flex;align-items:center;gap:10px}
+.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-name{font-size:.82rem;font-weight:600;color:white}
+.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
+.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
+.logout-link:hover{color:#ff7d7d}
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
+.overlay.show{display:block}
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
+.burger-btn:hover{background:var(--bg)}
+.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+
+.page{flex:1;padding:30px;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:.9rem;font-weight:700}
+.card-body{padding:22px}
+
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:var(--blue-deep)}
+.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline:hover{background:var(--blue-tint)}
+.btn-danger{background:var(--danger);color:white}
+.btn-sm{padding:6px 12px;font-size:.76rem}
+
+.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%}
+.form-input:focus{border-color:var(--blue)}
+.form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
+.form-group{margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.inv-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px;transition:all .2s}
+.inv-card:hover{box-shadow:var(--shadow-md);border-color:var(--blue)}
+.inv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.inv-number{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.85rem;color:var(--blue)}
+.inv-client{font-weight:700;font-size:.95rem;margin:4px 0 2px}
+.inv-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.2rem}
+.inv-meta{font-size:.76rem;color:var(--muted);margin-top:6px}
+.inv-actions{display:flex;gap:8px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.b-draft{background:var(--muted-tint);color:var(--muted)}
+.b-sent{background:var(--blue-tint);color:var(--blue)}
+.b-paid{background:var(--green-tint);color:#0A7A50}
+.b-cancelled{background:var(--danger-tint);color:#B3271A}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border-radius:20px;padding:28px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.08rem;font-weight:800;margin-bottom:18px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+.items-box{border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:14px}
+.item-row{display:grid;grid-template-columns:1fr 70px 100px 32px;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border-soft);align-items:center}
+.item-row:last-child{border-bottom:none}
+.item-row input{padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:100%}
+.item-row input:focus{border-color:var(--blue)}
+.item-remove{background:var(--danger-tint);color:#B3271A;border:none;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:.9rem}
+.items-total{padding:12px;text-align:right;font-weight:700;background:var(--bg);font-family:'Space Grotesk',sans-serif}
+.add-item-btn{background:var(--blue-tint);color:var(--blue);border:none;border-radius:var(--r-sm);padding:9px 14px;font-size:.82rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:14px}
+
+.link-box{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:10px}
+.link-box input{border:none;background:none;flex:1;font-family:'JetBrains Mono',monospace;font-size:.76rem;outline:none;color:var(--muted)}
+
+.empty{text-align:center;padding:42px 20px;color:var(--muted)}
+.empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
+.empty-text{font-size:.85rem;line-height:1.65}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+#toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .burger-btn{display:flex}
+  .close-sidebar{display:block}
+  .page{padding:16px}
+  .form-grid{grid-template-columns:1fr}
+  .item-row{grid-template-columns:1fr;gap:6px}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="ic-invoice" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  </defs>
+</svg>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div>
+      <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+  </div>
+
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
+    <div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">
+      🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-group">Principal</div>
+    <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
+    <a class="nav-link active" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
+
+    <div class="nav-group">Développeur</div>
+    <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
+
+    <div class="nav-group">Compte</div>
+    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+    <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-row">
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+      <div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
+      </div>
+    </div>
+  </div>
+  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+      <div class="topbar-title"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openCreateModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Nouvelle facture</button>
+  </div>
+
+  <div class="page">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Mes factures <span id="inv-count" style="color:var(--muted);font-weight:400"></span></div>
+      </div>
+      <div class="card-body" id="inv-list">
+        <div class="empty"><div class="empty-text">Chargement...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CRÉATION -->
+<div class="modal-bg" id="create-modal">
+  <div class="modal">
+    <h3><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Nouvelle facture</h3>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Nom du client *</label>
+        <input class="form-input" id="inv-client-name" placeholder="Kouamé Diallo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Téléphone du client</label>
+        <input class="form-input" id="inv-client-phone" placeholder="+225 0700000000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email du client</label>
+        <input class="form-input" id="inv-client-email" type="email" placeholder="client@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date d'échéance</label>
+        <input class="form-input" id="inv-due-date" type="date">
+      </div>
+    </div>
+
+    <label class="form-label">Articles</label>
+    <div class="items-box" id="items-box"></div>
+    <button type="button" class="add-item-btn" onclick="addItemRow()">+ Ajouter un article</button>
+
+    <div class="form-group">
+      <label class="form-label">Notes (optionnel)</label>
+      <input class="form-input" id="inv-notes" placeholder="Conditions de paiement, remerciements...">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeCreateModal()">Annuler</button>
+      <button class="btn btn-primary" id="btn-create-inv" onclick="createInvoice()">Créer la facture</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PARTAGE -->
+<div class="modal-bg" id="share-modal">
+  <div class="modal" style="max-width:440px">
+    <h3><span class="icon"><svg><use href="#ic-link"/></svg></span> Facture créée</h3>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Partagez ce lien avec votre client pour qu'il puisse consulter et payer la facture.</p>
+    <div class="link-box">
+      <input type="text" id="share-link-input" readonly>
+      <button class="btn btn-outline btn-sm" onclick="copyShareLink()">📋 Copier</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="width:100%" onclick="closeShareModal()">Terminé</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+
+// ── PROFIL ─────────────────────────────────────────
+async function loadProfile(){
+  try{
+    const r=await fetch('/api/me');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok) return;
+    const user=data.user;
+    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
+    document.getElementById('user-email').textContent=user.email||'';
+  }catch(e){}
+}
+
+// ── ARTICLES (formulaire dynamique) ────────────────
+let itemCounter=0;
+function addItemRow(desc='', qty=1, price=''){
+  itemCounter++;
+  const id='item-'+itemCounter;
+  const box=document.getElementById('items-box');
+  const row=document.createElement('div');
+  row.className='item-row';
+  row.id=id;
+  row.innerHTML=`
+    <input type="text" placeholder="Description" class="item-desc" value="${desc}" oninput="updateItemsTotal()">
+    <input type="number" placeholder="Qté" class="item-qty" value="${qty}" min="1" oninput="updateItemsTotal()">
+    <input type="number" placeholder="Prix unit." class="item-price" value="${price}" min="0" oninput="updateItemsTotal()">
+    <button type="button" class="item-remove" onclick="removeItemRow('${id}')">✕</button>
+  `;
+  box.appendChild(row);
+  updateItemsTotal();
+}
+function removeItemRow(id){
+  const el=document.getElementById(id);
+  if(el) el.remove();
+  updateItemsTotal();
+}
+function getItemsFromForm(){
+  const rows=document.querySelectorAll('#items-box .item-row');
+  const items=[];
+  rows.forEach(row=>{
+    const desc=row.querySelector('.item-desc').value.trim();
+    const qty=parseFloat(row.querySelector('.item-qty').value)||0;
+    const price=parseFloat(row.querySelector('.item-price').value)||0;
+    if(desc) items.push({description:desc, quantity:qty, unit_price:price});
+  });
+  return items;
+}
+function updateItemsTotal(){
+  const items=getItemsFromForm();
+  const total=items.reduce((s,it)=>s+(it.quantity*it.unit_price),0);
+  let totalEl=document.getElementById('items-total-display');
+  if(!totalEl){
+    totalEl=document.createElement('div');
+    totalEl.id='items-total-display';
+    totalEl.className='items-total';
+    document.getElementById('items-box').appendChild(totalEl);
+  }else{
+    document.getElementById('items-box').appendChild(totalEl); // garde en bas
+  }
+  totalEl.textContent='Total : '+total.toLocaleString()+' XOF';
+}
+
+// ── MODALES ─────────────────────────────────────────
+function openCreateModal(){
+  document.getElementById('inv-client-name').value='';
+  document.getElementById('inv-client-phone').value='';
+  document.getElementById('inv-client-email').value='';
+  document.getElementById('inv-due-date').value='';
+  document.getElementById('inv-notes').value='';
+  document.getElementById('items-box').innerHTML='';
+  addItemRow();
+  document.getElementById('create-modal').classList.add('show');
+}
+function closeCreateModal(){document.getElementById('create-modal').classList.remove('show')}
+document.getElementById('create-modal').addEventListener('click',e=>{if(e.target===document.getElementById('create-modal'))closeCreateModal()});
+
+let lastShareUrl='';
+function openShareModal(url){
+  lastShareUrl=url;
+  document.getElementById('share-link-input').value=url;
+  document.getElementById('share-modal').classList.add('show');
+}
+function closeShareModal(){
+  document.getElementById('share-modal').classList.remove('show');
+  loadInvoices();
+}
+document.getElementById('share-modal').addEventListener('click',e=>{if(e.target===document.getElementById('share-modal'))closeShareModal()});
+function copyShareLink(){
+  navigator.clipboard.writeText(lastShareUrl).then(()=>toast('Lien copié !'));
+}
+
+// ── CRÉATION ─────────────────────────────────────────
+async function createInvoice(){
+  const clientName=document.getElementById('inv-client-name').value.trim();
+  const items=getItemsFromForm();
+  if(!clientName){toast('Le nom du client est requis',false);return}
+  if(!items.length){toast('Ajoutez au moins un article',false);return}
+
+  const btn=document.getElementById('btn-create-inv');
+  btn.disabled=true; btn.textContent='Création...';
+
+  const payload={
+    client_name: clientName,
+    client_phone: document.getElementById('inv-client-phone').value.trim(),
+    client_email: document.getElementById('inv-client-email').value.trim(),
+    due_date: document.getElementById('inv-due-date').value || null,
+    notes: document.getElementById('inv-notes').value.trim(),
+    items
+  };
+
+  try{
+    const r=await fetch('/api/invoices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await r.json();
+    if(data.ok){
+      closeCreateModal();
+      const url='https://www.flinpay.cfd/invoice/'+data.invoice.token;
+      openShareModal(url);
+    }else{
+      toast(data.error||'Erreur lors de la création',false);
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+  btn.disabled=false; btn.textContent='Créer la facture';
+}
+
+// ── LISTE ─────────────────────────────────────────
+let invoices=[];
+async function loadInvoices(){
+  const el=document.getElementById('inv-list');
+  try{
+    const r=await fetch('/api/invoices');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; return; }
+    invoices=data.invoices||[];
+    renderInvoices();
+  }catch(e){
+    el.innerHTML='<div class="empty">Erreur de chargement.</div>';
+  }
+}
+const STATUS_LABELS={draft:['Brouillon','b-draft'],sent:['Envoyée','b-sent'],paid:['Payée','b-paid'],cancelled:['Annulée','b-cancelled']};
+function renderInvoices(){
+  const el=document.getElementById('inv-list');
+  document.getElementById('inv-count').textContent=invoices.length?`(${invoices.length})`:'';
+  if(!invoices.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Aucune facture créée.<br>Créez votre première facture structurée pour un client.</div></div>';
+    return;
+  }
+  el.innerHTML=invoices.map(inv=>{
+    const [label,cls]=STATUS_LABELS[inv.status]||['—','b-draft'];
+    const url='https://www.flinpay.cfd/invoice/'+inv.token;
+    return `
+    <div class="inv-card">
+      <div class="inv-top">
+        <div>
+          <div class="inv-number">${inv.invoice_number}</div>
+          <div class="inv-client">${inv.client_name}</div>
+          <div class="inv-meta">
+            ${inv.due_date?`Échéance : ${inv.due_date} · `:''}
+            Créée le ${inv.created_at?new Date(inv.created_at).toLocaleDateString('fr-FR'):''}
+            ${inv.paid_at?` · Payée le ${new Date(inv.paid_at).toLocaleDateString('fr-FR')}`:''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <span class="badge ${cls}">${label}</span>
+          <div class="inv-amount" style="margin-top:6px">${Number(inv.amount).toLocaleString()} XOF</div>
+        </div>
+      </div>
+      <div class="inv-actions" style="margin-top:12px">
+        <button class="btn btn-outline btn-sm" onclick="openShareModal('${url}')"><span class="icon"><svg><use href="#ic-link"/></svg></span> Lien</button>
+        ${inv.status==='draft'?`<button class="btn btn-outline btn-sm" onclick="markSent('${inv.token}')">✉️ Marquer envoyée</button>`:''}
+        ${inv.status!=='paid'?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.token}')"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markSent(token){
+  try{
+    const r=await fetch('/api/invoices/'+token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'sent'})});
+    const data=await r.json();
+    if(data.ok){ toast('Facture marquée comme envoyée'); loadInvoices(); }
+    else{ toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+async function deleteInvoice(token){
+  if(!confirm('Supprimer cette facture ?')) return;
+  try{
+    const r=await fetch('/api/invoices/'+token,{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){ toast('Facture supprimée'); loadInvoices(); }
+    else{ toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+
+// ── INIT ─────────────────────────────────────────
+loadProfile();
+loadInvoices();
+</script>
+</body>
+</html>
