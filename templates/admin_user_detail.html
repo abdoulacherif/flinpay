@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay Admin — Détail utilisateur</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;--danger:#FF4D4D;--border:#E7E9F3;--border-soft:#F0F1F8}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+.topbar-logo span{color:#5B7CFF}
+.topbar-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem}
+.topbar-right a:hover{color:white}
+.page{padding:26px;max-width:1000px;margin:0 auto}
+
+.profile-hero{background:white;border-radius:18px;border:1px solid var(--border);padding:24px;margin-bottom:18px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;box-shadow:0 1px 2px rgba(15,17,32,.04)}
+.p-av{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;flex-shrink:0}
+.p-name{font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:8px}
+.p-email{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--muted);margin-top:2px}
+.online-dot{width:9px;height:9px;border-radius:50%;background:#ccc;display:inline-block}
+.online-dot.on{background:var(--green);box-shadow:0 0 0 3px rgba(0,196,140,.2)}
+.online-label{font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:20px}
+.online-label.on{background:#E3FBF3;color:#0A7A50}
+.online-label.off{background:#F0F1F8;color:var(--muted)}
+.p-meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:var(--muted)}
+.p-meta b{color:var(--text)}
+
+.grid-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px}
+.stat-card{background:white;border-radius:14px;border:1px solid var(--border);padding:16px;text-align:center;box-shadow:0 1px 2px rgba(15,17,32,.04)}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem}
+.stat-lbl{font-size:.7rem;color:var(--muted);margin-top:4px}
+
+.section{background:white;border-radius:16px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden;box-shadow:0 1px 2px rgba(15,17,32,.04)}
+.section-head{padding:14px 18px;border-bottom:1px solid var(--border-soft);font-weight:700;font-size:.86rem;display:flex;justify-content:space-between;align-items:center}
+.section-body{padding:0 18px}
+.tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+.tbl th{padding:8px 6px;text-align:left;font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border-soft);white-space:nowrap}
+.tbl td{padding:9px 6px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700}
+.b-success{background:#E3FBF3;color:#0A7A50}
+.b-pending{background:#FFF6E0;color:#8A5B00}
+.b-failed{background:#FFEAEA;color:#B3271A}
+.b-neutral{background:#F0F1F8;color:var(--muted)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted)}
+.empty{padding:24px;text-align:center;color:var(--muted);font-size:.83rem}
+.back-link{color:rgba(255,255,255,.6);text-decoration:none;font-size:.85rem}
+.back-link:hover{color:white}
+.section-scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
+  <div class="topbar-right"><a href="/admin" class="back-link">← Retour à l'admin</a></div>
+</div>
+
+<div class="page" id="page-content">
+  <div class="empty">Chargement...</div>
+</div>
+
+<script>
+const userId = "{{ target_user_id }}";
+
+function fmtDate(d){ return d ? new Date(d).toLocaleString('fr-FR') : '—'; }
+function fmtAmount(a){ return a!=null ? Number(a).toLocaleString()+' XOF' : '—'; }
+
+async function loadDetail(){
+  const page=document.getElementById('page-content');
+  try{
+    const r=await fetch(`/api/admin/users/${userId}/full`);
+    const data=await r.json();
+    if(!data.ok){ page.innerHTML=`<div class="empty">${data.error||'Erreur de chargement'}</div>`; return; }
+    render(data);
+  }catch(e){
+    page.innerHTML='<div class="empty">Erreur de connexion.</div>';
+  }
+}
+
+function render(data){
+  const u=data.user;
+  const initial=(u.firstname||'U')[0].toUpperCase();
+  const online=u.is_online;
+
+  const html=`
+    <div class="profile-hero">
+      <div class="p-av">${initial}</div>
+      <div style="flex:1;min-width:200px">
+        <div class="p-name">${u.firstname||''} ${u.lastname||''}
+          <span class="online-dot ${online?'on':''}"></span>
+          <span class="online-label ${online?'on':'off'}">${online?'En ligne':'Hors ligne'}</span>
+        </div>
+        <div class="p-email">${u.email||''}</div>
+        <div class="p-meta">
+          <span><b>Plan :</b> ${u.plan||'starter'}</span>
+          <span><b>Pays :</b> ${u.country||'—'}</span>
+          <span><b>Téléphone :</b> ${u.phone||'—'}</span>
+          <span><b>Entreprise :</b> ${u.company||'—'}</span>
+          <span><b>KYC :</b> ${u.kyc_status||'unverified'}</span>
+          <span><b>Compte actif :</b> ${u.is_active!==false?'Oui':'Non'}</span>
+          <span><b>Admin :</b> ${u.is_admin?'Oui':'Non'}</span>
+          <span><b>2FA :</b> ${u.totp_enabled?'Activé':'Désactivé'}</span>
+          <span><b>Inscrit le :</b> ${fmtDate(u.created_at)}</span>
+          <span><b>Dernière activité :</b> ${fmtDate(u.last_seen_at)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stats">
+      <div class="stat-card"><div class="stat-val">${fmtAmount(u.available_balance||0)}</div><div class="stat-lbl">Solde disponible</div></div>
+      <div class="stat-card"><div class="stat-val">${data.transactions.length}</div><div class="stat-lbl">Transactions (100 dern.)</div></div>
+      <div class="stat-card"><div class="stat-val">${data.payment_links.length}</div><div class="stat-lbl">Liens de paiement</div></div>
+      <div class="stat-card"><div class="stat-val">${data.invoices.length}</div><div class="stat-lbl">Factures</div></div>
+      <div class="stat-card"><div class="stat-val">${data.api_keys.length}</div><div class="stat-lbl">Clés API</div></div>
+      <div class="stat-card"><div class="stat-val">${data.payouts.length}</div><div class="stat-lbl">Retraits</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Clés API</div>
+      <div class="section-body section-scroll">
+        ${data.api_keys.length ? `<table class="tbl"><thead><tr><th>Préfixe</th><th>Env.</th><th>Label</th><th>Active</th><th>Créée</th><th>Dernier usage</th></tr></thead><tbody>
+          ${data.api_keys.map(k=>`<tr>
+            <td class="mono">${k.key_prefix}</td>
+            <td>${k.environment}</td>
+            <td>${k.label||'—'}</td>
+            <td><span class="badge ${k.active?'b-success':'b-neutral'}">${k.active?'Oui':'Révoquée'}</span></td>
+            <td>${fmtDate(k.created_at)}</td>
+            <td>${fmtDate(k.last_used_at)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">Aucune clé API.</div>'}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Liens de paiement</div>
+      <div class="section-body section-scroll">
+        ${data.payment_links.length ? `<table class="tbl"><thead><tr><th>Nom</th><th>Montant</th><th>Statut</th><th>Vues</th><th>Payés</th><th>Créé</th></tr></thead><tbody>
+          ${data.payment_links.map(l=>`<tr>
+            <td>${l.name}</td>
+            <td>${l.amount_type==='flexible'?'Libre':fmtAmount(l.amount)}</td>
+            <td><span class="badge ${l.active?'b-success':'b-neutral'}">${l.active?'Actif':'Inactif'}</span></td>
+            <td>${l.views||0}</td>
+            <td>${l.paid_count||0}</td>
+            <td>${fmtDate(l.created_at)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">Aucun lien de paiement.</div>'}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Factures</div>
+      <div class="section-body section-scroll">
+        ${data.invoices.length ? `<table class="tbl"><thead><tr><th>N°</th><th>Client</th><th>Montant</th><th>Statut</th><th>Créée</th></tr></thead><tbody>
+          ${data.invoices.map(inv=>`<tr>
+            <td class="mono">${inv.invoice_number}</td>
+            <td>${inv.client_name||'—'}</td>
+            <td>${fmtAmount(inv.amount)}</td>
+            <td><span class="badge ${inv.status==='paid'?'b-success':inv.status==='cancelled'?'b-failed':'b-pending'}">${inv.status}</span></td>
+            <td>${fmtDate(inv.created_at)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">Aucune facture.</div>'}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Webhooks</div>
+      <div class="section-body section-scroll">
+        ${data.webhooks.length ? `<table class="tbl"><thead><tr><th>URL</th><th>Événements</th><th>Actif</th><th>Créé</th></tr></thead><tbody>
+          ${data.webhooks.map(w=>`<tr>
+            <td class="mono">${w.url}</td>
+            <td>${(w.events||[]).join(', ')}</td>
+            <td><span class="badge ${w.active?'b-success':'b-neutral'}">${w.active?'Oui':'Non'}</span></td>
+            <td>${fmtDate(w.created_at)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">Aucun webhook.</div>'}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Transactions récentes</div>
+      <div class="section-body section-scroll">
+        ${data.transactions.length ? `<table class="tbl"><thead><tr><th>Token</th><th>Client</th><th>Montant</th><th>Statut</th><th>Env.</th><th>Origine</th><th>Date</th></tr></thead><tbody>
+          ${data.transactions.map(tx=>`<tr>
+            <td class="mono">${(tx.token||'').substring(0,10)}...</td>
+            <td>${tx.client_name||'—'}</td>
+            <td>${fmtAmount(tx.amount)}</td>
+            <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">${tx.status}</span></td>
+            <td>${tx.environment||'—'}</td>
+            <td>${tx.payment_link_token?'Lien':tx.invoice_token?'Facture':'API'}</td>
+            <td>${fmtDate(tx.created_at)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">Aucune transaction.</div>'}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Retraits</div>
+      <div class="section-body section-scroll">
+        ${data.payouts.length ? `<table class="tbl"><thead><tr><th>Montant</th><th>Frais</th><th>Net</th><th>Téléphone</th><th>Statut</th><th>Date</th></tr></thead><tbody>
+          ${data.payouts.map(p=>`<tr>
+            <td>${fmtAmount(p.amount)}</td>
+            <td>${p.fee!=null?fmtAmount(p.fee):'—'}</td>
+            <td>${p.net_amount!=null?fmtAmount(p.net_amount):'—'}</td>
+            <td>${p.phone||'—'}</td>
+            <td><span class="badge ${p.status==='paid'?'b-success':p.status==='pending'?'b-pending':'b-failed'}">${p.status}</span></td>
+            <td>${fmtDate(p.created_at)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">Aucun retrait.</div>'}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">Filleuls (parrainage)</div>
+      <div class="section-body section-scroll">
+        ${data.referred_users.length ? `<table class="tbl"><thead><tr><th>Nom</th><th>Email</th><th>Plan</th><th>Inscrit</th></tr></thead><tbody>
+          ${data.referred_users.map(ru=>`<tr>
+            <td>${ru.firstname||''} ${ru.lastname||''}</td>
+            <td class="mono">${ru.email||''}</td>
+            <td>${ru.plan||'starter'}</td>
+            <td>${fmtDate(ru.created_at)}</td>
+          </tr>`).join('')}
+        </tbody></table>` : '<div class="empty">Aucun filleul.</div>'}
+      </div>
+    </div>
+  `;
+  document.getElementById('page-content').innerHTML=html;
+}
+
+loadDetail();
+setInterval(loadDetail, 20000); // rafraîchit le statut en ligne toutes les 20s
+</script>
+</body>
+</html>
