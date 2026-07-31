@@ -191,8 +191,16 @@ def user_required(f):
             return redirect(url_for('login_page'))
         request.user_id = payload.get('sub')
         request.user_email = payload.get('email')
+        touch_last_seen(request.user_id)
         return f(*args, **kwargs)
     return decorated
+
+def touch_last_seen(user_id):
+    """Met à jour la dernière activité de l'utilisateur, utilisé pour le statut 'en ligne' côté admin."""
+    try:
+        sb_patch('users', 'id', user_id, {'last_seen_at': datetime.utcnow().isoformat()})
+    except Exception:
+        pass
 
 def _login_success_response(user):
     """Construit la réponse de connexion réussie (cookie + payload utilisateur)."""
@@ -2094,8 +2102,70 @@ def api_admin_delete_payout(pid):
 @admin_required
 def api_admin_get_users():
     users = sb_get('users', 'order=created_at.desc&limit=500')
-    safe = [{k: v for k, v in u.items() if k != 'password_hash'} for u in users]
+    now = datetime.utcnow()
+    safe = []
+    for u in users:
+        u2 = {k: v for k, v in u.items() if k != 'password_hash'}
+        u2['is_online'] = _is_user_online(u.get('last_seen_at'), now)
+        safe.append(u2)
     return jsonify({'ok': True, 'items': safe})
+
+def _is_user_online(last_seen_at, now=None):
+    if not last_seen_at:
+        return False
+    now = now or datetime.utcnow()
+    try:
+        last_seen = datetime.fromisoformat(last_seen_at.replace('Z', '+00:00')).replace(tzinfo=None)
+        return (now - last_seen).total_seconds() < 120
+    except (ValueError, AttributeError):
+        return False
+
+@app.route('/admin/users/<user_id>')
+@admin_required
+def admin_user_detail_page(user_id):
+    return render_template('admin_user_detail.html', user=get_current_user(), target_user_id=user_id)
+
+@app.route('/api/admin/users/<user_id>/full', methods=['GET'])
+@admin_required
+def api_admin_get_user_full(user_id):
+    users = sb_get('users', f'id=eq.{user_id}')
+    if not users:
+        return jsonify({'ok': False, 'error': 'Utilisateur introuvable'}), 404
+    target = {k: v for k, v in users[0].items() if k != 'password_hash'}
+    target['is_online'] = _is_user_online(target.get('last_seen_at'))
+
+    payment_links = sb_get('payment_links', f'user_id=eq.{user_id}&order=created_at.desc')
+    for l in payment_links:
+        if l.get('image_path'):
+            l['image_url'] = sb_storage_public_url('payment-link-images', l['image_path'])
+
+    invoices = sb_get('invoices', f'user_id=eq.{user_id}&order=created_at.desc')
+
+    api_keys = sb_get('api_keys', f'user_id=eq.{user_id}&order=created_at.desc')
+    safe_keys = [{
+        'id': k['id'], 'key_prefix': k['key_prefix'], 'environment': k.get('environment', 'live'),
+        'label': k.get('label') or '', 'active': k.get('active', True),
+        'created_at': k.get('created_at'), 'last_used_at': k.get('last_used_at')
+    } for k in api_keys]
+
+    webhooks = sb_get('webhooks', f'user_id=eq.{user_id}&order=created_at.desc')
+    transactions = sb_get('transactions', f'user_id=eq.{user_id}&order=created_at.desc&limit=100')
+    payouts = sb_get('payouts', f'user_id=eq.{user_id}&order=created_at.desc')
+    referred_users = sb_get('users', f'referred_by=eq.{user_id}&order=created_at.desc')
+    referred_safe = [{'firstname': u.get('firstname'), 'lastname': u.get('lastname'),
+                       'email': u.get('email'), 'plan': u.get('plan'), 'created_at': u.get('created_at')} for u in referred_users]
+
+    return jsonify({
+        'ok': True,
+        'user': target,
+        'payment_links': payment_links,
+        'invoices': invoices,
+        'api_keys': safe_keys,
+        'webhooks': webhooks,
+        'transactions': transactions,
+        'payouts': payouts,
+        'referred_users': referred_safe
+    })
 
 @app.route('/api/admin/users/<user_id>', methods=['PUT'])
 @admin_required
