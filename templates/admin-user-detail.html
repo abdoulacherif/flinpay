@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay — Détail Utilisateur</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;
+  --r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+
+.topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:8px}
+.topbar-logo span{color:#5B7CFF}
+.topbar-right{display:flex;align-items:center;gap:14px;font-size:.8rem;color:rgba(255,255,255,.6)}
+.topbar-right a{color:rgba(255,255,255,.6);text-decoration:none}
+.topbar-right a:hover{color:white}
+
+.layout{display:grid;grid-template-columns:290px 1fr;gap:0;min-height:calc(100vh - 60px)}
+
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:18px 14px;overflow-y:auto;max-height:calc(100vh - 60px);position:sticky;top:60px}
+.sidebar-search{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:.83rem;font-family:'Inter',sans-serif;outline:none;margin-bottom:12px}
+.sidebar-search:focus{border-color:var(--blue)}
+.user-mini{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:10px;cursor:pointer;margin-bottom:2px}
+.user-mini:hover{background:var(--blue-tint)}
+.user-mini.active{background:var(--blue-tint);border:1px solid var(--blue)}
+.user-mini-avatar{width:34px;height:34px;border-radius:50%;background:var(--ink);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;flex-shrink:0}
+.user-mini-info{min-width:0}
+.user-mini-name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-mini-email{font-size:.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.page{padding:26px;overflow-y:auto}
+
+.empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:.9rem}
+
+.profile-head{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.profile-avatar{width:60px;height:60px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem;flex-shrink:0}
+.profile-name{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.35rem}
+.profile-email{font-size:.85rem;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700}
+.b-success{background:var(--green-tint);color:#0A7A50}
+.b-pending{background:var(--gold-tint);color:#8A5B00}
+.b-failed{background:var(--danger-tint);color:#B3271A}
+.b-admin{background:var(--blue-tint);color:var(--blue-deep)}
+.b-inactive{background:var(--border-soft);color:var(--muted)}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:16px;box-shadow:var(--shadow-sm)}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem}
+.stat-lbl{font-size:.74rem;color:var(--muted);margin-top:4px}
+
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:16px}
+.card-head{padding:15px 20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:.88rem;font-weight:700}
+.card-body{padding:18px 20px}
+
+.field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.field-label{font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block}
+.field-input{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:.83rem;font-family:'Inter',sans-serif;outline:none}
+.field-input:focus{border-color:var(--blue)}
+.field-input:disabled{background:var(--bg);color:var(--muted)}
+
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.78rem;padding:7px 14px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--blue);color:white}
+.btn-danger{background:var(--danger);color:white}
+.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-sm{padding:6px 11px;font-size:.74rem}
+
+.tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.tbl th{padding:8px 10px;text-align:left;font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFBFF;border-bottom:1px solid var(--border-soft);white-space:nowrap}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--muted)}
+.mini-select{padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:.76rem}
+
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.wallet-chip{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:.72rem;display:flex;align-items:center;gap:8px}
+.wallet-net{font-family:'Inter',sans-serif;font-weight:700;font-size:.66rem;color:var(--blue);text-transform:uppercase}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+#toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:860px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--border)}
+  .stats-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.75rem;color:rgba(255,255,255,.4);margin-left:4px">Détail Utilisateur</span></div>
+  <div class="topbar-right">
+    <a href="/admin">← Retour à l'admin</a>
+    <a href="/api/logout">Déconnexion</a>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <input class="sidebar-search" id="sidebar-search" placeholder="🔍 Rechercher un utilisateur..." oninput="filterSidebarUsers()">
+    <div id="sidebar-users"><div class="empty" style="padding:20px 4px">Chargement...</div></div>
+  </div>
+
+  <div class="page" id="page-content">
+    <div class="empty">Sélectionnez un utilisateur dans la liste à gauche pour voir tous ses détails.</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+function initials(u){const f=(u.firstname||'').charAt(0);const l=(u.lastname||'').charAt(0);return (f+l).toUpperCase()||'?'}
+function fmtDate(d){return d?new Date(d).toLocaleDateString('fr-FR',{year:'numeric',month:'short',day:'numeric'}):'—'}
+function fmtDateTime(d){return d?new Date(d).toLocaleString('fr-FR'):'—'}
+
+let allUsers=[], allTx=[], allPayouts=[], selectedUserId=null;
+
+// NOTE: cette page réutilise volontairement les mêmes endpoints que le dashboard
+// admin principal (/api/admin/users, /api/admin/transactions, /api/admin/payouts)
+// et filtre côté client par user_id. Si le volume d'utilisateurs devient important,
+// il vaudra mieux créer un endpoint dédié /api/admin/users/:id/detail côté serveur
+// (join Supabase sur user_id) plutôt que de tout charger côté client.
+async function init(){
+  try{
+    const [ur, tr, pr] = await Promise.all([
+      fetch('/api/admin/users'),
+      fetch('/api/admin/transactions'),
+      fetch('/api/admin/payouts')
+    ]);
+    if(ur.status===401||ur.redirected){ window.location.href='/login'; return; }
+    const ud=await ur.json(), td=await tr.json(), pd=await pr.json();
+    allUsers=ud.items||[];
+    allTx=td.items||[];
+    allPayouts=pd.items||[];
+    renderSidebarUsers(allUsers);
+
+    // support d'un lien direct ?id=uuid
+    const params=new URLSearchParams(window.location.search);
+    const preId=params.get('id');
+    if(preId) selectUser(preId);
+  }catch(e){
+    document.getElementById('sidebar-users').innerHTML='<div class="empty">Erreur de chargement.</div>';
+  }
+}
+
+function renderSidebarUsers(list){
+  const el=document.getElementById('sidebar-users');
+  if(!list.length){ el.innerHTML='<div class="empty">Aucun utilisateur.</div>'; return; }
+  el.innerHTML=list.map(u=>`
+    <div class="user-mini ${u.id===selectedUserId?'active':''}" data-id="${u.id}" onclick="selectUser('${u.id}')">
+      <div class="user-mini-avatar">${initials(u)}</div>
+      <div class="user-mini-info">
+        <div class="user-mini-name">${u.firstname||''} ${u.lastname||''}</div>
+        <div class="user-mini-email">${u.email||''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+function filterSidebarUsers(){
+  const q=document.getElementById('sidebar-search').value.toLowerCase();
+  renderSidebarUsers(allUsers.filter(u=>
+    (u.firstname||'').toLowerCase().includes(q) ||
+    (u.lastname||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q) ||
+    (u.id||'').toLowerCase().includes(q)
+  ));
+}
+
+function selectUser(id){
+  selectedUserId=id;
+  renderSidebarUsers(document.getElementById('sidebar-search').value ? allUsers.filter(u=>{
+    const q=document.getElementById('sidebar-search').value.toLowerCase();
+    return (u.firstname||'').toLowerCase().includes(q)||(u.lastname||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)||(u.id||'').toLowerCase().includes(q);
+  }) : allUsers);
+  const u=allUsers.find(x=>x.id===id);
+  if(!u){ document.getElementById('page-content').innerHTML='<div class="empty">Utilisateur introuvable.</div>'; return; }
+  renderUserDetail(u);
+}
+
+function renderUserDetail(u){
+  const userTx=allTx.filter(t=>t.user_id===u.id);
+  const userPayouts=allPayouts.filter(p=>p.user_id===u.id);
+  const totalVolume=userTx.filter(t=>t.status==='paid').reduce((s,t)=>s+Number(t.amount||0),0);
+  const totalPaidOut=userPayouts.filter(p=>p.status==='paid').reduce((s,p)=>s+Number(p.amount||0),0);
+  const pendingCount=userTx.filter(t=>t.status==='pending').length;
+
+  const kycBadge = u.kyc_status==='verified'?'b-success':u.kyc_status==='pending'?'b-pending':'b-failed';
+  const statusBadge = u.is_active!==false ? '' : '<span class="badge b-inactive">Inactif</span>';
+  const adminBadge = u.is_admin ? '<span class="badge b-admin">Admin</span>' : '';
+
+  const wallets = (u.wallets||u.wallet_addresses||[]);
+  const walletsHtml = Array.isArray(wallets) && wallets.length
+    ? `<div class="tag-row">${wallets.map(w=>`<div class="wallet-chip"><span class="wallet-net">${w.network||w.type||''}</span>${w.address||''}</div>`).join('')}</div>`
+    : `<div style="font-size:.8rem;color:var(--muted);margin-top:6px">Aucune adresse de wallet enregistrée.</div>`;
+
+  document.getElementById('page-content').innerHTML = `
+    <div class="profile-head">
+      <div class="profile-avatar">${initials(u)}</div>
+      <div>
+        <div class="profile-name">${u.firstname||''} ${u.lastname||''}</div>
+        <div class="profile-email">${u.email||''}</div>
+        <div class="tag-row" style="margin-top:6px">
+          <span class="badge ${kycBadge}">KYC ${u.kyc_status||'unverified'}</span>
+          ${statusBadge}
+          ${adminBadge}
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val">${userTx.length}</div><div class="stat-lbl">Transactions</div></div>
+      <div class="stat-card"><div class="stat-val">${totalVolume.toLocaleString()} XOF</div><div class="stat-lbl">Volume payé</div></div>
+      <div class="stat-card"><div class="stat-val">${totalPaidOut.toLocaleString()} XOF</div><div class="stat-lbl">Payouts versés</div></div>
+      <div class="stat-card"><div class="stat-val">${pendingCount}</div><div class="stat-lbl">Transactions en attente</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Informations personnelles</div></div>
+      <div class="card-body">
+        <div class="field-grid">
+          <div><label class="field-label">Prénom</label><input class="field-input" id="d-firstname" value="${(u.firstname||'').replace(/"/g,'&quot;')}"></div>
+          <div><label class="field-label">Nom</label><input class="field-input" id="d-lastname" value="${(u.lastname||'').replace(/"/g,'&quot;')}"></div>
+          <div><label class="field-label">Email</label><input class="field-input" id="d-email" value="${(u.email||'').replace(/"/g,'&quot;')}"></div>
+          <div><label class="field-label">Téléphone</label><input class="field-input" id="d-phone" value="${(u.phone||'').replace(/"/g,'&quot;')}"></div>
+          <div><label class="field-label">Pays</label><input class="field-input" id="d-country" value="${(u.country||'').replace(/"/g,'&quot;')}"></div>
+          <div><label class="field-label">Plan</label><input class="field-input" id="d-plan" value="${(u.plan||'').replace(/"/g,'&quot;')}"></div>
+          <div><label class="field-label">ID (uuid)</label><input class="field-input mono" value="${u.id}" disabled></div>
+          <div><label class="field-label">Inscrit le</label><input class="field-input" value="${fmtDateTime(u.created_at)}" disabled></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+          <label style="font-size:.82rem;display:flex;align-items:center;gap:6px"><input type="checkbox" id="d-active" ${u.is_active!==false?'checked':''}> Compte actif</label>
+          <label style="font-size:.82rem;display:flex;align-items:center;gap:6px"><input type="checkbox" id="d-admin" ${u.is_admin?'checked':''}> Administrateur</label>
+          <select class="field-input" id="d-kyc" style="max-width:180px">
+            <option value="unverified" ${u.kyc_status==='unverified'||!u.kyc_status?'selected':''}>KYC non vérifié</option>
+            <option value="pending" ${u.kyc_status==='pending'?'selected':''}>KYC en attente</option>
+            <option value="verified" ${u.kyc_status==='verified'?'selected':''}>KYC vérifié</option>
+            <option value="rejected" ${u.kyc_status==='rejected'?'selected':''}>KYC rejeté</option>
+          </select>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveUserDetail('${u.id}')">💾 Enregistrer les modifications</button>
+          <button class="btn btn-danger" onclick="deleteUserDetail('${u.id}')">🗑 Supprimer l'utilisateur</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Adresses wallet crypto</div></div>
+      <div class="card-body">${walletsHtml}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Historique des transactions (${userTx.length})</div></div>
+      <div class="card-body" style="overflow-x:auto">
+        ${userTx.length ? `<table class="tbl"><thead><tr>
+          <th>ID</th><th>Montant</th><th>Statut</th><th>Env.</th><th>Date</th>
+        </tr></thead><tbody>
+        ${userTx.map(tx=>`
+          <tr>
+            <td class="mono">${(tx.token||'').substring(0,10)}...</td>
+            <td>${Number(tx.amount||0).toLocaleString()} XOF</td>
+            <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">${tx.status||''}</span></td>
+            <td>${tx.environment||''}</td>
+            <td style="font-size:.72rem;color:var(--muted)">${fmtDate(tx.created_at)}</td>
+          </tr>
+        `).join('')}
+        </tbody></table>` : '<div class="empty">Aucune transaction pour cet utilisateur.</div>'}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Historique des payouts (${userPayouts.length})</div></div>
+      <div class="card-body" style="overflow-x:auto">
+        ${userPayouts.length ? `<table class="tbl"><thead><tr>
+          <th>Montant</th><th>Téléphone</th><th>Opérateur</th><th>Statut</th><th>Date</th>
+        </tr></thead><tbody>
+        ${userPayouts.map(p=>`
+          <tr>
+            <td>${Number(p.amount||0).toLocaleString()} XOF</td>
+            <td>${p.phone||''}</td>
+            <td>${p.operator||''}</td>
+            <td><span class="badge ${p.status==='paid'?'b-success':p.status==='pending'?'b-pending':'b-failed'}">${p.status||''}</span></td>
+            <td style="font-size:.72rem;color:var(--muted)">${fmtDate(p.created_at)}</td>
+          </tr>
+        `).join('')}
+        </tbody></table>` : '<div class="empty">Aucun payout pour cet utilisateur.</div>'}
+      </div>
+    </div>
+  `;
+}
+
+async function saveUserDetail(id){
+  const payload={
+    firstname: document.getElementById('d-firstname').value,
+    lastname: document.getElementById('d-lastname').value,
+    email: document.getElementById('d-email').value,
+    phone: document.getElementById('d-phone').value,
+    country: document.getElementById('d-country').value,
+    plan: document.getElementById('d-plan').value,
+    is_active: document.getElementById('d-active').checked,
+    is_admin: document.getElementById('d-admin').checked,
+    kyc_status: document.getElementById('d-kyc').value
+  };
+  try{
+    const r=await fetch('/api/admin/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await r.json();
+    if(data.ok){
+      toast('Utilisateur mis à jour');
+      Object.assign(allUsers.find(u=>u.id===id), payload);
+      renderSidebarUsers(allUsers);
+    } else { toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+
+async function deleteUserDetail(id){
+  if(!confirm('Supprimer définitivement cet utilisateur et toutes ses données ?')) return;
+  try{
+    const r=await fetch('/api/admin/users/'+id,{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){
+      toast('Utilisateur supprimé');
+      allUsers=allUsers.filter(u=>u.id!==id);
+      selectedUserId=null;
+      renderSidebarUsers(allUsers);
+      document.getElementById('page-content').innerHTML='<div class="empty">Sélectionnez un utilisateur dans la liste à gauche pour voir tous ses détails.</div>';
+    } else { toast(data.error||'Erreur',false); }
+  }catch(e){ toast('Erreur de connexion',false); }
+}
+
+init();
+</script>
+</body>
+</html>
