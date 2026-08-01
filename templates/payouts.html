@@ -231,13 +231,26 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   <div class="modal">
     <h3><span class="icon"><svg><use href="#ic-send"/></svg></span> Demander un retrait</h3>
     <div class="form-group">
-      <label class="form-label">Montant (XOF)</label>
+      <label class="form-label">Pays de retrait (détermine la devise)</label>
+      <select class="form-input" id="po-country" onchange="updateFeePreview()">
+        <option value="CM">🇨🇲 Cameroun (XAF)</option>
+        <option value="CI">🇨🇮 Côte d'Ivoire (XOF)</option>
+        <option value="BF">🇧🇫 Burkina Faso (XOF)</option>
+        <option value="BJ">🇧🇯 Bénin (XOF)</option>
+        <option value="TG">🇹🇬 Togo (XOF)</option>
+        <option value="CD">🇨🇩 RDC (CDF)</option>
+        <option value="GA">🇬🇦 Gabon (XAF)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Montant</label>
       <input class="form-input" id="po-amount" type="number" placeholder="5000" oninput="updateFeePreview()">
+      <div id="po-available-note" style="font-size:.74rem;color:var(--muted);margin-top:5px"></div>
     </div>
     <div class="fee-breakdown">
-      <div class="fee-row"><span>Montant demandé</span><span id="fee-gross">0 XOF</span></div>
-      <div class="fee-row"><span>Frais de retrait (3,5%)</span><span id="fee-amount">0 XOF</span></div>
-      <div class="fee-row total"><span>Vous recevrez</span><span id="fee-net">0 XOF</span></div>
+      <div class="fee-row"><span>Montant demandé</span><span id="fee-gross">0</span></div>
+      <div class="fee-row"><span>Frais de retrait (3,5%)</span><span id="fee-amount">0</span></div>
+      <div class="fee-row total"><span>Vous recevrez</span><span id="fee-net">0</span></div>
     </div>
     <div class="form-group">
       <label class="form-label">Numéro mobile money</label>
@@ -257,12 +270,15 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 <div id="toast"></div>
 <script>
 const PAYOUT_FEE_PERCENT = 3.5;
+const COUNTRY_CURRENCY = {CM:'XAF', CI:'XOF', BF:'XOF', BJ:'XOF', TG:'XOF', CD:'CDF', GA:'XAF'};
+let currentBalances = {};
 
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 function openModal(){
   document.getElementById('modal').classList.add('show');
+  document.getElementById('po-country').value=defaultCountry || 'CI';
   updateFeePreview();
 }
 function closeModal(){document.getElementById('modal').classList.remove('show')}
@@ -272,12 +288,19 @@ function updateFeePreview(){
   const amount=parseFloat(document.getElementById('po-amount').value)||0;
   const fee=Math.round(amount*PAYOUT_FEE_PERCENT/100*100)/100;
   const net=Math.round((amount-fee)*100)/100;
-  document.getElementById('fee-gross').textContent=amount.toLocaleString()+' XOF';
-  document.getElementById('fee-amount').textContent=fee.toLocaleString()+' XOF';
-  document.getElementById('fee-net').textContent=net.toLocaleString()+' XOF';
+  const country=document.getElementById('po-country').value;
+  const currency=COUNTRY_CURRENCY[country]||'XOF';
+  document.getElementById('fee-gross').textContent=amount.toLocaleString()+' '+currency;
+  document.getElementById('fee-amount').textContent=fee.toLocaleString()+' '+currency;
+  document.getElementById('fee-net').textContent=net.toLocaleString()+' '+currency;
+
+  const available=currentBalances[currency]||0;
+  const note=document.getElementById('po-available-note');
+  note.textContent=`Solde disponible en ${currency} : ${available.toLocaleString()} ${currency}`;
+  note.style.color=amount>available ? 'var(--danger)' : 'var(--muted)';
 }
 
-let currentBalance=0, kycStatus='unverified', currentPlan='starter';
+let currentBalance=0, kycStatus='unverified', currentPlan='starter', defaultCountry='';
 
 async function loadPage(){
   try{
@@ -290,6 +313,8 @@ async function loadPage(){
     document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
     document.getElementById('user-email').textContent=user.email||'';
     currentBalance=user.available_balance||0;
+    currentBalances=user.balances||{};
+    defaultCountry=user.country||'CI';
     kycStatus=user.kyc_status||'unverified';
     currentPlan=user.plan||'starter';
     document.getElementById('sidebar-plan').textContent=currentPlan==='pro'?'⭐ Pro':'🚀 Starter';
@@ -342,12 +367,16 @@ function renderPage(){
       </div>`;
     return;
   }
+  const balanceLines = Object.keys(currentBalances).length
+    ? Object.entries(currentBalances).filter(([,v])=>v).map(([c,v])=>`<div style="font-size:1rem;font-weight:700;position:relative;z-index:1">${v.toLocaleString()} ${c}</div>`).join('')
+    : `<div class="balance-val">0 XOF</div>`;
+
   page.innerHTML=`
     <div class="balance-hero">
-      <div class="balance-label">Solde disponible</div>
-      <div class="balance-val">${currentBalance.toLocaleString()} XOF</div>
+      <div class="balance-label">Solde disponible par devise</div>
+      ${balanceLines}
       <button class="btn btn-gold balance-btn" onclick="openModal()" style="width:auto;padding:11px 24px">📤 Demander un retrait</button>
-      <div class="balance-fee-note">Des frais de ${PAYOUT_FEE_PERCENT}% s'appliquent sur chaque retrait manuel.</div>
+      <div class="balance-fee-note">Des frais de ${PAYOUT_FEE_PERCENT}% s'appliquent sur chaque retrait manuel. Le retrait se fait uniquement dans la devise disponible correspondant au pays choisi.</div>
     </div>
 
     ${renderAutoWithdrawCard()}
@@ -371,15 +400,15 @@ async function loadPayouts(){
       return;
     }
     el.innerHTML=`<table class="tbl"><thead><tr><th>Montant demandé</th><th>Frais</th><th>Net reçu</th><th>Téléphone</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody>
-      ${items.map(p=>`<tr>
-        <td style="font-weight:700">${Number(p.amount).toLocaleString()} XOF</td>
-        <td style="color:var(--muted)">${p.fee!=null?Number(p.fee).toLocaleString()+' XOF':'—'}</td>
-        <td>${p.net_amount!=null?Number(p.net_amount).toLocaleString()+' XOF':'—'}</td>
+      ${items.map(p=>{ const cur=p.currency||'XOF'; return `<tr>
+        <td style="font-weight:700">${Number(p.amount).toLocaleString()} ${cur}</td>
+        <td style="color:var(--muted)">${p.fee!=null?Number(p.fee).toLocaleString()+' '+cur:'—'}</td>
+        <td>${p.net_amount!=null?Number(p.net_amount).toLocaleString()+' '+cur:'—'}</td>
         <td>${p.phone||''}</td>
         <td><span class="badge ${p.status==='paid'?'b-success':p.status==='pending'?'b-pending':'b-failed'}">${p.status==='paid'?'✅ Payé':p.status==='pending'?'⏳ Attente':'❌ Échoué'}</span></td>
         <td style="font-size:.76rem;color:var(--muted)">${p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR'):''}</td>
         <td>${p.status==='pending'?`<button class="btn btn-danger btn-sm" onclick="cancelPayout(${p.id})">Annuler</button>`:''}</td>
-      </tr>`).join('')}
+      </tr>`; }).join('')}
     </tbody></table>`;
   }catch(e){
     el.innerHTML='<div class="empty">Erreur de chargement.</div>';
@@ -390,13 +419,16 @@ async function requestPayout(){
   const amount=document.getElementById('po-amount').value;
   const phone=document.getElementById('po-phone').value.trim();
   const operator=document.getElementById('po-operator').value.trim();
+  const country=document.getElementById('po-country').value;
+  const currency=COUNTRY_CURRENCY[country]||'XOF';
   if(!amount||!phone){ toast('Montant et téléphone requis',false); return; }
-  if(parseFloat(amount)>currentBalance){ toast('Solde insuffisant',false); return; }
+  const availableInCurrency=currentBalances[currency]||0;
+  if(parseFloat(amount)>availableInCurrency){ toast(`Solde insuffisant en ${currency}`,false); return; }
 
   const btn=document.getElementById('btn-request');
   btn.disabled=true; btn.textContent='Envoi...';
   try{
-    const r=await fetch('/api/payouts/mine',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,operator})});
+    const r=await fetch('/api/payouts/mine',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,phone,operator,country})});
     const data=await r.json();
     if(data.ok){
       toast('Demande de retrait envoyée !');
