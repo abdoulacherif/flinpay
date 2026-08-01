@@ -309,74 +309,6 @@ def api_me():
         'totp_enabled': user.get('totp_enabled', False)
     }})
 
-@app.route('/convert')
-@user_required
-def convert_page():
-    return render_template('convert.html', user=get_current_user())
-
-@app.route('/api/fx-preview', methods=['GET'])
-@user_required
-def api_fx_preview():
-    from_currency = (request.args.get('from') or '').strip().upper()
-    to_currency = (request.args.get('to') or '').strip().upper()
-    try:
-        amount = float(request.args.get('amount', 0))
-    except (TypeError, ValueError):
-        amount = 0
-    if not from_currency or not to_currency or from_currency == to_currency or amount <= 0:
-        return jsonify({'ok': False, 'error': 'Paramètres invalides'}), 400
-
-    fee = round(amount * CONVERSION_FEE_PERCENT / 100, 2)
-    amount_after_fee = round(amount - fee, 2)
-    converted = soleaspay_convert(amount_after_fee, from_currency, to_currency)
-    try:
-        converted = round(float(converted), 2)
-    except (TypeError, ValueError):
-        converted = 0
-    return jsonify({'ok': True, 'fee': fee, 'amount_after_fee': amount_after_fee, 'converted_amount': converted})
-
-@app.route('/api/convert-balance', methods=['POST'])
-@user_required
-def api_convert_balance():
-    data = request.get_json() or {}
-    from_currency = (data.get('from_currency') or '').strip().upper()
-    to_currency = (data.get('to_currency') or '').strip().upper()
-    try:
-        amount = float(data.get('amount'))
-    except (TypeError, ValueError):
-        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
-
-    if not from_currency or not to_currency or from_currency == to_currency:
-        return jsonify({'ok': False, 'error': 'Sélectionnez deux devises différentes'}), 400
-    if amount <= 0:
-        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
-
-    user = get_current_user()
-    available = get_balance_for_currency(user, from_currency)
-    if amount > available:
-        return jsonify({'ok': False, 'error': f'Solde insuffisant en {from_currency} (disponible : {available:,.0f} {from_currency})'}), 400
-
-    fee = round(amount * CONVERSION_FEE_PERCENT / 100, 2)
-    amount_after_fee = round(amount - fee, 2)
-    converted_amount = soleaspay_convert(amount_after_fee, from_currency, to_currency)
-    try:
-        converted_amount = round(float(converted_amount), 2)
-    except (TypeError, ValueError):
-        return jsonify({'ok': False, 'error': 'Erreur lors de la conversion. Réessayez.'}), 502
-
-    debit_user_balance(request.user_id, from_currency, amount)
-    credit_user_balance(request.user_id, to_currency, converted_amount)
-
-    return jsonify({
-        'ok': True,
-        'from_currency': from_currency,
-        'to_currency': to_currency,
-        'amount': amount,
-        'fee': fee,
-        'converted_amount': converted_amount,
-        'message': f'{amount:,.0f} {from_currency} converti en {converted_amount:,.0f} {to_currency}'
-    })
-
 @app.route('/api/billing/subscribe', methods=['POST'])
 @user_required
 def api_billing_subscribe():
@@ -465,8 +397,6 @@ def api_request_payout():
     phone = (data.get('phone') or '').strip()
     if amount <= 0 or not phone:
         return jsonify({'ok': False, 'error': 'Montant et numéro de téléphone requis'}), 400
-    if amount < PAYOUT_MIN_AMOUNT:
-        return jsonify({'ok': False, 'error': f'Le montant minimum de retrait est de {PAYOUT_MIN_AMOUNT} (dans la devise choisie)'}), 400
 
     # Le pays choisi pour le retrait détermine la devise dans laquelle le mobile money
     # sera crédité. On ne retire que depuis la poche de solde correspondante, pour ne
@@ -1598,11 +1528,6 @@ def leekpay_verify_signature(raw_body, signature):
 FREE_PLAN_MONTHLY_LIMIT = 300
 
 PAYOUT_FEE_PERCENT = 3.5  # frais prélevés sur chaque retrait manuel
-PAYOUT_MIN_AMOUNT = 600   # minimum de retrait, toutes devises confondues
-CONVERSION_FEE_PERCENT = 5.5  # frais prélevés sur chaque conversion de devise entre poches
-                               # (SoleasPay prend réellement ~5.36% sur ses conversions de devise
-                               # via "Vendre une devise" — on s'aligne au-dessus pour ne jamais
-                               # perdre d'argent quand une conversion réelle devient nécessaire)
 
 REFERRAL_COMMISSION_RATE = 0.10  # 10% de l'abonnement du filleul
 
@@ -2272,8 +2197,6 @@ def api_admin_get_users():
     for u in users:
         u2 = {k: v for k, v in u.items() if k != 'password_hash'}
         u2['is_online'] = _is_user_online(u.get('last_seen_at'), now)
-        u_balances = get_balances(u)
-        u2['total_balance'] = sum(u_balances.values()) if u_balances else u.get('available_balance', 0)
         safe.append(u2)
     return jsonify({'ok': True, 'items': safe})
 
@@ -2300,8 +2223,6 @@ def api_admin_get_user_full(user_id):
         return jsonify({'ok': False, 'error': 'Utilisateur introuvable'}), 404
     target = {k: v for k, v in users[0].items() if k != 'password_hash'}
     target['is_online'] = _is_user_online(target.get('last_seen_at'))
-    target_balances = get_balances(target)
-    target['total_balance'] = sum(target_balances.values()) if target_balances else target.get('available_balance', 0)
 
     payment_links = sb_get('payment_links', f'user_id=eq.{user_id}&order=created_at.desc')
     for l in payment_links:
@@ -2345,4 +2266,189 @@ def api_admin_update_user(user_id):
     ok = sb_patch('users', 'id', user_id, data)
     return jsonify({'ok': ok})
 
-@app.route('/api/admin/users/<user_
+@app.route('/api/admin/users/<user_id>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_user(user_id):
+    ok = sb_delete('users', 'id', user_id)
+    return jsonify({'ok': ok})
+
+@app.route('/api/admin/overview')
+@admin_required
+def api_admin_overview():
+    return jsonify({
+        'ok': True,
+        'users': sb_count('users'),
+        'transactions': sb_count('transactions'),
+        'pending_kyc': sb_count('users', 'kyc_status=eq.pending'),
+        'payment_links': sb_count('payment_links')
+    })
+
+# ── API ADMIN CONFIG ──────────────────────────────
+@app.route('/api/admin/config', methods=['GET'])
+@admin_required
+def api_get_config():
+    return jsonify({'ok': True, 'items': sb_get('site_config')})
+
+@app.route('/api/admin/config', methods=['PUT'])
+@admin_required
+def api_update_config():
+    body = request.get_json()
+    ok = sb_patch('site_config', 'key', body.get('key'), {'value': body.get('value'), 'updated_at': datetime.utcnow().isoformat()})
+    return jsonify({'ok': ok})
+
+@app.route('/api/admin/stats', methods=['GET'])
+@admin_required
+def api_get_stats():
+    return jsonify({'ok': True, 'items': sb_get('stats', 'order=order_index.asc')})
+
+@app.route('/api/admin/stats', methods=['POST'])
+@admin_required
+def api_create_stat():
+    row = sb_post('stats', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
+
+@app.route('/api/admin/stats/<int:sid>', methods=['PUT'])
+@admin_required
+def api_update_stat(sid):
+    return jsonify({'ok': sb_patch('stats', 'id', sid, request.get_json())})
+
+@app.route('/api/admin/stats/<int:sid>', methods=['DELETE'])
+@admin_required
+def api_delete_stat(sid):
+    return jsonify({'ok': sb_delete('stats', 'id', sid)})
+
+@app.route('/api/admin/features', methods=['GET'])
+@admin_required
+def api_get_features():
+    return jsonify({'ok': True, 'items': sb_get('features', 'order=order_index.asc')})
+
+@app.route('/api/admin/features', methods=['POST'])
+@admin_required
+def api_create_feature():
+    row = sb_post('features', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
+
+@app.route('/api/admin/features/<int:fid>', methods=['PUT'])
+@admin_required
+def api_update_feature(fid):
+    return jsonify({'ok': sb_patch('features', 'id', fid, request.get_json())})
+
+@app.route('/api/admin/features/<int:fid>', methods=['DELETE'])
+@admin_required
+def api_delete_feature(fid):
+    return jsonify({'ok': sb_delete('features', 'id', fid)})
+
+@app.route('/api/admin/pricing', methods=['GET'])
+@admin_required
+def api_get_pricing():
+    return jsonify({'ok': True, 'items': sb_get('pricing_plans', 'order=order_index.asc')})
+
+@app.route('/api/admin/pricing', methods=['POST'])
+@admin_required
+def api_create_plan():
+    row = sb_post('pricing_plans', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
+
+@app.route('/api/admin/pricing/<int:pid>', methods=['PUT'])
+@admin_required
+def api_update_plan(pid):
+    return jsonify({'ok': sb_patch('pricing_plans', 'id', pid, request.get_json())})
+
+@app.route('/api/admin/pricing/<int:pid>', methods=['DELETE'])
+@admin_required
+def api_delete_plan(pid):
+    return jsonify({'ok': sb_delete('pricing_plans', 'id', pid)})
+
+@app.route('/api/admin/testimonials', methods=['GET'])
+@admin_required
+def api_get_testimonials():
+    return jsonify({'ok': True, 'items': sb_get('testimonials', 'order=order_index.asc')})
+
+@app.route('/api/admin/testimonials', methods=['POST'])
+@admin_required
+def api_create_testimonial():
+    row = sb_post('testimonials', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
+
+@app.route('/api/admin/testimonials/<int:tid>', methods=['PUT'])
+@admin_required
+def api_update_testimonial(tid):
+    return jsonify({'ok': sb_patch('testimonials', 'id', tid, request.get_json())})
+
+@app.route('/api/admin/testimonials/<int:tid>', methods=['DELETE'])
+@admin_required
+def api_delete_testimonial(tid):
+    return jsonify({'ok': sb_delete('testimonials', 'id', tid)})
+
+# ── ERREURS ───────────────────────────────────────
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    import traceback
+    orig = getattr(e, 'original_exception', e)
+    traceback.print_exc()
+    return jsonify({'error': str(orig), 'type': type(orig).__name__}), 500
+
+
+@app.route('/transactions')
+@user_required
+def transactions():
+    return render_template('transactions.html', user=get_current_user())
+
+@app.route('/payouts')
+@user_required
+def payouts():
+    return render_template('payouts.html', user=get_current_user())
+
+@app.route('/api-keys')
+@user_required
+def api_keys_page():
+    return render_template('api_keys.html', user=get_current_user())
+
+@app.route('/webhooks')
+@user_required
+def webhooks_page():
+    return render_template('webhooks.html', user=get_current_user())
+
+@app.route('/sandbox')
+@user_required
+def sandbox():
+    return render_template('sandbox.html', user=get_current_user())
+
+@app.route('/profile')
+@user_required
+def profile():
+    return render_template('profile.html', user=get_current_user())
+
+@app.route('/billing')
+@user_required
+def billing():
+    return render_template('billing.html', user=get_current_user())
+
+@app.route('/payment-links')
+@user_required
+def payment_links():
+    return render_template('payment_links.html', user=get_current_user())
+
+@app.route('/referral')
+@user_required
+def referral():
+    return render_template('referral.html', user=get_current_user())
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
