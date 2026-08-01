@@ -7,6 +7,8 @@ import hmac
 import secrets
 import pyotp
 import requests
+import smtplib
+from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, redirect, url_for, make_response
@@ -41,6 +43,9 @@ SOLEASPAY_API_KEY = os.getenv('SOLEASPAY_API_KEY')
 SOLEASPAY_CALLBACK_SECRET = os.getenv('SOLEASPAY_CALLBACK_SECRET')
 SOLEASPAY_BASE = 'https://soleaspay.com'
 SOLEASPAY_MIN_AMOUNT = 100  # XAF/XOF — en dessous, SoleasPay refuse la transaction
+
+EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
+EMAIL_APP_PASSWORD = os.getenv('EMAIL_APP_PASSWORD')
 
 # Services réellement actifs chez SoleasPay par pays (vérifié via /api/services-list).
 # format : code_pays -> { clé_opérateur: (service_id, libellé) }
@@ -284,6 +289,8 @@ def api_me():
     if not users:
         return jsonify({'ok': False}), 404
     user = users[0]
+    balances = get_balances(user)
+    total_balance = sum(balances.values()) if balances else user.get('available_balance', 0)
     return jsonify({'ok': True, 'user': {
         'firstname': user['firstname'],
         'lastname': user['lastname'],
@@ -297,7 +304,8 @@ def api_me():
         'kyc_rejection_reason': user.get('kyc_rejection_reason'),
         'usage_this_month': get_monthly_transaction_count(request.user_id),
         'monthly_limit': FREE_PLAN_MONTHLY_LIMIT,
-        'available_balance': user.get('available_balance', 0),
+        'available_balance': total_balance,
+        'balances': balances,
         'totp_enabled': user.get('totp_enabled', False)
     }})
 
@@ -390,9 +398,27 @@ def api_request_payout():
     if amount <= 0 or not phone:
         return jsonify({'ok': False, 'error': 'Montant et numéro de téléphone requis'}), 400
 
-    balance = user.get('available_balance') or 0
-    if amount > balance:
-        return jsonify({'ok': False, 'error': f'Solde insuffisant (disponible: {balance:,.0f} XOF)'}), 400
+    # Le pays choisi pour le retrait détermine la devise dans laquelle le mobile money
+    # sera crédité. On ne retire que depuis la poche de solde correspondante, pour ne
+    # jamais subir de conversion XAF/XOF imposée par SoleasPay au moment du retrait.
+    withdraw_country = (data.get('country') or user.get('country') or '').strip()
+    withdraw_currency = get_currency_for_country(withdraw_country)
+
+    balances = get_balances(user)
+    available_in_currency = get_balance_for_currency(user, withdraw_currency)
+
+    if amount > available_in_currency:
+        other_currencies = {c: v for c, v in balances.items() if c != withdraw_currency and v and v > 0}
+        if other_currencies:
+            other_desc = ', '.join(f'{v:,.0f} {c}' for c, v in other_currencies.items())
+            return jsonify({
+                'ok': False,
+                'error': (f"Solde insuffisant en {withdraw_currency} "
+                          f"(disponible : {available_in_currency:,.0f} {withdraw_currency}). "
+                          f"Vous avez {other_desc} sur une autre devise — convertissez-le "
+                          f"via l'E-Change de SoleasPay avant de retirer en {withdraw_currency}.")
+            }), 400
+        return jsonify({'ok': False, 'error': f'Solde insuffisant (disponible : {available_in_currency:,.0f} {withdraw_currency})'}), 400
 
     # Frais de retrait manuel : 3.5% du montant demandé, déduits du solde du marchand.
     # Le montant net (envoyé sur son mobile money) est amount - fee.
@@ -404,9 +430,10 @@ def api_request_payout():
         'amount': amount,
         'fee': fee,
         'net_amount': net_amount,
+        'currency': withdraw_currency,
         'phone': phone,
         'operator': (data.get('operator') or '').strip(),
-        'country': user.get('country', ''),
+        'country': withdraw_country,
         'status': 'pending',
         'note': (data.get('note') or '').strip(),
         'created_at': datetime.utcnow().isoformat()
@@ -415,7 +442,7 @@ def api_request_payout():
         detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
         return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
 
-    sb_patch('users', 'id', request.user_id, {'available_balance': balance - amount})
+    debit_user_balance(request.user_id, withdraw_currency, amount)
     return jsonify({'ok': True, 'payout': row[0] if isinstance(row, list) else row})
 
 @app.route('/api/payouts/mine/<int:pid>', methods=['DELETE'])
@@ -432,8 +459,8 @@ def api_cancel_payout(pid):
     if not ok:
         return jsonify({'ok': False, 'error': 'Erreur lors de l\'annulation'}), 500
 
-    user = get_current_user()
-    sb_patch('users', 'id', request.user_id, {'available_balance': (user.get('available_balance') or 0) + payout['amount']})
+    refund_currency = payout.get('currency') or get_currency_for_country(payout.get('country', ''))
+    credit_user_balance(request.user_id, refund_currency, payout['amount'])
     return jsonify({'ok': True})
 
 
@@ -586,8 +613,9 @@ def api_sync_transaction(token):
             mark_invoice_paid_if_applicable(tx)
         if new_status == 'paid' and tx.get('user_id'):
             merchant = get_user_by_id(tx['user_id'])
-            new_balance = (merchant.get('available_balance') or 0) + float(tx.get('amount') or 0)
-            sb_patch('users', 'id', tx['user_id'], {'available_balance': new_balance})
+            tx_currency = tx.get('currency') or 'XOF'
+            credit_user_balance(tx['user_id'], tx_currency, tx.get('amount') or 0)
+            send_payment_notification_email(merchant, tx)
         if new_status in ('paid', 'failed') and tx.get('user_id'):
             dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
                 'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
@@ -641,6 +669,7 @@ def api_pay():
         'client_name': data['client_name'],
         'client_phone': data['phone'],
         'country': country_code,
+        'currency': merchant_currency,
         'status': 'pending',
         'environment': env_label,
         'user_id': user_id,
@@ -1146,6 +1175,7 @@ def api_invoice_pay(token):
         'client_name': customer_name,
         'client_phone': phone,
         'country': merchant.get('country', ''),
+        'currency': merchant_currency,
         'status': 'pending',
         'environment': 'production',
         'user_id': invoice['user_id'],
@@ -1543,6 +1573,63 @@ def get_user_by_id(user_id):
     users = sb_get('users', f'id=eq.{user_id}')
     return users[0] if users else {}
 
+def get_currency_for_country(country_code):
+    return next((c['currency'] for c in COUNTRIES if c['code'] == country_code), 'XOF')
+
+def get_balances(user):
+    """Retourne le dict des soldes par devise, ex: {'XAF': 1200, 'XOF': 500}."""
+    return user.get('balances') or {}
+
+def get_balance_for_currency(user, currency):
+    return float(get_balances(user).get(currency) or 0)
+
+def credit_user_balance(user_id, currency, amount):
+    """Crédite la poche de solde correspondant à une devise précise, sans toucher aux autres."""
+    user = get_user_by_id(user_id)
+    balances = get_balances(user)
+    balances[currency] = round(float(balances.get(currency) or 0) + float(amount), 2)
+    sb_patch('users', 'id', user_id, {'balances': balances})
+
+def debit_user_balance(user_id, currency, amount):
+    user = get_user_by_id(user_id)
+    balances = get_balances(user)
+    balances[currency] = round(float(balances.get(currency) or 0) - float(amount), 2)
+    sb_patch('users', 'id', user_id, {'balances': balances})
+
+def send_payment_notification_email(merchant, tx):
+    """Envoie un email au marchand quand il reçoit un paiement. Best-effort : ne bloque
+    jamais le traitement du paiement si l'email échoue."""
+    if not EMAIL_ADDRESS or not EMAIL_APP_PASSWORD:
+        return
+    to_email = (merchant or {}).get('email')
+    if not to_email:
+        return
+    try:
+        amount = tx.get('amount')
+        currency = tx.get('currency') or 'XOF'
+        firstname = (merchant.get('firstname') or '').strip()
+        body = (
+            f"Bonjour {firstname},\n\n"
+            f"Vous venez de recevoir un paiement sur Flinpay :\n\n"
+            f"Montant : {amount} {currency}\n"
+            f"Client : {tx.get('client_name', '—')}\n"
+            f"Téléphone : {tx.get('client_phone', '—')}\n"
+            f"Référence : {tx.get('token', '—')}\n"
+            f"Date : {datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC\n\n"
+            f"Connectez-vous à votre dashboard Flinpay pour voir le détail complet.\n\n"
+            f"— L'équipe Flinpay"
+        )
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['Subject'] = f"Nouveau paiement reçu — {amount} {currency}"
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = to_email
+        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
+            server.starttls()
+            server.login(EMAIL_ADDRESS, EMAIL_APP_PASSWORD)
+            server.send_message(msg)
+    except Exception as e:
+        print(f'[send_payment_notification_email] error: {e}')
+
 def get_request_client_info():
     """Capture les infos du visiteur qui déclenche le paiement (navigateur, IP, page d'origine),
     pour affichage dans l'historique des transactions."""
@@ -1862,6 +1949,7 @@ def api_pay_link(token):
         'client_name': customer_name,
         'client_phone': phone,
         'country': merchant.get('country', ''),
+        'currency': merchant_currency,
         'status': 'pending',
         'environment': 'production',
         'user_id': link['user_id'],
@@ -1906,8 +1994,9 @@ def api_pay_status(tx_token):
                     mark_invoice_paid_if_applicable(tx)
                 if new_status == 'paid' and tx.get('user_id'):
                     merchant = get_user_by_id(tx['user_id'])
-                    new_balance = (merchant.get('available_balance') or 0) + float(tx.get('amount') or 0)
-                    sb_patch('users', 'id', tx['user_id'], {'available_balance': new_balance})
+                    tx_currency = tx.get('currency') or 'XOF'
+                    credit_user_balance(tx['user_id'], tx_currency, tx.get('amount') or 0)
+                    send_payment_notification_email(merchant, tx)
                 if new_status in ('paid', 'failed') and tx.get('user_id'):
                     dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
                         'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
@@ -2000,8 +2089,9 @@ def webhook_soleaspay():
         # Le marchand reçoit le montant plein : notre marge a déjà été prise en
         # majorant ce que le client final a payé (voir amount_with_markup).
         merchant = get_user_by_id(tx['user_id'])
-        new_balance = (merchant.get('available_balance') or 0) + float(tx.get('amount') or 0)
-        sb_patch('users', 'id', tx['user_id'], {'available_balance': new_balance})
+        tx_currency = tx.get('currency') or 'XOF'
+        credit_user_balance(tx['user_id'], tx_currency, tx.get('amount') or 0)
+        send_payment_notification_email(merchant, tx)
 
     if new_status in ('paid', 'failed') and tx.get('user_id'):
         dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
@@ -2273,92 +2363,4 @@ def api_create_plan():
 def api_update_plan(pid):
     return jsonify({'ok': sb_patch('pricing_plans', 'id', pid, request.get_json())})
 
-@app.route('/api/admin/pricing/<int:pid>', methods=['DELETE'])
-@admin_required
-def api_delete_plan(pid):
-    return jsonify({'ok': sb_delete('pricing_plans', 'id', pid)})
-
-@app.route('/api/admin/testimonials', methods=['GET'])
-@admin_required
-def api_get_testimonials():
-    return jsonify({'ok': True, 'items': sb_get('testimonials', 'order=order_index.asc')})
-
-@app.route('/api/admin/testimonials', methods=['POST'])
-@admin_required
-def api_create_testimonial():
-    row = sb_post('testimonials', request.get_json())
-    if not row or (isinstance(row, dict) and row.get('_error')):
-        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
-        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
-    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
-
-@app.route('/api/admin/testimonials/<int:tid>', methods=['PUT'])
-@admin_required
-def api_update_testimonial(tid):
-    return jsonify({'ok': sb_patch('testimonials', 'id', tid, request.get_json())})
-
-@app.route('/api/admin/testimonials/<int:tid>', methods=['DELETE'])
-@admin_required
-def api_delete_testimonial(tid):
-    return jsonify({'ok': sb_delete('testimonials', 'id', tid)})
-
-# ── ERREURS ───────────────────────────────────────
-@app.errorhandler(404)
-def not_found(e):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def server_error(e):
-    import traceback
-    orig = getattr(e, 'original_exception', e)
-    traceback.print_exc()
-    return jsonify({'error': str(orig), 'type': type(orig).__name__}), 500
-
-
-@app.route('/transactions')
-@user_required
-def transactions():
-    return render_template('transactions.html', user=get_current_user())
-
-@app.route('/payouts')
-@user_required
-def payouts():
-    return render_template('payouts.html', user=get_current_user())
-
-@app.route('/api-keys')
-@user_required
-def api_keys_page():
-    return render_template('api_keys.html', user=get_current_user())
-
-@app.route('/webhooks')
-@user_required
-def webhooks_page():
-    return render_template('webhooks.html', user=get_current_user())
-
-@app.route('/sandbox')
-@user_required
-def sandbox():
-    return render_template('sandbox.html', user=get_current_user())
-
-@app.route('/profile')
-@user_required
-def profile():
-    return render_template('profile.html', user=get_current_user())
-
-@app.route('/billing')
-@user_required
-def billing():
-    return render_template('billing.html', user=get_current_user())
-
-@app.route('/payment-links')
-@user_required
-def payment_links():
-    return render_template('payment_links.html', user=get_current_user())
-
-@app.route('/referral')
-@user_required
-def referral():
-    return render_template('referral.html', user=get_current_user())
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+@app.route('/api/admin/pricing/<int:pid>',
