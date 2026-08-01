@@ -309,6 +309,74 @@ def api_me():
         'totp_enabled': user.get('totp_enabled', False)
     }})
 
+@app.route('/convert')
+@user_required
+def convert_page():
+    return render_template('convert.html', user=get_current_user())
+
+@app.route('/api/fx-preview', methods=['GET'])
+@user_required
+def api_fx_preview():
+    from_currency = (request.args.get('from') or '').strip().upper()
+    to_currency = (request.args.get('to') or '').strip().upper()
+    try:
+        amount = float(request.args.get('amount', 0))
+    except (TypeError, ValueError):
+        amount = 0
+    if not from_currency or not to_currency or from_currency == to_currency or amount <= 0:
+        return jsonify({'ok': False, 'error': 'Paramètres invalides'}), 400
+
+    fee = round(amount * CONVERSION_FEE_PERCENT / 100, 2)
+    amount_after_fee = round(amount - fee, 2)
+    converted = soleaspay_convert(amount_after_fee, from_currency, to_currency)
+    try:
+        converted = round(float(converted), 2)
+    except (TypeError, ValueError):
+        converted = 0
+    return jsonify({'ok': True, 'fee': fee, 'amount_after_fee': amount_after_fee, 'converted_amount': converted})
+
+@app.route('/api/convert-balance', methods=['POST'])
+@user_required
+def api_convert_balance():
+    data = request.get_json() or {}
+    from_currency = (data.get('from_currency') or '').strip().upper()
+    to_currency = (data.get('to_currency') or '').strip().upper()
+    try:
+        amount = float(data.get('amount'))
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+
+    if not from_currency or not to_currency or from_currency == to_currency:
+        return jsonify({'ok': False, 'error': 'Sélectionnez deux devises différentes'}), 400
+    if amount <= 0:
+        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+
+    user = get_current_user()
+    available = get_balance_for_currency(user, from_currency)
+    if amount > available:
+        return jsonify({'ok': False, 'error': f'Solde insuffisant en {from_currency} (disponible : {available:,.0f} {from_currency})'}), 400
+
+    fee = round(amount * CONVERSION_FEE_PERCENT / 100, 2)
+    amount_after_fee = round(amount - fee, 2)
+    converted_amount = soleaspay_convert(amount_after_fee, from_currency, to_currency)
+    try:
+        converted_amount = round(float(converted_amount), 2)
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Erreur lors de la conversion. Réessayez.'}), 502
+
+    debit_user_balance(request.user_id, from_currency, amount)
+    credit_user_balance(request.user_id, to_currency, converted_amount)
+
+    return jsonify({
+        'ok': True,
+        'from_currency': from_currency,
+        'to_currency': to_currency,
+        'amount': amount,
+        'fee': fee,
+        'converted_amount': converted_amount,
+        'message': f'{amount:,.0f} {from_currency} converti en {converted_amount:,.0f} {to_currency}'
+    })
+
 @app.route('/api/billing/subscribe', methods=['POST'])
 @user_required
 def api_billing_subscribe():
@@ -397,6 +465,8 @@ def api_request_payout():
     phone = (data.get('phone') or '').strip()
     if amount <= 0 or not phone:
         return jsonify({'ok': False, 'error': 'Montant et numéro de téléphone requis'}), 400
+    if amount < PAYOUT_MIN_AMOUNT:
+        return jsonify({'ok': False, 'error': f'Le montant minimum de retrait est de {PAYOUT_MIN_AMOUNT} (dans la devise choisie)'}), 400
 
     # Le pays choisi pour le retrait détermine la devise dans laquelle le mobile money
     # sera crédité. On ne retire que depuis la poche de solde correspondante, pour ne
@@ -1528,6 +1598,11 @@ def leekpay_verify_signature(raw_body, signature):
 FREE_PLAN_MONTHLY_LIMIT = 300
 
 PAYOUT_FEE_PERCENT = 3.5  # frais prélevés sur chaque retrait manuel
+PAYOUT_MIN_AMOUNT = 600   # minimum de retrait, toutes devises confondues
+CONVERSION_FEE_PERCENT = 5.5  # frais prélevés sur chaque conversion de devise entre poches
+                               # (SoleasPay prend réellement ~5.36% sur ses conversions de devise
+                               # via "Vendre une devise" — on s'aligne au-dessus pour ne jamais
+                               # perdre d'argent quand une conversion réelle devient nécessaire)
 
 REFERRAL_COMMISSION_RATE = 0.10  # 10% de l'abonnement du filleul
 
