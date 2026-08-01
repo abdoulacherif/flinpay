@@ -2363,4 +2363,92 @@ def api_create_plan():
 def api_update_plan(pid):
     return jsonify({'ok': sb_patch('pricing_plans', 'id', pid, request.get_json())})
 
-@app.route('/api/admin/pricing/<int:pid>',
+@app.route('/api/admin/pricing/<int:pid>', methods=['DELETE'])
+@admin_required
+def api_delete_plan(pid):
+    return jsonify({'ok': sb_delete('pricing_plans', 'id', pid)})
+
+@app.route('/api/admin/testimonials', methods=['GET'])
+@admin_required
+def api_get_testimonials():
+    return jsonify({'ok': True, 'items': sb_get('testimonials', 'order=order_index.asc')})
+
+@app.route('/api/admin/testimonials', methods=['POST'])
+@admin_required
+def api_create_testimonial():
+    row = sb_post('testimonials', request.get_json())
+    if not row or (isinstance(row, dict) and row.get('_error')):
+        detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
+        return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+    return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
+
+@app.route('/api/admin/testimonials/<int:tid>', methods=['PUT'])
+@admin_required
+def api_update_testimonial(tid):
+    return jsonify({'ok': sb_patch('testimonials', 'id', tid, request.get_json())})
+
+@app.route('/api/admin/testimonials/<int:tid>', methods=['DELETE'])
+@admin_required
+def api_delete_testimonial(tid):
+    return jsonify({'ok': sb_delete('testimonials', 'id', tid)})
+
+# ── ERREURS ───────────────────────────────────────
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    import traceback
+    orig = getattr(e, 'original_exception', e)
+    traceback.print_exc()
+    return jsonify({'error': str(orig), 'type': type(orig).__name__}), 500
+
+
+@app.route('/transactions')
+@user_required
+def transactions():
+    return render_template('transactions.html', user=get_current_user())
+
+@app.route('/payouts')
+@user_required
+def payouts():
+    return render_template('payouts.html', user=get_current_user())
+
+@app.route('/api-keys')
+@user_required
+def api_keys_page():
+    return render_template('api_keys.html', user=get_current_user())
+
+@app.route('/webhooks')
+@user_required
+def webhooks_page():
+    return render_template('webhooks.html', user=get_current_user())
+
+@app.route('/sandbox')
+@user_required
+def sandbox():
+    return render_template('sandbox.html', user=get_current_user())
+
+@app.route('/profile')
+@user_required
+def profile():
+    return render_template('profile.html', user=get_current_user())
+
+@app.route('/billing')
+@user_required
+def billing():
+    return render_template('billing.html', user=get_current_user())
+
+@app.route('/payment-links')
+@user_required
+def payment_links():
+    return render_template('payment_links.html', user=get_current_user())
+
+@app.route('/referral')
+@user_required
+def referral():
+    return render_template('referral.html', user=get_current_user())
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
