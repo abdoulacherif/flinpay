@@ -112,7 +112,8 @@ function render(data){
     </div>
 
     <div class="grid-stats">
-      <div class="stat-card"><div class="stat-val">${fmtAmount(u.available_balance||0)}</div><div class="stat-lbl">Solde disponible</div></div>
+      <div class="stat-card"><div class="stat-val">${fmtAmount(u.total_balance||0)}</div><div class="stat-lbl">Solde total (toutes devises)</div></div>
+      ${Object.entries(u.balances||{}).map(([cur,val])=>`<div class="stat-card"><div class="stat-val">${Number(val).toLocaleString()} ${cur}</div><div class="stat-lbl">Solde en ${cur}</div></div>`).join('')}
       <div class="stat-card"><div class="stat-val">${data.transactions.length}</div><div class="stat-lbl">Transactions (100 dern.)</div></div>
       <div class="stat-card"><div class="stat-val">${data.payment_links.length}</div><div class="stat-lbl">Liens de paiement</div></div>
       <div class="stat-card"><div class="stat-val">${data.invoices.length}</div><div class="stat-lbl">Factures</div></div>
