@@ -125,6 +125,21 @@ def sb_patch_multi(table, filters, data):
     except:
         return False
 
+def sb_patch_if_pending(table, token_field, token_value, data):
+    """Met à jour une ligne UNIQUEMENT si elle est encore status='pending', de façon
+    atomique côté base de données. Retourne True seulement si CETTE requête a
+    réellement effectué la transition — protège contre le double crédit quand le
+    webhook SoleasPay et la vérification automatique du navigateur se chevauchent."""
+    try:
+        qs = f'{token_field}=eq.{token_value}&status=eq.pending'
+        r = requests.patch(f'{SUPABASE_URL}/rest/v1/{table}?{qs}', headers=SUPA_HEADERS, json=data, timeout=10)
+        if not r.ok:
+            return False
+        updated = r.json()
+        return bool(updated)
+    except Exception:
+        return False
+
 def sb_delete_multi(table, filters):
     try:
         qs = '&'.join([f'{k}=eq.{v}' for k, v in filters.items()])
@@ -674,23 +689,28 @@ def api_sync_transaction(token):
         update = {'status': new_status}
         if new_status == 'paid':
             update['paid_at'] = datetime.utcnow().isoformat()
-        sb_patch_multi('transactions', {'token': token}, update)
-        if new_status == 'paid' and tx.get('payment_link_token'):
-            links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
-            if links:
-                sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
-        if new_status == 'paid':
-            mark_invoice_paid_if_applicable(tx)
-        if new_status == 'paid' and tx.get('user_id'):
-            merchant = get_user_by_id(tx['user_id'])
-            tx_currency = tx.get('currency') or 'XOF'
-            credit_user_balance(tx['user_id'], tx_currency, tx.get('amount') or 0)
-            send_payment_notification_email(merchant, tx)
-        if new_status in ('paid', 'failed') and tx.get('user_id'):
-            dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
-                'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
-                'status': new_status, 'client_name': tx.get('client_name'), 'client_phone': tx.get('client_phone')
-            })
+        # Mise à jour atomique : seule la requête qui fait réellement basculer le statut
+        # depuis 'pending' déclenche les effets ci-dessous (crédit, webhook, email...).
+        # Empêche le double crédit si le webhook SoleasPay traite la même transaction
+        # en même temps que cette vérification manuelle.
+        won_race = sb_patch_if_pending('transactions', 'token', token, update)
+        if won_race:
+            if new_status == 'paid' and tx.get('payment_link_token'):
+                links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
+                if links:
+                    sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+            if new_status == 'paid':
+                mark_invoice_paid_if_applicable(tx)
+            if new_status == 'paid' and tx.get('user_id'):
+                merchant = get_user_by_id(tx['user_id'])
+                tx_currency = tx.get('currency') or 'XOF'
+                credit_user_balance(tx['user_id'], tx_currency, tx.get('amount') or 0)
+                send_payment_notification_email(merchant, tx)
+            if new_status in ('paid', 'failed') and tx.get('user_id'):
+                dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
+                    'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
+                    'status': new_status, 'client_name': tx.get('client_name'), 'client_phone': tx.get('client_phone')
+                })
 
     return jsonify({'ok': True, 'status': new_status})
 
@@ -2113,24 +2133,35 @@ def api_pay_status(tx_token):
                 update = {'status': new_status}
                 if new_status == 'paid':
                     update['paid_at'] = datetime.utcnow().isoformat()
-                sb_patch_multi('transactions', {'token': tx_token}, update)
-                tx['status'] = new_status
-                if new_status == 'paid' and tx.get('payment_link_token'):
-                    links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
-                    if links:
-                        sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
-                if new_status == 'paid':
-                    mark_invoice_paid_if_applicable(tx)
-                if new_status == 'paid' and tx.get('user_id'):
-                    merchant = get_user_by_id(tx['user_id'])
-                    tx_currency = tx.get('currency') or 'XOF'
-                    credit_user_balance(tx['user_id'], tx_currency, tx.get('amount') or 0)
-                    send_payment_notification_email(merchant, tx)
-                if new_status in ('paid', 'failed') and tx.get('user_id'):
-                    dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
-                        'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
-                        'status': new_status, 'client_name': tx.get('client_name'), 'client_phone': tx.get('client_phone')
-                    })
+                # Mise à jour atomique : seule la requête qui fait réellement basculer le
+                # statut depuis 'pending' déclenche les effets ci-dessous. Empêche le
+                # double crédit si le webhook SoleasPay traite la même transaction en
+                # même temps que ce polling automatique du navigateur.
+                won_race = sb_patch_if_pending('transactions', 'token', tx_token, update)
+                if won_race:
+                    tx['status'] = new_status
+                    if new_status == 'paid' and tx.get('payment_link_token'):
+                        links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
+                        if links:
+                            sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (links[0].get('paid_count') or 0) + 1})
+                    if new_status == 'paid':
+                        mark_invoice_paid_if_applicable(tx)
+                    if new_status == 'paid' and tx.get('user_id'):
+                        merchant = get_user_by_id(tx['user_id'])
+                        tx_currency = tx.get('currency') or 'XOF'
+                        credit_user_balance(tx['user_id'], tx_currency, tx.get('amount') or 0)
+                        send_payment_notification_email(merchant, tx)
+                    if new_status in ('paid', 'failed') and tx.get('user_id'):
+                        dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
+                            'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
+                            'status': new_status, 'client_name': tx.get('client_name'), 'client_phone': tx.get('client_phone')
+                        })
+                else:
+                    # Un autre process (webhook) a déjà traité cette transition entre-temps :
+                    # on relit son état final pour renvoyer une réponse cohérente au client.
+                    refreshed = sb_get('transactions', f'token=eq.{tx_token}')
+                    if refreshed:
+                        tx = refreshed[0]
 
     link = None
     if tx.get('payment_link_token'):
@@ -2204,7 +2235,13 @@ def webhook_soleaspay():
     if new_status == 'paid':
         update['paid_at'] = datetime.utcnow().isoformat()
 
-    sb_patch_multi('transactions', {'token': tx['token']}, update)
+    # Mise à jour atomique : seule la requête qui fait réellement basculer le statut
+    # depuis 'pending' déclenche les effets ci-dessous. Empêche le double crédit si la
+    # vérification automatique du navigateur traite la même transaction en même temps
+    # que ce webhook.
+    won_race = sb_patch_if_pending('transactions', 'token', tx['token'], update)
+    if not won_race:
+        return jsonify({'ok': True, 'note': 'déjà traitée'}), 200
 
     if new_status == 'paid' and tx.get('payment_link_token'):
         links = sb_get('payment_links', f"token=eq.{tx['payment_link_token']}")
