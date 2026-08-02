@@ -758,14 +758,17 @@ def api_pay():
         service_id = get_service_id(country_code, operator)
         if not service_id:
             return jsonify({'ok': False, 'error': f"Opérateur '{operator}' non disponible pour le pays '{country_code}'"}), 400
-        markup_amount = amount_with_markup(data['amount'])
-        xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
-        if xaf_amount < SOLEASPAY_MIN_AMOUNT:
-            return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} XOF)"}), 400
+        # On collecte directement dans la devise réelle du portefeuille du client (celle de
+        # son pays), sans détour artificiel par le XAF — ce détour causait une double
+        # conversion (la nôtre + celle, silencieuse, de SoleasPay au moment du débit réel du
+        # portefeuille), donc une double perte à chaque transaction hors zone XAF.
+        collect_amount = amount_with_markup(data['amount'])
+        if collect_amount < SOLEASPAY_MIN_AMOUNT:
+            return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} {merchant_currency})"}), 400
         collect = soleaspay_collect(
             wallet=data['phone'],
-            amount=xaf_amount,
-            currency='XAF',
+            amount=collect_amount,
+            currency=merchant_currency,
             order_id=token,
             description=f"Commande {data['order_id']}",
             payer=data['client_name'],
@@ -1214,10 +1217,13 @@ def api_invoice_pay(token):
     if not service_id:
         return jsonify({'ok': False, 'error': "Opérateur indisponible pour ce pays"}), 400
 
+    # Même correction que pour les liens de paiement : collecte directe dans la devise
+    # réelle du client, sans détour XAF systématique.
+    customer_currency = get_currency_for_country(customer_country) or merchant_currency
     markup_amount = amount_with_markup(amount)
-    xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
-    if xaf_amount < SOLEASPAY_MIN_AMOUNT:
-        return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} XOF)"}), 400
+    collect_amount = soleaspay_convert(markup_amount, merchant_currency, customer_currency)
+    if collect_amount < SOLEASPAY_MIN_AMOUNT:
+        return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} {customer_currency})"}), 400
 
     import uuid
     tx_token = 'fp_tx_' + uuid.uuid4().hex[:20]
@@ -1225,8 +1231,8 @@ def api_invoice_pay(token):
 
     collect = soleaspay_collect(
         wallet=phone,
-        amount=xaf_amount,
-        currency='XAF',
+        amount=collect_amount,
+        currency=customer_currency,
         order_id=tx_token,
         description=f"Facture {invoice['invoice_number']}",
         payer=customer_name,
@@ -1238,14 +1244,16 @@ def api_invoice_pay(token):
     if not collect['ok']:
         return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
 
+    credited_amount = amount if customer_currency == merchant_currency else soleaspay_convert(amount, merchant_currency, customer_currency)
+
     tx = sb_post('transactions', {
         'token': tx_token,
         'order_id': invoice['invoice_number'],
-        'amount': amount,
+        'amount': credited_amount,
         'client_name': customer_name,
         'client_phone': phone,
         'country': merchant.get('country', ''),
-        'currency': merchant_currency,
+        'currency': customer_currency,
         'status': 'pending',
         'environment': 'production',
         'user_id': invoice['user_id'],
@@ -1644,6 +1652,27 @@ def amount_with_markup(base_amount):
     client final paie le surplus au lieu que ce soit déduit du solde du marchand."""
     return round(float(base_amount) * (1 + get_markup_percent() / 100), 2)
 
+# ── Marge spécifique aux liens de paiement ────────
+# Ajoutée directement au client au moment du prélèvement (pas déduite du marchand),
+# pour que le marchand reçoive toujours son montant plein — évite qu'il aille voir
+# ailleurs à cause de frais qui rognent ce qu'il reçoit.
+LINK_MARKUP_DEFAULT_PERCENT = 3.0
+
+# Permet d'ajuster la marge par opérateur (portefeuille) si leurs coûts réels chez
+# SoleasPay diffèrent. Clé = code opérateur (voir SOLEASPAY_SERVICES : 'om', 'momo',
+# 'moov', 'wave', 'tmoney', 'vodacom', 'airtel'...). Laisser vide = LINK_MARKUP_DEFAULT_PERCENT.
+LINK_MARKUP_BY_OPERATOR = {
+    # 'wave': 2.5,
+    # 'om': 3.5,
+}
+
+def get_link_markup_percent(operator_key):
+    return LINK_MARKUP_BY_OPERATOR.get(operator_key, LINK_MARKUP_DEFAULT_PERCENT)
+
+def link_amount_with_markup(base_amount, operator_key):
+    pct = get_link_markup_percent(operator_key)
+    return round(float(base_amount) * (1 + pct / 100), 2)
+
 def get_user_by_id(user_id):
     users = sb_get('users', f'id=eq.{user_id}')
     return users[0] if users else {}
@@ -1997,15 +2026,21 @@ def api_pay_link(token):
     if not service_id:
         return jsonify({'ok': False, 'error': "Opérateur indisponible pour ce pays"}), 400
 
-    markup_amount = amount_with_markup(amount)
-    xaf_amount = soleaspay_convert(markup_amount, merchant_currency, 'XAF')
-    if xaf_amount < SOLEASPAY_MIN_AMOUNT:
-        return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} XOF)"}), 400
+    # On collecte directement dans la devise réelle du portefeuille du client (celle de
+    # son pays), en convertissant une seule fois depuis la devise d'affichage du marchand
+    # si elles diffèrent — jamais via un détour XAF systématique, qui causait une double
+    # conversion (la nôtre + celle, silencieuse, de SoleasPay au débit réel du portefeuille)
+    # et donc une perte à chaque transaction hors zone du marchand.
+    customer_currency = get_currency_for_country(customer_country) or merchant_currency
+    markup_amount = link_amount_with_markup(amount, operator)
+    collect_amount = soleaspay_convert(markup_amount, merchant_currency, customer_currency)
+    if collect_amount < SOLEASPAY_MIN_AMOUNT:
+        return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} {customer_currency})"}), 400
 
     collect = soleaspay_collect(
         wallet=phone,
-        amount=xaf_amount,
-        currency='XAF',
+        amount=collect_amount,
+        currency=customer_currency,
         order_id=tx_token,
         description=link.get('description') or link['name'],
         payer=customer_name,
@@ -2017,14 +2052,19 @@ def api_pay_link(token):
     if not collect['ok']:
         return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
 
+    # Le marchand est crédité dans la devise réellement collectée (customer_currency).
+    # Si elle diffère de sa devise d'affichage, on convertit le montant de base pour que
+    # le solde crédité reste financièrement équivalent à son prix d'origine.
+    credited_amount = amount if customer_currency == merchant_currency else soleaspay_convert(amount, merchant_currency, customer_currency)
+
     tx = sb_post('transactions', {
         'token': tx_token,
         'order_id': 'link_' + uuid.uuid4().hex[:10],
-        'amount': amount,
+        'amount': credited_amount,
         'client_name': customer_name,
         'client_phone': phone,
         'country': merchant.get('country', ''),
-        'currency': merchant_currency,
+        'currency': customer_currency,
         'status': 'pending',
         'environment': 'production',
         'user_id': link['user_id'],
@@ -2272,6 +2312,8 @@ def api_admin_get_users():
     for u in users:
         u2 = {k: v for k, v in u.items() if k != 'password_hash'}
         u2['is_online'] = _is_user_online(u.get('last_seen_at'), now)
+        u_balances = get_balances(u)
+        u2['total_balance'] = sum(u_balances.values()) if u_balances else u.get('available_balance', 0)
         safe.append(u2)
     return jsonify({'ok': True, 'items': safe})
 
@@ -2298,6 +2340,8 @@ def api_admin_get_user_full(user_id):
         return jsonify({'ok': False, 'error': 'Utilisateur introuvable'}), 404
     target = {k: v for k, v in users[0].items() if k != 'password_hash'}
     target['is_online'] = _is_user_online(target.get('last_seen_at'))
+    target_balances = get_balances(target)
+    target['total_balance'] = sum(target_balances.values()) if target_balances else target.get('available_balance', 0)
 
     payment_links = sb_get('payment_links', f'user_id=eq.{user_id}&order=created_at.desc')
     for l in payment_links:
