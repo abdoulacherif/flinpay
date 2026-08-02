@@ -1676,7 +1676,7 @@ def amount_with_markup(base_amount):
 # Ajoutée directement au client au moment du prélèvement (pas déduite du marchand),
 # pour que le marchand reçoive toujours son montant plein — évite qu'il aille voir
 # ailleurs à cause de frais qui rognent ce qu'il reçoit.
-LINK_MARKUP_DEFAULT_PERCENT = 3.0
+LINK_MARKUP_DEFAULT_PERCENT = 4.5
 
 # Frais fixe ajouté EN PLUS du pourcentage, sur chaque transaction. Nécessaire car
 # SoleasPay prélève ses propres frais internes à chaque collecte (indépendamment de
