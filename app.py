@@ -1658,20 +1658,34 @@ def amount_with_markup(base_amount):
 # ailleurs à cause de frais qui rognent ce qu'il reçoit.
 LINK_MARKUP_DEFAULT_PERCENT = 3.0
 
+# Frais fixe ajouté EN PLUS du pourcentage, sur chaque transaction. Nécessaire car
+# SoleasPay prélève ses propres frais internes à chaque collecte (indépendamment de
+# toute conversion de devise) — un pourcentage seul ne suffit pas à couvrir ce coût,
+# surtout sur les petits montants.
+LINK_MARKUP_DEFAULT_FLAT_FEE = 50
+
 # Permet d'ajuster la marge par opérateur (portefeuille) si leurs coûts réels chez
 # SoleasPay diffèrent. Clé = code opérateur (voir SOLEASPAY_SERVICES : 'om', 'momo',
-# 'moov', 'wave', 'tmoney', 'vodacom', 'airtel'...). Laisser vide = LINK_MARKUP_DEFAULT_PERCENT.
+# 'moov', 'wave', 'tmoney', 'vodacom', 'airtel'...). Laisser vide = valeur par défaut.
 LINK_MARKUP_BY_OPERATOR = {
     # 'wave': 2.5,
     # 'om': 3.5,
+}
+LINK_MARKUP_FLAT_FEE_BY_OPERATOR = {
+    # 'wave': 30,
+    # 'om': 60,
 }
 
 def get_link_markup_percent(operator_key):
     return LINK_MARKUP_BY_OPERATOR.get(operator_key, LINK_MARKUP_DEFAULT_PERCENT)
 
+def get_link_markup_flat_fee(operator_key):
+    return LINK_MARKUP_FLAT_FEE_BY_OPERATOR.get(operator_key, LINK_MARKUP_DEFAULT_FLAT_FEE)
+
 def link_amount_with_markup(base_amount, operator_key):
     pct = get_link_markup_percent(operator_key)
-    return round(float(base_amount) * (1 + pct / 100), 2)
+    flat = get_link_markup_flat_fee(operator_key)
+    return round(float(base_amount) * (1 + pct / 100) + flat, 2)
 
 def get_user_by_id(user_id):
     users = sb_get('users', f'id=eq.{user_id}')
