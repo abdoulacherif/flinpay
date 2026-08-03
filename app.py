@@ -2313,12 +2313,43 @@ def api_admin_create_payout():
     data = request.get_json() or {}
     if not data.get('user_id') or not data.get('amount') or not data.get('phone'):
         return jsonify({'ok': False, 'error': 'user_id, amount et phone sont requis'}), 400
+
+    target_user_id = data.get('user_id')
+    try:
+        amount = float(data.get('amount'))
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
+
+    target_user = get_user_by_id(target_user_id)
+    withdraw_country = (data.get('country') or target_user.get('country') or '').strip()
+    withdraw_currency = get_currency_for_country(withdraw_country)
+    available_in_currency = get_balance_for_currency(target_user, withdraw_currency)
+
+    if amount > available_in_currency and not data.get('force'):
+        balances = get_balances(target_user)
+        other_currencies = {c: v for c, v in balances.items() if c != withdraw_currency and v and v > 0}
+        other_desc = (', '.join(f'{v:,.0f} {c}' for c, v in other_currencies.items())
+                      if other_currencies else 'aucun autre solde')
+        return jsonify({
+            'ok': False,
+            'error': (f"Solde insuffisant en {withdraw_currency} pour ce marchand "
+                      f"(disponible : {available_in_currency:,.0f} {withdraw_currency} — "
+                      f"autres devises : {other_desc}). Convertissez via /convert avant de "
+                      f"lancer ce retrait, ou passez explicitement 'force': true pour outrepasser.")
+        }), 400
+
+    fee = round(amount * PAYOUT_FEE_PERCENT / 100, 2)
+    net_amount = round(amount - fee, 2)
+
     payload = {
-        'user_id': data.get('user_id'),
-        'amount': data.get('amount'),
+        'user_id': target_user_id,
+        'amount': amount,
+        'fee': fee,
+        'net_amount': net_amount,
+        'currency': withdraw_currency,
         'phone': data.get('phone'),
         'operator': data.get('operator', ''),
-        'country': data.get('country', ''),
+        'country': withdraw_country,
         'status': data.get('status', 'pending'),
         'note': data.get('note', ''),
         'created_at': datetime.utcnow().isoformat()
@@ -2327,6 +2358,8 @@ def api_admin_create_payout():
     if not row or (isinstance(row, dict) and row.get('_error')):
         detail = row.get('_detail') if isinstance(row, dict) else 'inconnue'
         return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
+
+    debit_user_balance(target_user_id, withdraw_currency, amount)
     return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
 
 @app.route('/api/admin/payouts/<int:pid>', methods=['PUT'])
