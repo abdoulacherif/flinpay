@@ -782,7 +782,7 @@ def api_pay():
         # son pays), sans détour artificiel par le XAF — ce détour causait une double
         # conversion (la nôtre + celle, silencieuse, de SoleasPay au moment du débit réel du
         # portefeuille), donc une double perte à chaque transaction hors zone XAF.
-        collect_amount = amount_with_markup(data['amount'])
+        collect_amount = api_amount_with_markup(data['amount'], operator)
         if collect_amount < SOLEASPAY_MIN_AMOUNT:
             return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {SOLEASPAY_MIN_AMOUNT} {merchant_currency})"}), 400
         collect = soleaspay_collect(
@@ -800,6 +800,8 @@ def api_pay():
         if not collect['ok']:
             return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
         tx_payload['gateway_reference'] = collect['data'].get('reference')
+        tx_payload['client_amount'] = collect_amount
+        tx_payload['fee_amount'] = round(collect_amount - data['amount'], 2)
 
     tx = sb_post('transactions', tx_payload)
 
@@ -1270,6 +1272,8 @@ def api_invoice_pay(token):
         'token': tx_token,
         'order_id': invoice['invoice_number'],
         'amount': credited_amount,
+        'client_amount': collect_amount,
+        'fee_amount': round(collect_amount - credited_amount, 2),
         'client_name': customer_name,
         'client_phone': phone,
         'country': merchant.get('country', ''),
@@ -1707,6 +1711,33 @@ def link_amount_with_markup(base_amount, operator_key):
     flat = get_link_markup_flat_fee(operator_key)
     return round(float(base_amount) * (1 + pct / 100) + flat, 2)
 
+# ── Marge spécifique à l'API directe ──────────────
+# Même principe que les liens de paiement : ajoutée au client au moment du prélèvement,
+# le marchand reçoit toujours son montant plein. Valeurs différentes des liens car le
+# profil d'usage (intégrations techniques) diffère.
+API_MARKUP_DEFAULT_PERCENT = 5.0
+API_MARKUP_DEFAULT_FLAT_FEE = 100
+
+API_MARKUP_BY_OPERATOR = {
+    # 'wave': 4.0,
+    # 'om': 5.5,
+}
+API_MARKUP_FLAT_FEE_BY_OPERATOR = {
+    # 'wave': 60,
+    # 'om': 120,
+}
+
+def get_api_markup_percent(operator_key):
+    return API_MARKUP_BY_OPERATOR.get(operator_key, API_MARKUP_DEFAULT_PERCENT)
+
+def get_api_markup_flat_fee(operator_key):
+    return API_MARKUP_FLAT_FEE_BY_OPERATOR.get(operator_key, API_MARKUP_DEFAULT_FLAT_FEE)
+
+def api_amount_with_markup(base_amount, operator_key):
+    pct = get_api_markup_percent(operator_key)
+    flat = get_api_markup_flat_fee(operator_key)
+    return round(float(base_amount) * (1 + pct / 100) + flat, 2)
+
 def get_user_by_id(user_id):
     users = sb_get('users', f'id=eq.{user_id}')
     return users[0] if users else {}
@@ -2095,6 +2126,8 @@ def api_pay_link(token):
         'token': tx_token,
         'order_id': 'link_' + uuid.uuid4().hex[:10],
         'amount': credited_amount,
+        'client_amount': collect_amount,
+        'fee_amount': round(collect_amount - credited_amount, 2),
         'client_name': customer_name,
         'client_phone': phone,
         'country': merchant.get('country', ''),
@@ -2282,6 +2315,46 @@ def admin_logout():
 @admin_required
 def admin():
     return render_template('admin.html', user=get_current_user())
+
+@app.route('/admin/payments')
+@admin_required
+def admin_payments_page():
+    return render_template('admin_payments.html', user=get_current_user())
+
+@app.route('/api/admin/payments', methods=['GET'])
+@admin_required
+def api_admin_payments():
+    txs = sb_get('transactions', 'order=created_at.desc&limit=500')
+    all_users = sb_get('users', 'limit=1000')
+    users_map = {u['id']: u for u in all_users}
+
+    items = []
+    total_fees_paid = 0.0
+    for t in txs:
+        merchant = users_map.get(t.get('user_id'), {})
+        fee = t.get('fee_amount')
+        if fee is not None and t.get('status') == 'paid':
+            try:
+                total_fees_paid += float(fee)
+            except (TypeError, ValueError):
+                pass
+        source = 'Lien' if t.get('payment_link_token') else ('Facture' if t.get('invoice_token') else 'API')
+        items.append({
+            'token': t.get('token'),
+            'merchant_name': f"{merchant.get('firstname','')} {merchant.get('lastname','')}".strip(),
+            'merchant_email': merchant.get('email'),
+            'client_name': t.get('client_name'),
+            'client_amount': t.get('client_amount'),
+            'merchant_amount': t.get('amount'),
+            'fee_amount': t.get('fee_amount'),
+            'currency': t.get('currency') or 'XOF',
+            'status': t.get('status'),
+            'source': source,
+            'operator': t.get('operator'),
+            'created_at': t.get('created_at')
+        })
+
+    return jsonify({'ok': True, 'items': items, 'total_fees_paid': round(total_fees_paid, 2)})
 
 # ── ADMIN : TRANSACTIONS (tous les utilisateurs) ──
 @app.route('/api/admin/transactions', methods=['GET'])
