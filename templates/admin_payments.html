@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay Admin — Paiements & Marges</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;--danger:#FF4D4D;--border:#E7E9F3;--border-soft:#F0F1F8}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+.topbar-logo span{color:#5B7CFF}
+.topbar-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem;margin-left:16px}
+.topbar-right a:hover{color:white}
+.page{padding:26px;max-width:1200px;margin:0 auto}
+
+.summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.summary-card{background:white;border-radius:16px;border:1px solid var(--border);padding:20px;box-shadow:0 1px 2px rgba(15,17,32,.04)}
+.summary-card.highlight{background:linear-gradient(135deg,var(--blue) 0%,#0A1FCC 60%,#5B2CFF 100%);border:none;color:white}
+.summary-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem}
+.summary-lbl{font-size:.72rem;color:var(--muted);margin-top:4px}
+.summary-card.highlight .summary-lbl{color:rgba(255,255,255,.7)}
+
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filter-input,.filter-select{padding:9px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;background:white;outline:none}
+.filter-input{min-width:200px}
+
+.card{background:white;border-radius:16px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 2px rgba(15,17,32,.04)}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--border-soft);font-weight:700;font-size:.86rem;display:flex;justify-content:space-between;align-items:center}
+.card-body{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+.tbl th{padding:9px 12px;text-align:left;font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border-soft);white-space:nowrap;background:#FAFBFF}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#FAFBFF}
+.badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700}
+.b-success{background:#E3FBF3;color:#0A7A50}
+.b-pending{background:#FFF6E0;color:#8A5B00}
+.b-failed{background:#FFEAEA;color:#B3271A}
+.b-source{background:#EEF1FF;color:var(--blue)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted)}
+.fee-positive{color:#0A7A50;font-weight:700}
+.merchant-cell{font-weight:600}
+.merchant-email{font-size:.7rem;color:var(--muted);display:block}
+.empty{padding:36px;text-align:center;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
+  <div class="topbar-right">
+    <a href="/admin">← Admin</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="summary-row" id="summary-row">
+    <div class="summary-card highlight"><div class="summary-val" id="sum-total-fees">—</div><div class="summary-lbl">Marge totale encaissée (paiements réussis)</div></div>
+    <div class="summary-card"><div class="summary-val" id="sum-tx-count">—</div><div class="summary-lbl">Transactions affichées</div></div>
+    <div class="summary-card"><div class="summary-val" id="sum-paid-count">—</div><div class="summary-lbl">Paiements réussis</div></div>
+    <div class="summary-card"><div class="summary-val" id="sum-avg-fee">—</div><div class="summary-lbl">Marge moyenne / paiement réussi</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <input class="filter-input" type="text" id="search" placeholder="Rechercher marchand, client, token..." oninput="render()">
+    <select class="filter-select" id="filter-status" onchange="render()">
+      <option value="">Tous les statuts</option>
+      <option value="paid">✅ Payé</option>
+      <option value="pending">⏳ En attente</option>
+      <option value="failed">❌ Échoué</option>
+    </select>
+    <select class="filter-select" id="filter-source" onchange="render()">
+      <option value="">Toutes les sources</option>
+      <option value="Lien">Lien de paiement</option>
+      <option value="Facture">Facture</option>
+      <option value="API">API directe</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span>Paiements <span id="tbl-count" style="color:var(--muted);font-weight:400"></span></span>
+      <button onclick="load()" style="background:var(--blue);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer">🔄 Actualiser</button>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <thead><tr>
+          <th>Marchand</th><th>Client</th><th>Source</th><th>Client a payé</th><th>Marchand a reçu</th><th>Ma marge</th><th>Devise</th><th>Statut</th><th>Date</th>
+        </tr></thead>
+        <tbody id="tbody"><tr><td colspan="9"><div class="empty">Chargement...</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let allItems=[];
+
+function fmt(n){ return n!=null ? Number(n).toLocaleString() : '—'; }
+function fmtDate(d){ return d ? new Date(d).toLocaleString('fr-FR') : '—'; }
+
+async function load(){
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='<tr><td colspan="9"><div class="empty">Chargement...</div></td></tr>';
+  try{
+    const r=await fetch('/api/admin/payments');
+    const data=await r.json();
+    if(!data.ok){ tbody.innerHTML=`<tr><td colspan="9"><div class="empty">${data.error||'Erreur'}</div></td></tr>`; return; }
+    allItems=data.items||[];
+    document.getElementById('sum-total-fees').textContent=fmt(data.total_fees_paid)+' XOF*';
+    render();
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="9"><div class="empty">Erreur de connexion.</div></td></tr>';
+  }
+}
+
+function render(){
+  const search=document.getElementById('search').value.toLowerCase();
+  const status=document.getElementById('filter-status').value;
+  const source=document.getElementById('filter-source').value;
+
+  const filtered=allItems.filter(it=>{
+    const matchSearch=!search ||
+      (it.merchant_name||'').toLowerCase().includes(search) ||
+      (it.merchant_email||'').toLowerCase().includes(search) ||
+      (it.client_name||'').toLowerCase().includes(search) ||
+      (it.token||'').toLowerCase().includes(search);
+    const matchStatus=!status || it.status===status;
+    const matchSource=!source || it.source===source;
+    return matchSearch && matchStatus && matchSource;
+  });
+
+  document.getElementById('tbl-count').textContent=`(${filtered.length})`;
+  document.getElementById('sum-tx-count').textContent=filtered.length;
+  const paidItems=filtered.filter(it=>it.status==='paid');
+  document.getElementById('sum-paid-count').textContent=paidItems.length;
+  const paidFees=paidItems.filter(it=>it.fee_amount!=null).map(it=>Number(it.fee_amount));
+  const avgFee=paidFees.length ? (paidFees.reduce((a,b)=>a+b,0)/paidFees.length) : 0;
+  document.getElementById('sum-avg-fee').textContent=fmt(Math.round(avgFee*100)/100)+' XOF*';
+
+  const tbody=document.getElementById('tbody');
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="9"><div class="empty">Aucun paiement trouvé.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=filtered.map(it=>`
+    <tr>
+      <td>
+        <div class="merchant-cell">${it.merchant_name||'—'}</div>
+        <span class="merchant-email">${it.merchant_email||''}</span>
+      </td>
+      <td>${it.client_name||'—'}</td>
+      <td><span class="badge b-source">${it.source}</span></td>
+      <td>${it.client_amount!=null ? fmt(it.client_amount)+' '+it.currency : '—'}</td>
+      <td>${fmt(it.merchant_amount)+' '+it.currency}</td>
+      <td class="${it.fee_amount>0?'fee-positive':''}">${it.fee_amount!=null ? fmt(it.fee_amount)+' '+it.currency : '—'}</td>
+      <td>${it.currency}</td>
+      <td><span class="badge ${it.status==='paid'?'b-success':it.status==='pending'?'b-pending':'b-failed'}">${it.status}</span></td>
+      <td style="font-size:.72rem;color:var(--muted)">${fmtDate(it.created_at)}</td>
+    </tr>
+  `).join('');
+}
+
+load();
+</script>
+</body>
+</html>
