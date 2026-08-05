@@ -285,8 +285,8 @@ def api_login_2fa():
     if not user.get('is_active', True):
         return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
 
-    totp = pyotp.TOTP(user['totp_secret'])
-    if not totp.verify(code, valid_window=1):
+    totp = pyotp.TOTP((user.get('totp_secret') or '').strip())
+    if not totp.verify(code.replace(' ', ''), valid_window=2):
         return jsonify({'ok': False, 'error': 'Code invalide'}), 401
 
     return _login_success_response(user)
@@ -625,8 +625,8 @@ def api_2fa_verify():
     if not secret:
         return jsonify({'ok': False, 'error': "Aucune configuration 2FA en cours. Relancez l'activation."}), 400
 
-    totp = pyotp.TOTP(secret)
-    if not totp.verify(code, valid_window=1):
+    totp = pyotp.TOTP((secret or '').strip())
+    if not totp.verify((code or '').replace(' ', ''), valid_window=2):
         return jsonify({'ok': False, 'error': 'Code invalide'}), 401
 
     ok = sb_patch('users', 'id', request.user_id, {'totp_enabled': True})
@@ -651,8 +651,8 @@ def api_2fa_disable():
     if not secret or not user.get('totp_enabled'):
         return jsonify({'ok': False, 'error': "Le 2FA n'est pas activé"}), 400
 
-    totp = pyotp.TOTP(secret)
-    if not totp.verify(code, valid_window=1):
+    totp = pyotp.TOTP((secret or '').strip())
+    if not totp.verify((code or '').replace(' ', ''), valid_window=2):
         return jsonify({'ok': False, 'error': 'Code invalide'}), 401
 
     ok = sb_patch('users', 'id', request.user_id, {'totp_enabled': False, 'totp_secret': None})
@@ -1680,13 +1680,13 @@ def amount_with_markup(base_amount):
 # Ajoutée directement au client au moment du prélèvement (pas déduite du marchand),
 # pour que le marchand reçoive toujours son montant plein — évite qu'il aille voir
 # ailleurs à cause de frais qui rognent ce qu'il reçoit.
-LINK_MARKUP_DEFAULT_PERCENT = 4.5
+LINK_MARKUP_DEFAULT_PERCENT = 5.0
 
 # Frais fixe ajouté EN PLUS du pourcentage, sur chaque transaction. Nécessaire car
 # SoleasPay prélève ses propres frais internes à chaque collecte (indépendamment de
 # toute conversion de devise) — un pourcentage seul ne suffit pas à couvrir ce coût,
 # surtout sur les petits montants.
-LINK_MARKUP_DEFAULT_FLAT_FEE = 50
+LINK_MARKUP_DEFAULT_FLAT_FEE = 150
 
 # Permet d'ajuster la marge par opérateur (portefeuille) si leurs coûts réels chez
 # SoleasPay diffèrent. Clé = code opérateur (voir SOLEASPAY_SERVICES : 'om', 'momo',
@@ -1716,7 +1716,7 @@ def link_amount_with_markup(base_amount, operator_key):
 # le marchand reçoit toujours son montant plein. Valeurs différentes des liens car le
 # profil d'usage (intégrations techniques) diffère.
 API_MARKUP_DEFAULT_PERCENT = 5.0
-API_MARKUP_DEFAULT_FLAT_FEE = 100
+API_MARKUP_DEFAULT_FLAT_FEE = 150
 
 API_MARKUP_BY_OPERATOR = {
     # 'wave': 4.0,
