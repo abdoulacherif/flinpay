@@ -18,8 +18,29 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+ALLOWED_ORIGINS = [
+    'https://www.flinpay.cfd',
+    'https://flinpay.cfd',
+    'https://flinpay.vercel.app',
+]
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    # Les pages de paiement et de facture doivent pouvoir être intégrées en iframe par le
+    # widget "Payer avec Flinpay" (voir /widget.js) — on ne restreint donc pas leur
+    # frame-ancestors. Tout le reste du site refuse d'être affiché dans une iframe externe.
+    if request.path.startswith('/pay/') or request.path.startswith('/invoice/'):
+        response.headers['Content-Security-Policy'] = "frame-ancestors *"
+    else:
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['Content-Security-Policy'] = "frame-ancestors 'self'"
+    return response
 
 @app.context_processor
 def inject_globals():
@@ -251,11 +272,17 @@ def api_login():
         return jsonify({'ok': False, 'error': 'Identifiants incorrects'}), 401
 
     user = users[0]
+    if is_locked_out(user):
+        return jsonify({'ok': False, 'error': f'Trop de tentatives échouées. Réessayez dans {LOGIN_LOCKOUT_MINUTES} minutes.'}), 429
+
     if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+        register_failed_login(user)
         return jsonify({'ok': False, 'error': 'Identifiants incorrects'}), 401
 
     if not user.get('is_active', True):
         return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
+
+    reset_failed_login(user['id'])
 
     # Si le 2FA est activé, on ne connecte pas tout de suite : on renvoie un
     # token temporaire (10 min) que le front doit renvoyer avec le code TOTP
@@ -285,10 +312,15 @@ def api_login_2fa():
     if not user.get('is_active', True):
         return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
 
+    if is_locked_out(user):
+        return jsonify({'ok': False, 'error': f'Trop de tentatives échouées. Réessayez dans {LOGIN_LOCKOUT_MINUTES} minutes.'}), 429
+
     totp = pyotp.TOTP((user.get('totp_secret') or '').strip())
     if not totp.verify(code.replace(' ', ''), valid_window=2):
+        register_failed_login(user)
         return jsonify({'ok': False, 'error': 'Code invalide'}), 401
 
+    reset_failed_login(user['id'])
     return _login_success_response(user)
 
 @app.route('/api/logout')
@@ -928,6 +960,8 @@ def api_admin_kyc_approve(user_id):
         'kyc_reviewed_at': datetime.utcnow().isoformat(),
         'kyc_rejection_reason': None
     })
+    if ok:
+        log_admin_action('kyc_approve', {'target_user_id': user_id})
     return jsonify({'ok': ok})
 
 @app.route('/api/admin/kyc/<user_id>/reject', methods=['POST'])
@@ -940,6 +974,8 @@ def api_admin_kyc_reject(user_id):
         'kyc_reviewed_at': datetime.utcnow().isoformat(),
         'kyc_rejection_reason': reason
     })
+    if ok:
+        log_admin_action('kyc_reject', {'target_user_id': user_id, 'reason': reason})
     return jsonify({'ok': ok})
 
 # ── API KEYS (réelles, hashées) ───────────────────
@@ -1630,6 +1666,48 @@ def leekpay_verify_signature(raw_body, signature):
 FREE_PLAN_MONTHLY_LIMIT = 300
 
 PAYOUT_FEE_PERCENT = 3.5  # frais prélevés sur chaque retrait manuel
+
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_LOCKOUT_MINUTES = 15
+
+def is_locked_out(user):
+    locked_until = user.get('locked_until')
+    if not locked_until:
+        return False
+    try:
+        lu = datetime.fromisoformat(locked_until.replace('Z', '+00:00')).replace(tzinfo=None)
+        return datetime.utcnow() < lu
+    except (ValueError, AttributeError):
+        return False
+
+def register_failed_login(user):
+    """Compte les tentatives échouées (mot de passe ou code 2FA) et verrouille le
+    compte temporairement après trop d'échecs, pour bloquer le brute-force."""
+    attempts = (user.get('failed_login_attempts') or 0) + 1
+    update = {'failed_login_attempts': attempts}
+    if attempts >= LOGIN_MAX_ATTEMPTS:
+        update['locked_until'] = (datetime.utcnow() + timedelta(minutes=LOGIN_LOCKOUT_MINUTES)).isoformat()
+    sb_patch('users', 'id', user['id'], update)
+
+def reset_failed_login(user_id):
+    sb_patch('users', 'id', user_id, {'failed_login_attempts': 0, 'locked_until': None})
+
+def log_admin_action(action, details=None):
+    """Journal d'audit des actions admin sensibles (KYC, comptes, retraits, config...).
+    Best-effort : n'interrompt jamais l'action elle-même si l'écriture du log échoue."""
+    try:
+        ip = request.headers.get('x-forwarded-for', request.remote_addr or '')
+        if ip and ',' in ip:
+            ip = ip.split(',')[0].strip()
+        sb_post('admin_audit_log', {
+            'admin_id': getattr(request, 'user_id', None),
+            'action': action,
+            'details': details or {},
+            'ip_address': ip,
+            'created_at': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        print(f'[log_admin_action] error: {e}')
 PAYOUT_MIN_AMOUNT = 600   # minimum de retrait, toutes devises confondues
 CONVERSION_FEE_PERCENT = 5.5  # frais prélevés sur chaque conversion de devise entre poches
                                # (SoleasPay prend réellement ~5.36% sur ses conversions de devise
@@ -2433,6 +2511,7 @@ def api_admin_create_payout():
         return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
 
     debit_user_balance(target_user_id, withdraw_currency, amount)
+    log_admin_action('payout_create', {'target_user_id': target_user_id, 'amount': amount, 'currency': withdraw_currency})
     return jsonify({'ok': True, 'item': row[0] if isinstance(row, list) else row})
 
 @app.route('/api/admin/payouts/<int:pid>', methods=['PUT'])
@@ -2447,17 +2526,25 @@ def api_admin_update_payout(pid):
     ok = sb_patch('payouts', 'id', pid, data)
 
     if data.get('status') == 'failed' and payout.get('status') != 'failed':
-        user = get_user_by_id(payout['user_id'])
-        sb_patch('users', 'id', payout['user_id'], {'available_balance': (user.get('available_balance') or 0) + payout['amount']})
+        # Corrige le même bug que celui trouvé sur les autres flux : le remboursement doit
+        # aller dans la bonne poche de devise, pas dans l'ancien champ available_balance
+        # qui n'est plus tenu à jour.
+        refund_currency = payout.get('currency') or get_currency_for_country(payout.get('country', ''))
+        credit_user_balance(payout['user_id'], refund_currency, payout['amount'])
     elif data.get('status') == 'paid' and not payout.get('processed_at'):
         sb_patch('payouts', 'id', pid, {'processed_at': datetime.utcnow().isoformat()})
 
+    if ok:
+        log_admin_action('payout_update', {'payout_id': pid, 'changes': data})
     return jsonify({'ok': ok})
 
 @app.route('/api/admin/payouts/<int:pid>', methods=['DELETE'])
 @admin_required
 def api_admin_delete_payout(pid):
-    return jsonify({'ok': sb_delete('payouts', 'id', pid)})
+    ok = sb_delete('payouts', 'id', pid)
+    if ok:
+        log_admin_action('payout_delete', {'payout_id': pid})
+    return jsonify({'ok': ok})
 
 # ── ADMIN : UTILISATEURS (voir/modifier/supprimer tout) ──
 @app.route('/api/admin/users', methods=['GET'])
@@ -2540,12 +2627,16 @@ def api_admin_update_user(user_id):
     data.pop('password_hash', None)
     data.pop('id', None)
     ok = sb_patch('users', 'id', user_id, data)
+    if ok:
+        log_admin_action('user_update', {'target_user_id': user_id, 'fields': list(data.keys())})
     return jsonify({'ok': ok})
 
 @app.route('/api/admin/users/<user_id>', methods=['DELETE'])
 @admin_required
 def api_admin_delete_user(user_id):
     ok = sb_delete('users', 'id', user_id)
+    if ok:
+        log_admin_action('user_delete', {'target_user_id': user_id})
     return jsonify({'ok': ok})
 
 @app.route('/api/admin/overview')
