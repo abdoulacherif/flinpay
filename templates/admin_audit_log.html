@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flinpay Admin — Journal d'audit</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;--danger:#FF4D4D;--border:#E7E9F3;--border-soft:#F0F1F8}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+.topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+.topbar-logo span{color:#5B7CFF}
+.topbar-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem;margin-left:16px}
+.topbar-right a:hover{color:white}
+.page{padding:26px;max-width:1100px;margin:0 auto}
+
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filter-input,.filter-select{padding:9px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;background:white;outline:none}
+.filter-input{min-width:220px}
+
+.card{background:white;border-radius:16px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 2px rgba(15,17,32,.04)}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--border-soft);font-weight:700;font-size:.86rem;display:flex;justify-content:space-between;align-items:center}
+
+.log-row{padding:14px 18px;border-bottom:1px solid var(--border-soft);display:flex;gap:14px;align-items:flex-start}
+.log-row:last-child{border-bottom:none}
+.log-row:hover{background:#FAFBFF}
+.log-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem;background:var(--border-soft)}
+.log-icon.kyc{background:#FFF6E0}
+.log-icon.user{background:#EEF1FF}
+.log-icon.payout{background:#E3FBF3}
+.log-body{flex:1;min-width:0}
+.log-action{font-weight:700;font-size:.86rem}
+.log-meta{font-size:.76rem;color:var(--muted);margin-top:2px}
+.log-details{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);margin-top:6px;background:var(--bg);border-radius:8px;padding:8px 10px;word-break:break-word;display:none}
+.log-details.show{display:block}
+.log-toggle{font-size:.72rem;color:var(--blue);cursor:pointer;margin-top:6px;background:none;border:none;padding:0;font-weight:600}
+.log-date{font-size:.72rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+
+.empty{padding:36px;text-align:center;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
+  <div class="topbar-right"><a href="/admin">← Admin</a></div>
+</div>
+
+<div class="page">
+  <div class="filter-bar">
+    <input class="filter-input" type="text" id="search" placeholder="Rechercher admin, email, IP..." oninput="render()">
+    <select class="filter-select" id="filter-action" onchange="render()">
+      <option value="">Toutes les actions</option>
+      <option value="kyc_approve">KYC approuvé</option>
+      <option value="kyc_reject">KYC rejeté</option>
+      <option value="user_update">Utilisateur modifié</option>
+      <option value="user_delete">Utilisateur supprimé</option>
+      <option value="payout_create">Retrait créé</option>
+      <option value="payout_update">Retrait modifié</option>
+      <option value="payout_delete">Retrait supprimé</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span>Journal d'audit <span id="count" style="color:var(--muted);font-weight:400"></span></span>
+      <button onclick="load()" style="background:var(--blue);color:white;border:none;border-radius:8px;padding:7px 14px;font-size:.78rem;font-weight:700;cursor:pointer">🔄 Actualiser</button>
+    </div>
+    <div id="list"><div class="empty">Chargement...</div></div>
+  </div>
+</div>
+
+<script>
+let allLogs=[];
+
+const ACTION_LABELS={
+  kyc_approve:['🪪','kyc','Vérification KYC approuvée'],
+  kyc_reject:['🪪','kyc','Vérification KYC rejetée'],
+  user_update:['👤','user','Utilisateur modifié'],
+  user_delete:['🗑','user','Utilisateur supprimé'],
+  payout_create:['📤','payout','Retrait créé manuellement'],
+  payout_update:['📤','payout','Retrait modifié'],
+  payout_delete:['📤','payout','Retrait supprimé'],
+};
+
+function fmtDate(d){ return d ? new Date(d).toLocaleString('fr-FR') : '—'; }
+
+async function load(){
+  const list=document.getElementById('list');
+  list.innerHTML='<div class="empty">Chargement...</div>';
+  try{
+    const r=await fetch('/api/admin/audit-log');
+    const data=await r.json();
+    if(!data.ok){ list.innerHTML=`<div class="empty">${data.error||'Erreur'}</div>`; return; }
+    allLogs=data.items||[];
+    render();
+  }catch(e){
+    list.innerHTML='<div class="empty">Erreur de connexion.</div>';
+  }
+}
+
+function render(){
+  const search=document.getElementById('search').value.toLowerCase();
+  const actionFilter=document.getElementById('filter-action').value;
+
+  const filtered=allLogs.filter(l=>{
+    const matchSearch=!search ||
+      (l.admin_name||'').toLowerCase().includes(search) ||
+      (l.admin_email||'').toLowerCase().includes(search) ||
+      (l.ip_address||'').toLowerCase().includes(search);
+    const matchAction=!actionFilter || l.action===actionFilter;
+    return matchSearch && matchAction;
+  });
+
+  document.getElementById('count').textContent=`(${filtered.length})`;
+  const list=document.getElementById('list');
+  if(!filtered.length){
+    list.innerHTML='<div class="empty">Aucune action trouvée.</div>';
+    return;
+  }
+
+  list.innerHTML=filtered.map((l,i)=>{
+    const [icon,cls,label]=ACTION_LABELS[l.action]||['⚙','','Action: '+l.action];
+    const detailsStr=l.details ? JSON.stringify(l.details) : '';
+    return `
+    <div class="log-row">
+      <div class="log-icon ${cls}">${icon}</div>
+      <div class="log-body">
+        <div class="log-action">${label}</div>
+        <div class="log-meta">${l.admin_name} (${l.admin_email||'—'}) — IP: ${l.ip_address||'—'}</div>
+        ${detailsStr ? `<button class="log-toggle" onclick="toggleDetails(${i})">Voir le détail</button>
+        <div class="log-details" id="details-${i}">${detailsStr}</div>` : ''}
+      </div>
+      <div class="log-date">${fmtDate(l.created_at)}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDetails(i){
+  document.getElementById('details-'+i).classList.toggle('show');
+}
+
+load();
+</script>
+</body>
+</html>
