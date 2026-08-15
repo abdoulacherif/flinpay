@@ -1027,7 +1027,6 @@ def api_delete_key(key_id):
     if not ok:
         return jsonify({'ok': False, 'error': 'Erreur lors de la révocation'}), 500
     return jsonify({'ok': True})
-
 # ── API WEBHOOKS (marchand) ────────────────────────
 @app.route('/api/webhooks', methods=['GET'])
 @user_required
