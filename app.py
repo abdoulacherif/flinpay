@@ -282,6 +282,9 @@ def api_login():
     if not user.get('is_active', True):
         return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
 
+    if not user.get('email_verified', False):
+        return jsonify({'ok': False, 'error': 'Vérifiez votre adresse email avant de vous connecter (lien envoyé à l\'inscription).', 'email_unverified': True}), 403
+
     reset_failed_login(user['id'])
 
     # Si le 2FA est activé, on ne connecte pas tout de suite : on renvoie un
@@ -1027,6 +1030,7 @@ def api_delete_key(key_id):
     if not ok:
         return jsonify({'ok': False, 'error': 'Erreur lors de la révocation'}), 500
     return jsonify({'ok': True})
+
 # ── API WEBHOOKS (marchand) ────────────────────────
 @app.route('/api/webhooks', methods=['GET'])
 @user_required
@@ -1842,6 +1846,29 @@ def debit_user_balance(user_id, currency, amount):
     balances[currency] = round(float(balances.get(currency) or 0) - float(amount), 2)
     sb_patch('users', 'id', user_id, {'balances': balances})
 
+def send_verification_email(to_email, firstname, token):
+    if not EMAIL_ADDRESS or not EMAIL_APP_PASSWORD or not to_email:
+        return
+    try:
+        verify_url = f'https://www.flinpay.cfd/verify-email/{token}'
+        body = (
+            f"Bonjour {firstname},\n\n"
+            f"Merci de vous être inscrit sur Flinpay. Confirmez votre adresse email en "
+            f"cliquant sur ce lien :\n\n{verify_url}\n\n"
+            f"Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.\n\n"
+            f"— L'équipe Flinpay"
+        )
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['Subject'] = "Confirmez votre adresse email — Flinpay"
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = to_email
+        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
+            server.starttls()
+            server.login(EMAIL_ADDRESS, EMAIL_APP_PASSWORD)
+            server.send_message(msg)
+    except Exception as e:
+        print(f'[send_verification_email] error: {e}')
+
 def send_payment_notification_email(merchant, tx):
     """Envoie un email au marchand quand il reçoit un paiement. Best-effort : ne bloque
     jamais le traitement du paiement si l'email échoue."""
@@ -2055,6 +2082,15 @@ def api_register():
     data = request.get_json()
     if not data:
         return jsonify({'ok': False, 'error': 'Données manquantes'}), 400
+
+    ip = request.headers.get('x-forwarded-for', request.remote_addr or '')
+    if ip and ',' in ip:
+        ip = ip.split(',')[0].strip()
+    one_hour_ago = (datetime.utcnow() - timedelta(hours=1)).isoformat()
+    recent = sb_get('registration_ips', f'ip_address=eq.{ip}&created_at=gte.{one_hour_ago}')
+    if len(recent) >= 3:
+        return jsonify({'ok': False, 'error': 'Trop de comptes créés depuis cette adresse. Réessayez plus tard.'}), 429
+
     for field in ['firstname','lastname','email','country','phone','password']:
         if not data.get(field):
             return jsonify({'ok': False, 'error': f'Champ manquant: {field}'}), 400
@@ -2073,6 +2109,8 @@ def api_register():
             referred_by = referrers[0]['id']
 
     hashed = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    import uuid as _uuid
+    verify_token = _uuid.uuid4().hex
     user = sb_post('users', {
         'firstname': data['firstname'].strip(),
         'lastname': data['lastname'].strip(),
@@ -2083,13 +2121,41 @@ def api_register():
         'password_hash': hashed,
         'plan': 'starter',
         'is_active': True,
+        'email_verified': False,
+        'email_verify_token': verify_token,
         'referred_by': referred_by,
         'created_at': datetime.utcnow().isoformat()
     })
     if not user or (isinstance(user, dict) and user.get('_error')):
         detail = user.get('_detail') if isinstance(user, dict) else 'inconnue'
         return jsonify({'ok': False, 'error': f'Erreur Supabase: {detail}'}), 500
-    return jsonify({'ok': True, 'message': 'Compte créé avec succès'})
+    sb_post('registration_ips', {'ip_address': ip, 'created_at': datetime.utcnow().isoformat()})
+    send_verification_email(email, data['firstname'].strip(), verify_token)
+    return jsonify({'ok': True, 'message': 'Compte créé ! Vérifiez votre email pour l\'activer.'})
+
+@app.route('/verify-email/<token>')
+def verify_email(token):
+    users = sb_get('users', f'email_verify_token=eq.{token}')
+    if not users:
+        return render_template('verify_result.html', success=False, message="Lien de vérification invalide ou déjà utilisé.")
+    sb_patch('users', 'id', users[0]['id'], {'email_verified': True, 'email_verify_token': None})
+    return render_template('verify_result.html', success=True, message="Votre adresse email est confirmée. Vous pouvez vous connecter.")
+
+@app.route('/api/resend-verification', methods=['POST'])
+def api_resend_verification():
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    users = sb_get('users', f'email=eq.{email}')
+    if not users:
+        return jsonify({'ok': True})  # ne révèle pas si l'email existe ou non
+    user = users[0]
+    if user.get('email_verified'):
+        return jsonify({'ok': True})
+    import uuid as _uuid
+    token = user.get('email_verify_token') or _uuid.uuid4().hex
+    sb_patch('users', 'id', user['id'], {'email_verify_token': token})
+    send_verification_email(email, user.get('firstname', ''), token)
+    return jsonify({'ok': True})
 
 # ── PAGE PUBLIQUE : LIEN DE PAIEMENT ──────────────
 def _link_status(link):
