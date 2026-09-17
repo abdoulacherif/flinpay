@@ -9,13 +9,14 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
-  --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
-  --gold:#FFB400;--gold-tint:#FFF6E0;
-  --green:#00C48C;--green-tint:#E3FBF3;
-  --text:#12131C;--muted:#767A94;
-  --r-lg:20px;--r-md:14px;--r-sm:10px;
+--ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+--border:#E7E9F3;--border-soft:#F0F1F8;
+--blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+--gold:#FFB400;--gold-tint:#FFF6E0;
+--green:#00C48C;--green-tint:#E3FBF3;
+--text:#12131C;--muted:#767A94;
+--r-lg:20px;--r-md:14px;--r-sm:10px;
+--ease:cubic-bezier(.16,.8,.3,1);
 }
 html{scroll-behavior:smooth}
 body{font-family:'Inter',sans-serif;background:var(--surface);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
@@ -23,70 +24,134 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .icon{width:20px;height:20px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
+/* ── barre de progression de scroll ───────────── */
+.scroll-progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--green));z-index:1000;width:0%;transition:width .1s linear}
+
 .announce{background:var(--ink);color:rgba(255,255,255,.85);text-align:center;padding:9px 20px;font-size:.82rem;font-weight:500}
 
+/* ── nav ───────────────────────────────────────── */
 nav{
-  position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
-  border-bottom:1px solid var(--border);padding:0 6%;height:68px;
-  display:flex;align-items:center;justify-content:space-between
+position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+border-bottom:1px solid var(--border);padding:0 6%;height:68px;
+display:flex;align-items:center;justify-content:space-between;
+transition:height .3s var(--ease),box-shadow .3s var(--ease)
 }
-.nav-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:var(--ink);text-decoration:none}
+nav.scrolled{height:56px;box-shadow:0 8px 28px rgba(15,17,32,.06)}
+.nav-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:2px}
 .nav-logo span{color:var(--blue)}
+.nav-logo .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:6px;box-shadow:0 0 0 0 rgba(0,196,140,.6);animation:dotpulse 2.4s infinite}
+@keyframes dotpulse{0%{box-shadow:0 0 0 0 rgba(0,196,140,.55)}70%{box-shadow:0 0 0 8px rgba(0,196,140,0)}100%{box-shadow:0 0 0 0 rgba(0,196,140,0)}}
 .nav-links{display:flex;gap:30px;list-style:none}
-.nav-links a{text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:500;transition:color .2s}
+.nav-links a{position:relative;text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:500;transition:color .2s;padding:4px 0}
+.nav-links a::after{content:'';position:absolute;left:0;bottom:-2px;width:0;height:2px;background:var(--blue);transition:width .25s var(--ease)}
 .nav-links a:hover{color:var(--text)}
+.nav-links a:hover::after{width:100%}
 .nav-cta{display:flex;gap:10px;align-items:center}
-
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.86rem;padding:10px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.86rem;padding:10px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:transform .2s var(--ease),background .2s,box-shadow .2s}
 .btn-ghost{background:transparent;color:var(--text)}
 .btn-ghost:hover{color:var(--blue)}
 .btn-primary{background:var(--blue);color:white}
-.btn-primary:hover{background:var(--blue-deep);transform:translateY(-1px)}
+.btn-primary:hover{background:var(--blue-deep);transform:translateY(-2px);box-shadow:0 10px 22px rgba(26,60,255,.28)}
 .btn-gold{background:var(--gold);color:var(--ink)}
-.btn-gold:hover{filter:brightness(1.06)}
+.btn-gold:hover{filter:brightness(1.06);transform:translateY(-2px)}
 .btn-lg{padding:14px 28px;font-size:.95rem;border-radius:12px}
 
-/* HERO */
-.hero{
-  background:var(--ink);min-height:90vh;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;text-align:center;padding:100px 6% 70px;
-  position:relative;overflow:hidden
-}
-.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% -5%,rgba(26,60,255,.28) 0%,transparent 70%);pointer-events:none}
-.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 45% 40% at 90% 100%,rgba(0,196,140,.1) 0%,transparent 60%);pointer-events:none}
-.hero-eyebrow{
-  display:inline-flex;align-items:center;gap:8px;background:rgba(26,60,255,.16);
-  border:1px solid rgba(26,60,255,.3);color:#8EA6FF;border-radius:30px;padding:7px 16px;
-  font-size:.76rem;font-weight:600;letter-spacing:.05em;margin-bottom:28px;position:relative;z-index:1
-}
-.hero h1{
-  font-size:clamp(2.4rem,5.4vw,4.6rem);font-weight:800;color:white;line-height:1.06;
-  letter-spacing:-.03em;max-width:880px;margin-bottom:22px;position:relative;z-index:1
-}
-.hero h1 .accent{background:linear-gradient(120deg,var(--blue) 10%,var(--green) 90%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{font-size:1.08rem;color:rgba(255,255,255,.55);max-width:600px;line-height:1.7;margin-bottom:38px;position:relative;z-index:1}
-.hero-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1;margin-bottom:56px}
+/* burger (mobile) */
+.burger{display:none;width:40px;height:40px;border:none;background:transparent;cursor:pointer;position:relative;flex-shrink:0}
+.burger span{position:absolute;left:8px;right:8px;height:2px;background:var(--text);border-radius:2px;transition:transform .3s var(--ease),opacity .2s}
+.burger span:nth-child(1){top:14px}
+.burger span:nth-child(2){top:20px}
+.burger span:nth-child(3){top:26px}
+.burger.open span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.burger.open span:nth-child(2){opacity:0}
+.burger.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+.mobile-panel{display:none;position:fixed;top:0;right:0;bottom:0;width:min(82vw,340px);background:var(--ink);z-index:99;
+padding:90px 30px 30px;transform:translateX(100%);transition:transform .35s var(--ease);flex-direction:column;gap:6px}
+.mobile-panel.open{transform:translateX(0)}
+.mobile-panel a{color:rgba(255,255,255,.75);text-decoration:none;font-size:1.05rem;font-weight:600;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.mobile-panel .btn{margin-top:18px;justify-content:center}
+.scrim{display:none;position:fixed;inset:0;background:rgba(6,7,14,.5);z-index:98;opacity:0;transition:opacity .3s}
+.scrim.open{opacity:1}
 
-/* SIGNATURE : ligne de corridors avec pulsation */
-.corridor-line{position:relative;z-index:1;width:100%;max-width:720px}
+/* ── reveal générique ──────────────────────────── */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.reveal.in{opacity:1;transform:translateY(0)}
+.reveal-stagger.in > *{opacity:1;transform:translateY(0)}
+.reveal-stagger > *{opacity:0;transform:translateY(22px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.reveal-stagger.in > *:nth-child(1){transition-delay:.03s}
+.reveal-stagger.in > *:nth-child(2){transition-delay:.11s}
+.reveal-stagger.in > *:nth-child(3){transition-delay:.19s}
+.reveal-stagger.in > *:nth-child(4){transition-delay:.27s}
+.reveal-stagger.in > *:nth-child(5){transition-delay:.35s}
+.reveal-stagger.in > *:nth-child(6){transition-delay:.43s}
+.reveal-stagger.in > *:nth-child(7){transition-delay:.51s}
+
+/* ── HERO ──────────────────────────────────────── */
+.hero{
+background:var(--ink);min-height:92vh;display:flex;flex-direction:column;
+align-items:center;justify-content:center;text-align:center;padding:100px 6% 70px;
+position:relative;overflow:hidden
+}
+.hero-glow-a{position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% -5%,rgba(26,60,255,.28) 0%,transparent 70%);pointer-events:none;animation:driftA 14s ease-in-out infinite}
+.hero-glow-b{position:absolute;inset:0;background:radial-gradient(ellipse 45% 40% at 90% 100%,rgba(0,196,140,.12) 0%,transparent 60%);pointer-events:none;animation:driftB 18s ease-in-out infinite}
+@keyframes driftA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-2%,3%) scale(1.08)}}
+@keyframes driftB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(3%,-2%) scale(1.1)}}
+
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(ellipse 60% 60% at 50% 30%,black,transparent);pointer-events:none}
+
+.float-chip{position:absolute;font-size:1.3rem;opacity:0;animation:floaty 9s ease-in-out infinite;pointer-events:none}
+.float-chip.c1{top:18%;left:9%;animation-delay:.2s}
+.float-chip.c2{top:66%;left:6%;animation-delay:2.4s}
+.float-chip.c3{top:24%;right:9%;animation-delay:1.1s}
+.float-chip.c4{top:64%;right:8%;animation-delay:3.2s}
+@keyframes floaty{0%{opacity:0;transform:translateY(14px)}12%{opacity:.55}50%{transform:translateY(-14px)}88%{opacity:.55}100%{opacity:0;transform:translateY(14px)}}
+
+.hero-eyebrow{
+display:inline-flex;align-items:center;gap:8px;background:rgba(26,60,255,.16);
+border:1px solid rgba(26,60,255,.3);color:#8EA6FF;border-radius:30px;padding:7px 16px;
+font-size:.76rem;font-weight:600;letter-spacing:.05em;margin-bottom:28px;position:relative;z-index:1;
+opacity:0;animation:riseIn .7s var(--ease) .1s forwards
+}
+.hero-eyebrow .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:dotpulse 2.4s infinite}
+.hero h1{
+font-size:clamp(2.4rem,5.4vw,4.6rem);font-weight:800;color:white;line-height:1.06;
+letter-spacing:-.03em;max-width:880px;margin-bottom:22px;position:relative;z-index:1;
+opacity:0;animation:riseIn .8s var(--ease) .22s forwards
+}
+.hero h1 .accent{background:linear-gradient(120deg,var(--blue) 10%,var(--green) 90%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% 100%;animation:sheen 6s ease-in-out infinite}
+@keyframes sheen{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero p{font-size:1.08rem;color:rgba(255,255,255,.55);max-width:600px;line-height:1.7;margin-bottom:38px;position:relative;z-index:1;
+opacity:0;animation:riseIn .8s var(--ease) .34s forwards}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1;margin-bottom:56px;
+opacity:0;animation:riseIn .8s var(--ease) .46s forwards}
+@keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* corridor + pulsation, agrandi en mini "moniteur de transactions" */
+.corridor-line{position:relative;z-index:1;width:100%;max-width:760px;
+opacity:0;animation:riseIn .8s var(--ease) .58s forwards}
+.corridor-label{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:rgba(255,255,255,.3);letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px}
 .corridor-track{position:relative;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18) 12%,rgba(255,255,255,.18) 88%,transparent);margin:0 10px 22px}
 .corridor-pulse{position:absolute;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px 2px rgba(0,196,140,.7);animation:travel 4.5s linear infinite}
+.corridor-pulse.p2{animation:travel 4.5s linear infinite 1.5s;background:var(--blue);box-shadow:0 0 12px 2px rgba(26,60,255,.7)}
+.corridor-pulse.p3{animation:travel 4.5s linear infinite 3s;background:var(--gold);box-shadow:0 0 12px 2px rgba(255,180,0,.6)}
 @keyframes travel{0%{left:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:100%;opacity:0}}
 .corridor-chips{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
-.corridor-chip{display:flex;flex-direction:column;align-items:center;gap:6px}
+.corridor-chip{display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .25s var(--ease)}
+.corridor-chip:hover{transform:translateY(-4px)}
 .chip-flag{font-size:1.5rem}
 .chip-label{font-size:.68rem;color:rgba(255,255,255,.4);font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
 
-/* STATS */
+/* ── STATS ─────────────────────────────────────── */
 .stats-strip{background:#07080F;padding:44px 6%;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);max-width:920px;margin:0 auto}
 .stat-item{text-align:center;padding:12px;border-right:1px solid rgba(255,255,255,.07)}
 .stat-item:last-child{border-right:none}
-.stat-icon-wrap{width:38px;height:38px;border-radius:10px;background:rgba(26,60,255,.15);color:#8EA6FF;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.stat-icon-wrap{width:38px;height:38px;border-radius:10px;background:rgba(26,60,255,.15);color:#8EA6FF;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;transition:transform .3s var(--ease)}
+.stat-item:hover .stat-icon-wrap{transform:scale(1.12) rotate(-6deg)}
 .stat-value{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.9rem;color:white;letter-spacing:-.02em}
 .stat-label{font-size:.78rem;color:rgba(255,255,255,.4);margin-top:5px}
 
-/* SECTIONS */
+/* ── SECTIONS ──────────────────────────────────── */
 section{padding:100px 6%}
 .section-head{max-width:640px;margin:0 auto 56px;text-align:center}
 .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:12px}
@@ -96,9 +161,12 @@ section{padding:100px 6%}
 /* FEATURES */
 .features-section{background:var(--bg)}
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px;margin:0 auto}
-.feature-card{background:var(--surface);border-radius:var(--r-lg);padding:30px;border:1px solid var(--border);transition:all .25s}
-.feature-card:hover{transform:translateY(-4px);box-shadow:0 20px 44px rgba(15,17,32,.08);border-color:var(--blue)}
-.feature-icon{width:46px;height:46px;border-radius:12px;background:var(--blue-tint);color:var(--blue);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.feature-card{background:var(--surface);border-radius:var(--r-lg);padding:30px;border:1px solid var(--border);transition:transform .3s var(--ease),box-shadow .3s var(--ease),border-color .3s;position:relative;overflow:hidden}
+.feature-card::before{content:'';position:absolute;inset:0;background:radial-gradient(180px circle at var(--mx,50%) var(--my,0%),rgba(26,60,255,.08),transparent 70%);opacity:0;transition:opacity .3s}
+.feature-card:hover::before{opacity:1}
+.feature-card:hover{transform:translateY(-6px);box-shadow:0 24px 48px rgba(15,17,32,.1);border-color:var(--blue)}
+.feature-icon{width:46px;height:46px;border-radius:12px;background:var(--blue-tint);color:var(--blue);display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:transform .3s var(--ease)}
+.feature-card:hover .feature-icon{transform:scale(1.08) rotate(-4deg)}
 .feature-card:nth-child(3n+2) .feature-icon{background:var(--green-tint);color:#0A7A50}
 .feature-card:nth-child(3n) .feature-icon{background:var(--gold-tint);color:#8A5B00}
 .feature-card h3{font-size:1rem;font-weight:700;margin-bottom:9px}
@@ -108,18 +176,25 @@ section{padding:100px 6%}
 .how-section{background:var(--surface)}
 .how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;max-width:1060px;margin:0 auto}
 .how-step{position:relative}
-.how-icon{width:52px;height:52px;border-radius:14px;background:var(--ink);color:#8EA6FF;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.how-icon{width:52px;height:52px;border-radius:14px;background:var(--ink);color:#8EA6FF;display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:transform .3s var(--ease)}
+.how-step:hover .how-icon{transform:translateY(-4px)}
 .how-step h4{font-size:.94rem;font-weight:700;margin-bottom:8px}
 .how-step p{font-size:.83rem;color:var(--muted);line-height:1.6}
-.how-connector{position:absolute;top:26px;left:100%;width:22px;height:2px;background:var(--border)}
+.how-connector{position:absolute;top:26px;left:100%;width:22px;height:2px;background:var(--border);overflow:hidden}
+.how-connector::after{content:'';position:absolute;inset:0;background:var(--blue);transform:scaleX(0);transform-origin:left;transition:transform .6s var(--ease)}
+.how-grid.in .how-connector::after{transform:scaleX(1)}
+.how-grid.in .how-step:nth-child(1) .how-connector::after{transition-delay:.5s}
+.how-grid.in .how-step:nth-child(2) .how-connector::after{transition-delay:.75s}
+.how-grid.in .how-step:nth-child(3) .how-connector::after{transition-delay:1s}
 
 /* COUNTRIES */
 .countries-section{background:var(--bg)}
 .countries-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1000px;margin:0 auto}
-.country-card{background:var(--surface);border-radius:var(--r-md);padding:22px 20px;border:1px solid var(--border);transition:all .2s}
-.country-card:hover{border-color:var(--blue);box-shadow:0 10px 26px rgba(15,17,32,.06)}
+.country-card{background:var(--surface);border-radius:var(--r-md);padding:22px 20px;border:1px solid var(--border);transition:transform .25s var(--ease),box-shadow .25s var(--ease),border-color .25s}
+.country-card:hover{border-color:var(--blue);box-shadow:0 14px 30px rgba(15,17,32,.08);transform:translateY(-3px)}
 .country-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.country-flag{font-size:1.6rem}
+.country-flag{font-size:1.6rem;transition:transform .3s var(--ease)}
+.country-card:hover .country-flag{transform:scale(1.15)}
 .country-name{font-weight:700;font-size:.92rem}
 .country-ops{display:flex;flex-wrap:wrap;gap:6px}
 .op-tag{font-size:.68rem;font-family:'JetBrains Mono',monospace;background:var(--bg);border:1px solid var(--border);color:var(--muted);padding:3px 9px;border-radius:6px}
@@ -128,9 +203,11 @@ section{padding:100px 6%}
 /* PRICING */
 .pricing-section{background:var(--surface)}
 .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto;align-items:start}
-.pricing-card{background:var(--bg);border-radius:var(--r-lg);padding:34px 28px;border:2px solid var(--border);position:relative}
+.pricing-card{background:var(--bg);border-radius:var(--r-lg);padding:34px 28px;border:2px solid var(--border);position:relative;transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.pricing-card:hover{transform:translateY(-6px);box-shadow:0 24px 50px rgba(15,17,32,.1)}
 .pricing-card.popular{background:var(--ink);border-color:var(--ink);color:white}
-.popular-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 16px;border-radius:20px}
+.popular-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 16px;border-radius:20px;animation:badgeBob 2.6s ease-in-out infinite}
+@keyframes badgeBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
 .plan-name{font-size:.76rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .pricing-card.popular .plan-name{color:#8EA6FF}
 .plan-price{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.2rem;letter-spacing:-.02em}
@@ -149,7 +226,8 @@ section{padding:100px 6%}
 /* TESTIMONIALS */
 .testimonials-section{background:var(--bg)}
 .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px;margin:0 auto}
-.testi-card{background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border)}
+.testi-card{background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border);transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.testi-card:hover{transform:translateY(-5px);box-shadow:0 20px 40px rgba(15,17,32,.08)}
 .testi-quote{font-size:.9rem;color:var(--text);line-height:1.75;margin-bottom:20px}
 .testi-author{display:flex;align-items:center;gap:12px}
 .author-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1rem;flex-shrink:0}
@@ -158,7 +236,7 @@ section{padding:100px 6%}
 
 /* CTA */
 .cta-section{background:var(--ink);padding:110px 6%;text-align:center;position:relative;overflow:hidden}
-.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 75% at 50% 50%,rgba(26,60,255,.22) 0%,transparent 70%)}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 75% at 50% 50%,rgba(26,60,255,.22) 0%,transparent 70%);animation:driftA 16s ease-in-out infinite}
 .cta-section h2{font-size:clamp(1.9rem,3.6vw,3rem);color:white;font-weight:800;letter-spacing:-.02em;margin-bottom:16px;position:relative}
 .cta-section p{color:rgba(255,255,255,.5);font-size:.98rem;margin-bottom:34px;position:relative;max-width:480px;margin-left:auto;margin-right:auto}
 .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative}
@@ -177,288 +255,441 @@ footer{background:#07080F;padding:52px 6% 30px;border-top:1px solid rgba(255,255
 .footer-bottom{border-top:1px solid rgba(255,255,255,.06);padding-top:22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
 .footer-copy{font-size:.78rem;color:rgba(255,255,255,.2)}
 
+/* bouton retour en haut */
+.to-top{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;background:var(--ink);color:white;border:none;
+display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(10px);
+transition:opacity .3s var(--ease),transform .3s var(--ease);z-index:80;box-shadow:0 10px 24px rgba(11,13,23,.25)}
+.to-top.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+.to-top:hover{background:var(--blue)}
+
 @media(max-width:960px){
-  .nav-links{display:none}
-  .features-grid,.pricing-grid,.testi-grid,.how-grid{grid-template-columns:1fr}
-  .how-connector{display:none}
-  .stats-grid{grid-template-columns:repeat(2,1fr)}
-  .countries-grid{grid-template-columns:repeat(2,1fr)}
-  .footer-grid{grid-template-columns:1fr 1fr}
-  .corridor-chips{gap:10px}
-  .chip-label{display:none}
+.nav-links{display:none}
+.nav-cta .btn-ghost{display:none}
+.burger{display:block}
+.mobile-panel,.scrim{display:flex}
+.features-grid,.pricing-grid,.testi-grid,.how-grid{grid-template-columns:1fr}
+.how-connector{display:none}
+.stats-grid{grid-template-columns:repeat(2,1fr)}
+.countries-grid{grid-template-columns:repeat(2,1fr)}
+.footer-grid{grid-template-columns:1fr 1fr}
+.corridor-chips{gap:10px}
+.chip-label{display:none}
+.float-chip{display:none}
 }
 @media(max-width:520px){
-  .hero-btns,.cta-btns{flex-direction:column;align-items:center}
-  .stats-grid{grid-template-columns:1fr 1fr}
-  section{padding:70px 6%}
+.hero-btns,.cta-btns{flex-direction:column;align-items:center}
+.stats-grid{grid-template-columns:1fr 1fr}
+section{padding:70px 6%}
+}
+
+@media(prefers-reduced-motion:reduce){
+*{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+.reveal,.reveal-stagger > *{opacity:1;transform:none}
 }
 </style>
 </head>
 <body>
 
 <svg width="0" height="0" style="position:absolute">
-  <defs>
-    <symbol id="ic-smartphone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
-    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
-    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
-    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
-    <symbol id="ic-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
-    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
-    <symbol id="ic-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></symbol>
-    <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
-    <symbol id="ic-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
-    <symbol id="ic-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
-    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
-    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
-    <symbol id="ic-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
-  </defs>
+<defs>
+<symbol id="ic-smartphone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+<symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+<symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+<symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+<symbol id="ic-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+<symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+<symbol id="ic-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></symbol>
+<symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="ic-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+<symbol id="ic-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+<symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+<symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="ic-arrow-up" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+</defs>
 </svg>
+
+<div class="scroll-progress" id="scrollProgress"></div>
 
 {% if cfg.get('announcement_bar') %}
 <div class="announce">{{ cfg.get('announcement_bar') }}</div>
 {% endif %}
 
-<nav>
-  <a href="/" class="nav-logo">Flin<span>pay</span></a>
-  <ul class="nav-links">
-    <li><a href="#features">Fonctionnalités</a></li>
-    <li><a href="#how">Fonctionnement</a></li>
-    <li><a href="#countries">Pays</a></li>
-    <li><a href="#pricing">Tarifs</a></li>
-    <li><a href="/docs">Documentation</a></li>
-  </ul>
-  <div class="nav-cta">
-    <a href="/login" class="btn btn-ghost">Connexion</a>
-    <a href="/register" class="btn btn-primary">Créer un compte</a>
-  </div>
+<nav id="mainNav">
+<a href="/" class="nav-logo">Flin<span>pay</span><span class="pulse-dot"></span></a>
+<ul class="nav-links">
+<li><a href="#features">Fonctionnalités</a></li>
+<li><a href="#how">Fonctionnement</a></li>
+<li><a href="#countries">Pays</a></li>
+<li><a href="#pricing">Tarifs</a></li>
+<li><a href="/docs">Documentation</a></li>
+</ul>
+<div class="nav-cta">
+<a href="/login" class="btn btn-ghost">Connexion</a>
+<a href="/register" class="btn btn-primary">Créer un compte</a>
+</div>
+<button class="burger" id="burgerBtn" aria-label="Ouvrir le menu" aria-expanded="false"><span></span><span></span><span></span></button>
 </nav>
 
+<div class="scrim" id="scrim"></div>
+<div class="mobile-panel" id="mobilePanel">
+<a href="#features">Fonctionnalités</a>
+<a href="#how">Fonctionnement</a>
+<a href="#countries">Pays</a>
+<a href="#pricing">Tarifs</a>
+<a href="/docs">Documentation</a>
+<a href="/login">Connexion</a>
+<a href="/register" class="btn btn-primary">Créer un compte</a>
+</div>
+
 <section class="hero">
-  <div class="hero-eyebrow"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-smartphone"/></svg></span> Confirmation directe sur le téléphone du client</div>
+<div class="hero-glow-a"></div>
+<div class="hero-glow-b"></div>
+<div class="hero-grid"></div>
+<span class="float-chip c1">💸</span>
+<span class="float-chip c2">📲</span>
+<span class="float-chip c3">🔐</span>
+<span class="float-chip c4">⚡</span>
 
-  <h1>Encaissez du mobile<br><span class="accent">money, sans redirection.</span></h1>
+<div class="hero-eyebrow"><span class="live-dot"></span> Confirmation directe sur le téléphone du client</div>
+<h1>Encaissez du mobile<br><span class="accent">money, sans redirection.</span></h1>
+<p>{{ cfg.get('hero_subtitle', "Une API, des liens de paiement, et une confirmation envoyée directement sur le téléphone du client — pas de page tierce, pas de friction.") }}</p>
+<div class="hero-btns">
+<a href="/register" class="btn btn-primary btn-lg">{{ cfg.get('hero_cta_primary', 'Créer un compte gratuit') }}</a>
+<a href="/docs" class="btn btn-lg" style="border:1.5px solid rgba(255,255,255,.25);color:white;background:transparent">
+<span class="icon" style="width:16px;height:16px"><svg><use href="#ic-code"/></svg></span> {{ cfg.get('hero_cta_secondary', 'Voir la documentation') }}
+</a>
+</div>
 
-  <p>{{ cfg.get('hero_subtitle', "Une API, des liens de paiement, et une confirmation envoyée directement sur le téléphone du client — pas de page tierce, pas de friction.") }}</p>
-
-  <div class="hero-btns">
-    <a href="/register" class="btn btn-primary btn-lg">{{ cfg.get('hero_cta_primary', 'Créer un compte gratuit') }}</a>
-    <a href="/docs" class="btn btn-lg" style="border:1.5px solid rgba(255,255,255,.25);color:white;background:transparent">
-      <span class="icon" style="width:16px;height:16px"><svg><use href="#ic-code"/></svg></span> {{ cfg.get('hero_cta_secondary', 'Voir la documentation') }}
-    </a>
-  </div>
-
-  <div class="corridor-line">
-    <div class="corridor-track">
-      <div class="corridor-pulse"></div>
-    </div>
-    <div class="corridor-chips">
-      {% for c in countries %}
-      <div class="corridor-chip">
-        <span class="chip-flag">{{ c.flag }}</span>
-        <span class="chip-label">{{ c.code }}</span>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
+<div class="corridor-line">
+<div class="corridor-label">CORRIDORS ACTIFS EN TEMPS RÉEL</div>
+<div class="corridor-track">
+<div class="corridor-pulse"></div>
+<div class="corridor-pulse p2"></div>
+<div class="corridor-pulse p3"></div>
+</div>
+<div class="corridor-chips">
+{% for c in countries %}
+<div class="corridor-chip">
+<span class="chip-flag">{{ c.flag }}</span>
+<span class="chip-label">{{ c.code }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
 </section>
 
 <div class="stats-strip">
-  <div class="stats-grid">
-    {% for s in stats %}
-    <div class="stat-item">
-      <div class="stat-icon-wrap"><span class="icon"><svg><use href="#ic-check-circle"/></svg></span></div>
-      <div class="stat-value">{{ s.value }}</div>
-      <div class="stat-label">{{ s.label }}</div>
-    </div>
-    {% endfor %}
-  </div>
+<div class="stats-grid reveal-stagger" id="statsGrid">
+{% for s in stats %}
+<div class="stat-item">
+<div class="stat-icon-wrap"><span class="icon"><svg><use href="#ic-check-circle"/></svg></span></div>
+<div class="stat-value" data-raw="{{ s.value }}">0</div>
+<div class="stat-label">{{ s.label }}</div>
+</div>
+{% endfor %}
+</div>
 </div>
 
 <section class="features-section" id="features">
-  <div class="section-head">
-    <div class="eyebrow">Fonctionnalités</div>
-    <h2 class="section-title">Construit pour le mobile money africain</h2>
-    <p class="section-sub">Pas une adaptation d'un système occidental — pensé pour la manière dont vos clients paient réellement.</p>
-  </div>
-  <div class="features-grid">
-    {% set icons = ['ic-smartphone','ic-link','ic-key','ic-zap','ic-globe','ic-gift'] %}
-    {% for f in features %}
-    <div class="feature-card">
-      <div class="feature-icon"><span class="icon"><svg><use href="#{{ icons[loop.index0 % icons|length] }}"/></svg></span></div>
-      <h3>{{ f.title }}</h3>
-      <p>{{ f.description }}</p>
-    </div>
-    {% endfor %}
-  </div>
+<div class="section-head reveal">
+<div class="eyebrow">Fonctionnalités</div>
+<h2 class="section-title">Construit pour le mobile money africain</h2>
+<p class="section-sub">Pas une adaptation d'un système occidental — pensé pour la manière dont vos clients paient réellement.</p>
+</div>
+<div class="features-grid reveal-stagger">
+{% set icons = ['ic-smartphone','ic-link','ic-key','ic-zap','ic-globe','ic-gift'] %}
+{% for f in features %}
+<div class="feature-card" data-tilt>
+<div class="feature-icon"><span class="icon"><svg><use href="#{{ icons[loop.index0 % icons|length] }}"/></svg></span></div>
+<h3>{{ f.title }}</h3>
+<p>{{ f.description }}</p>
+</div>
+{% endfor %}
+</div>
 </section>
 
 <section class="how-section" id="how">
-  <div class="section-head">
-    <div class="eyebrow">Fonctionnement</div>
-    <h2 class="section-title">Quatre étapes, aucune redirection</h2>
-    <p class="section-sub">Du compte créé au premier encaissement confirmé sur le téléphone du client.</p>
-  </div>
-  <div class="how-grid">
-    <div class="how-step">
-      <div class="how-icon"><span class="icon"><svg><use href="#ic-user-plus"/></svg></span></div>
-      <h4>Créez votre compte</h4>
-      <p>Inscription gratuite, plan Starter avec 300 transactions/mois inclus.</p>
-      <div class="how-connector"></div>
-    </div>
-    <div class="how-step">
-      <div class="how-icon"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span></div>
-      <h4>Vérifiez votre identité</h4>
-      <p>Une pièce d'identité suffit — nécessaire avant de générer une clé API.</p>
-      <div class="how-connector"></div>
-    </div>
-    <div class="how-step">
-      <div class="how-icon"><span class="icon"><svg><use href="#ic-key"/></svg></span></div>
-      <h4>Intégrez ou créez un lien</h4>
-      <p>Un appel API, ou un lien de paiement partageable sans écrire de code.</p>
-      <div class="how-connector"></div>
-    </div>
-    <div class="how-step">
-      <div class="how-icon"><span class="icon"><svg><use href="#ic-smartphone"/></svg></span></div>
-      <h4>Le client confirme</h4>
-      <p>Il choisit son opérateur et valide directement depuis son téléphone.</p>
-    </div>
-  </div>
+<div class="section-head reveal">
+<div class="eyebrow">Fonctionnement</div>
+<h2 class="section-title">Quatre étapes, aucune redirection</h2>
+<p class="section-sub">Du compte créé au premier encaissement confirmé sur le téléphone du client.</p>
+</div>
+<div class="how-grid reveal-stagger" id="howGrid">
+<div class="how-step">
+<div class="how-icon"><span class="icon"><svg><use href="#ic-user-plus"/></svg></span></div>
+<h4>Créez votre compte</h4>
+<p>Inscription gratuite, plan Starter avec 300 transactions/mois inclus.</p>
+<div class="how-connector"></div>
+</div>
+<div class="how-step">
+<div class="how-icon"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span></div>
+<h4>Vérifiez votre identité</h4>
+<p>Une pièce d'identité suffit — nécessaire avant de générer une clé API.</p>
+<div class="how-connector"></div>
+</div>
+<div class="how-step">
+<div class="how-icon"><span class="icon"><svg><use href="#ic-key"/></svg></span></div>
+<h4>Intégrez ou créez un lien</h4>
+<p>Un appel API, ou un lien de paiement partageable sans écrire de code.</p>
+<div class="how-connector"></div>
+</div>
+<div class="how-step">
+<div class="how-icon"><span class="icon"><svg><use href="#ic-smartphone"/></svg></span></div>
+<h4>Le client confirme</h4>
+<p>Il choisit son opérateur et valide directement depuis son téléphone.</p>
+</div>
+</div>
 </section>
 
 <section class="countries-section" id="countries">
-  <div class="section-head">
-    <div class="eyebrow">Couverture</div>
-    <h2 class="section-title">{{ countries|length }} pays, chacun avec ses vrais opérateurs</h2>
-    <p class="section-sub">Pas une liste générique — les opérateurs mobile money réellement actifs, pays par pays.</p>
-  </div>
-  <div class="countries-grid">
-    <div class="country-card">
-      <div class="country-top"><span class="country-flag">🇨🇲</span><span class="country-name">Cameroun</span></div>
-      <div class="country-ops"><span class="op-tag">MTN MoMo</span><span class="op-tag">Orange Money</span></div>
-    </div>
-    <div class="country-card">
-      <div class="country-top"><span class="country-flag">🇨🇮</span><span class="country-name">Côte d'Ivoire</span></div>
-      <div class="country-ops"><span class="op-tag">Orange</span><span class="op-tag">MTN</span><span class="op-tag">Moov</span><span class="op-tag">Wave</span></div>
-    </div>
-    <div class="country-card">
-      <div class="country-top"><span class="country-flag">🇧🇫</span><span class="country-name">Burkina Faso</span></div>
-      <div class="country-ops"><span class="op-tag">Moov</span><span class="op-tag">Orange</span></div>
-    </div>
-    <div class="country-card">
-      <div class="country-top"><span class="country-flag">🇧🇯</span><span class="country-name">Bénin</span></div>
-      <div class="country-ops"><span class="op-tag">MTN</span><span class="op-tag">Moov</span></div>
-    </div>
-    <div class="country-card">
-      <div class="country-top"><span class="country-flag">🇹🇬</span><span class="country-name">Togo</span></div>
-      <div class="country-ops"><span class="op-tag">T-Money</span><span class="op-tag">Moov</span></div>
-    </div>
-    <div class="country-card">
-      <div class="country-top"><span class="country-flag">🇨🇩</span><span class="country-name">RDC</span></div>
-      <div class="country-ops"><span class="op-tag">Vodacom</span><span class="op-tag">Airtel</span><span class="op-tag">Orange</span></div>
-    </div>
-    <div class="country-card">
-      <div class="country-top"><span class="country-flag">🇬🇦</span><span class="country-name">Gabon</span></div>
-      <div class="country-ops"><span class="op-tag">Airtel</span></div>
-    </div>
-  </div>
-  <p class="countries-note">D'autres corridors ouvrent progressivement. La devise de facturation suit le pays de chaque marchand ; le client paie toujours dans sa propre devise locale.</p>
+<div class="section-head reveal">
+<div class="eyebrow">Couverture</div>
+<h2 class="section-title">{{ countries|length }} pays, chacun avec ses vrais opérateurs</h2>
+<p class="section-sub">Pas une liste générique — les opérateurs mobile money réellement actifs, pays par pays.</p>
+</div>
+<div class="countries-grid reveal-stagger">
+<div class="country-card">
+<div class="country-top"><span class="country-flag">🇨🇲</span><span class="country-name">Cameroun</span></div>
+<div class="country-ops"><span class="op-tag">MTN MoMo</span><span class="op-tag">Orange Money</span></div>
+</div>
+<div class="country-card">
+<div class="country-top"><span class="country-flag">🇨🇮</span><span class="country-name">Côte d'Ivoire</span></div>
+<div class="country-ops"><span class="op-tag">Orange</span><span class="op-tag">MTN</span><span class="op-tag">Moov</span><span class="op-tag">Wave</span></div>
+</div>
+<div class="country-card">
+<div class="country-top"><span class="country-flag">🇧🇫</span><span class="country-name">Burkina Faso</span></div>
+<div class="country-ops"><span class="op-tag">Moov</span><span class="op-tag">Orange</span></div>
+</div>
+<div class="country-card">
+<div class="country-top"><span class="country-flag">🇧🇯</span><span class="country-name">Bénin</span></div>
+<div class="country-ops"><span class="op-tag">MTN</span><span class="op-tag">Moov</span></div>
+</div>
+<div class="country-card">
+<div class="country-top"><span class="country-flag">🇹🇬</span><span class="country-name">Togo</span></div>
+<div class="country-ops"><span class="op-tag">T-Money</span><span class="op-tag">Moov</span></div>
+</div>
+<div class="country-card">
+<div class="country-top"><span class="country-flag">🇨🇩</span><span class="country-name">RDC</span></div>
+<div class="country-ops"><span class="op-tag">Vodacom</span><span class="op-tag">Airtel</span><span class="op-tag">Orange</span></div>
+</div>
+<div class="country-card">
+<div class="country-top"><span class="country-flag">🇬🇦</span><span class="country-name">Gabon</span></div>
+<div class="country-ops"><span class="op-tag">Airtel</span></div>
+</div>
+</div>
+<p class="countries-note reveal">D'autres corridors ouvrent progressivement. La devise de facturation suit le pays de chaque marchand ; le client paie toujours dans sa propre devise locale.</p>
 </section>
 
 <section class="pricing-section" id="pricing">
-  <div class="section-head">
-    <div class="eyebrow">Tarifs</div>
-    <h2 class="section-title">Simple, sans frais cachés</h2>
-    <p class="section-sub">Commencez gratuitement. Passez au Pro quand le volume grandit.</p>
-  </div>
-  <div class="pricing-grid">
-    {% for p in plans %}
-    <div class="pricing-card {% if p.is_popular %}popular{% endif %}">
-      {% if p.is_popular %}<div class="popular-badge">Recommandé</div>{% endif %}
-      <div class="plan-name">{{ p.name }}</div>
-      <div class="plan-price">{{ p.price }}<span class="plan-period"> {{ p.period or '' }}</span></div>
-      <div class="plan-desc">{{ p.description or '' }}</div>
-      <ul class="plan-features">
-        {% if p.features %}
-          {% for feat in p.features | replace('[','') | replace(']','') | replace('"','') | split(',') %}
-          <li><span class="icon check-mini"><svg><use href="#ic-check"/></svg></span> {{ feat | trim }}</li>
-          {% endfor %}
-        {% endif %}
-      </ul>
-      <a href="/register" class="plan-btn btn {% if p.is_popular %}btn-gold{% else %}btn-primary{% endif %}">
-        {{ p.cta_text or 'Choisir' }}
-      </a>
-    </div>
-    {% endfor %}
-  </div>
+<div class="section-head reveal">
+<div class="eyebrow">Tarifs</div>
+<h2 class="section-title">Simple, sans frais cachés</h2>
+<p class="section-sub">Commencez gratuitement. Passez au Pro quand le volume grandit.</p>
+</div>
+<div class="pricing-grid reveal-stagger">
+{% for p in plans %}
+<div class="pricing-card {% if p.is_popular %}popular{% endif %}">
+{% if p.is_popular %}<div class="popular-badge">Recommandé</div>{% endif %}
+<div class="plan-name">{{ p.name }}</div>
+<div class="plan-price">{{ p.price }}<span class="plan-period"> {{ p.period or '' }}</span></div>
+<div class="plan-desc">{{ p.description or '' }}</div>
+<ul class="plan-features">
+{% if p.features %}
+{% for feat in p.features | replace('[','') | replace(']','') | replace('"','') | split(',') %}
+<li><span class="icon check-mini"><svg><use href="#ic-check"/></svg></span> {{ feat | trim }}</li>
+{% endfor %}
+{% endif %}
+</ul>
+<a href="/register" class="plan-btn btn {% if p.is_popular %}btn-gold{% else %}btn-primary{% endif %}">
+{{ p.cta_text or 'Choisir' }}
+</a>
+</div>
+{% endfor %}
+</div>
 </section>
 
 {% if testimonials %}
 <section class="testimonials-section" id="testimonials">
-  <div class="section-head">
-    <div class="eyebrow">Témoignages</div>
-    <h2 class="section-title">Ils encaissent déjà avec Flinpay</h2>
-  </div>
-  <div class="testi-grid">
-    {% for t in testimonials %}
-    <div class="testi-card">
-      <p class="testi-quote">{{ t.content }}</p>
-      <div class="testi-author">
-        <div class="author-av">{{ t.avatar_letter or t.name[0] }}</div>
-        <div>
-          <div class="author-name">{{ t.country_flag or '' }} {{ t.name }}</div>
-          <div class="author-role">{{ t.role or '' }}{% if t.company %} · {{ t.company }}{% endif %}</div>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
+<div class="section-head reveal">
+<div class="eyebrow">Témoignages</div>
+<h2 class="section-title">Ils encaissent déjà avec Flinpay</h2>
+</div>
+<div class="testi-grid reveal-stagger">
+{% for t in testimonials %}
+<div class="testi-card">
+<p class="testi-quote">{{ t.content }}</p>
+<div class="testi-author">
+<div class="author-av">{{ t.avatar_letter or t.name[0] }}</div>
+<div>
+<div class="author-name">{{ t.country_flag or '' }} {{ t.name }}</div>
+<div class="author-role">{{ t.role or '' }}{% if t.company %} · {{ t.company }}{% endif %}</div>
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
 </section>
 {% endif %}
 
-<section class="cta-section">
-  <h2>Prêt à encaisser votre<br>premier paiement ?</h2>
-  <p>Gratuit jusqu'à 300 transactions par mois. Aucune carte bancaire requise pour démarrer.</p>
-  <div class="cta-btns">
-    <a href="/register" class="btn btn-primary btn-lg">Créer un compte gratuit</a>
-    <a href="/docs" class="btn btn-gold btn-lg">Lire la documentation</a>
-  </div>
+<section class="cta-section reveal">
+<h2>Prêt à encaisser votre<br>premier paiement ?</h2>
+<p>Gratuit jusqu'à 300 transactions par mois. Aucune carte bancaire requise pour démarrer.</p>
+<div class="cta-btns">
+<a href="/register" class="btn btn-primary btn-lg">Créer un compte gratuit</a>
+<a href="/docs" class="btn btn-gold btn-lg">Lire la documentation</a>
+</div>
 </section>
 
 <footer>
-  <div class="footer-grid">
-    <div>
-      <a href="/" class="footer-logo">Flin<span>pay</span></a>
-      <p class="footer-tagline">{{ cfg.get('footer_text', "Paiements mobile money pour les marchands d'Afrique francophone.") }}</p>
-    </div>
-    <div class="footer-col">
-      <h4>Produit</h4>
-      <ul>
-        <li><a href="#features">Fonctionnalités</a></li>
-        <li><a href="#pricing">Tarifs</a></li>
-        <li><a href="/docs">Documentation</a></li>
-        <li><a href="#countries">Pays couverts</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h4>Compte</h4>
-      <ul>
-        <li><a href="/register">Créer un compte</a></li>
-        <li><a href="/login">Connexion</a></li>
-        <li><a href="/kyc">Vérification</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h4>Support</h4>
-      <ul>
-        <li><a href="mailto:{{ cfg.get('contact_email', 'contact@flinpay.cfd') }}">Contact</a></li>
-        <li><a href="/docs">FAQ technique</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <div class="footer-copy">© {{ current_year }} Flinpay. Tous droits réservés.</div>
-  </div>
+<div class="footer-grid">
+<div>
+<a href="/" class="footer-logo">Flin<span>pay</span></a>
+<p class="footer-tagline">{{ cfg.get('footer_text', "Paiements mobile money pour les marchands d'Afrique francophone.") }}</p>
+</div>
+<div class="footer-col">
+<h4>Produit</h4>
+<ul>
+<li><a href="#features">Fonctionnalités</a></li>
+<li><a href="#pricing">Tarifs</a></li>
+<li><a href="/docs">Documentation</a></li>
+<li><a href="#countries">Pays couverts</a></li>
+</ul>
+</div>
+<div class="footer-col">
+<h4>Compte</h4>
+<ul>
+<li><a href="/register">Créer un compte</a></li>
+<li><a href="/login">Connexion</a></li>
+<li><a href="/kyc">Vérification</a></li>
+</ul>
+</div>
+<div class="footer-col">
+<h4>Support</h4>
+<ul>
+<li><a href="mailto:{{ cfg.get('contact_email', 'contact@flinpay.cfd') }}">Contact</a></li>
+<li><a href="/docs">FAQ technique</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<div class="footer-copy">© {{ current_year }} Flinpay. Tous droits réservés.</div>
+</div>
 </footer>
 
+<button class="to-top" id="toTop" aria-label="Retour en haut"><span class="icon" style="width:18px;height:18px"><svg><use href="#ic-arrow-up"/></svg></span></button>
+<script>
+(function(){
+"use strict";
+var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* barre de progression + nav compacte + bouton retour en haut */
+var progress = document.getElementById('scrollProgress');
+var nav = document.getElementById('mainNav');
+var toTop = document.getElementById('toTop');
+function onScroll(){
+var h = document.documentElement;
+var scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+progress.style.width = (scrolled || 0) + '%';
+nav.classList.toggle('scrolled', h.scrollTop > 30);
+toTop.classList.toggle('show', h.scrollTop > 600);
+}
+document.addEventListener('scroll', onScroll, {passive:true});
+onScroll();
+toTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduceMotion ? 'auto' : 'smooth'}); });
+
+/* menu mobile */
+var burger = document.getElementById('burgerBtn');
+var panel = document.getElementById('mobilePanel');
+var scrim = document.getElementById('scrim');
+function closeMenu(){
+burger.classList.remove('open'); burger.setAttribute('aria-expanded','false');
+panel.classList.remove('open'); scrim.classList.remove('open');
+document.body.style.overflow = '';
+}
+function toggleMenu(){
+var opening = !panel.classList.contains('open');
+burger.classList.toggle('open', opening); burger.setAttribute('aria-expanded', opening);
+panel.classList.toggle('open', opening); scrim.classList.toggle('open', opening);
+document.body.style.overflow = opening ? 'hidden' : '';
+}
+burger.addEventListener('click', toggleMenu);
+scrim.addEventListener('click', closeMenu);
+panel.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', closeMenu); });
+
+/* reveal au scroll (IntersectionObserver) */
+var revealables = document.querySelectorAll('.reveal, .reveal-stagger, #howGrid');
+if('IntersectionObserver' in window){
+var io = new IntersectionObserver(function(entries){
+entries.forEach(function(entry){
+if(entry.isIntersecting){
+entry.target.classList.add('in');
+io.unobserve(entry.target);
+}
+});
+}, {threshold:.15, rootMargin:'0px 0px -60px 0px'});
+revealables.forEach(function(el){ io.observe(el); });
+} else {
+revealables.forEach(function(el){ el.classList.add('in'); });
+}
+
+/* compteurs animés pour les stats */
+var statValues = document.querySelectorAll('.stat-value');
+function parseRaw(raw){
+var match = raw.match(/^([^\d]*)([\d\s.,]+)(.*)$/);
+if(!match) return {prefix:'', number:0, suffix: raw, decimals:0};
+var prefix = match[1] || '';
+var numStr = match[2].replace(/\s/g,'');
+var suffix = match[3] || '';
+var decimals = 0;
+var normalized = numStr;
+if(numStr.indexOf(',') > -1 && numStr.indexOf('.') === -1){
+normalized = numStr.replace(',', '.');
+}
+if(normalized.indexOf('.') > -1){
+decimals = normalized.split('.')[1].length;
+}
+return {prefix: prefix, number: parseFloat(normalized) || 0, suffix: suffix, decimals: decimals};
+}
+function animateCount(el){
+var raw = el.getAttribute('data-raw') || el.textContent;
+var parsed = parseRaw(raw);
+if(reduceMotion){ el.textContent = raw; return; }
+var duration = 1400, start = null;
+function step(ts){
+if(!start) start = ts;
+var p = Math.min((ts - start) / duration, 1);
+var eased = 1 - Math.pow(1 - p, 3);
+var current = parsed.number * eased;
+el.textContent = parsed.prefix + current.toLocaleString('fr-FR', {minimumFractionDigits:parsed.decimals, maximumFractionDigits:parsed.decimals}) + parsed.suffix;
+if(p < 1) requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+}
+var statsGrid = document.getElementById('statsGrid');
+if(statsGrid && 'IntersectionObserver' in window){
+var statsIo = new IntersectionObserver(function(entries){
+entries.forEach(function(entry){
+if(entry.isIntersecting){
+statValues.forEach(animateCount);
+statsIo.unobserve(entry.target);
+}
+});
+}, {threshold:.4});
+statsIo.observe(statsGrid);
+} else {
+statValues.forEach(function(el){ el.textContent = el.getAttribute('data-raw'); });
+}
+
+/* spotlight qui suit le curseur sur les cartes de fonctionnalités */
+document.querySelectorAll('[data-tilt]').forEach(function(card){
+card.addEventListener('mousemove', function(e){
+var r = card.getBoundingClientRect();
+card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+});
+});
+})();
+</script>
 </body>
 </html>
