@@ -69,6 +69,13 @@ def _is_safe_webhook_url(url: str) -> bool:
     return True
 
 
+# Alias public : _is_safe_webhook_url reste utilisable en interne à ce module,
+# mais les autres modules (ex: routes/keys_webhooks.py, pour valider une URL
+# dès la création du webhook plutôt qu'au moment de l'envoi) doivent importer
+# cette version sans le underscore.
+is_safe_webhook_url = _is_safe_webhook_url
+
+
 def dispatch_merchant_webhooks(user_id, event, payload):
     """Best-effort, non bloquant : un webhook marchand qui échoue ne doit
     jamais empêcher le traitement du paiement lui-même."""
