@@ -43,7 +43,7 @@ import secrets
 from datetime import datetime
 
 from config import config
-from db.supabase import sb_get, sb_get_eq, sb_get_one, sb_patch, sb_count
+from db.supabase import sb_get_eq, sb_get_one, sb_patch, sb_count
 
 logger = logging.getLogger('flinpay.billing')
 
