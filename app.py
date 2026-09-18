@@ -48,15 +48,12 @@ def create_app():
     from routes.keys_webhooks import keys_webhooks_bp
     from routes.kyc import kyc_bp
     from routes.webhook_callback import webhook_callback_bp
+    from routes.admin import admin_blueprints
 
     for bp in (public_bp, auth_bp, dashboard_bp, payments_bp, invoices_bp,
-               payouts_bp, keys_webhooks_bp, kyc_bp, webhook_callback_bp):
+               payouts_bp, keys_webhooks_bp, kyc_bp, webhook_callback_bp,
+               *admin_blueprints):
         app.register_blueprint(bp)
-
-    # Reste à découper : les routes admin (routes/admin/...).
-    #
-    #   from routes.admin import admin_bp
-    #   app.register_blueprint(admin_bp)
 
     @app.errorhandler(404)
     def not_found(e):
