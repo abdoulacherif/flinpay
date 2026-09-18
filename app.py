@@ -39,12 +39,16 @@ def create_app():
     init_extensions(app)
 
     # ── Blueprints ──────────────────────────────────
-    # À enregistrer au fur et à mesure du découpage des routes d'origine.
-    # Exemple une fois les modules créés :
+    from routes.public import public_bp
+    from routes.auth import auth_bp
+    from routes.dashboard import dashboard_bp
+
+    for bp in (public_bp, auth_bp, dashboard_bp):
+        app.register_blueprint(bp)
+
+    # À enregistrer au fur et à mesure du découpage du reste des routes
+    # d'origine (paiements, factures, retraits, KYC, admin...) :
     #
-    #   from routes.public import public_bp
-    #   from routes.auth import auth_bp
-    #   from routes.dashboard import dashboard_bp
     #   from routes.payments import payments_bp
     #   from routes.invoices import invoices_bp
     #   from routes.payouts import payouts_bp
@@ -53,8 +57,8 @@ def create_app():
     #   from routes.webhook_callback import webhook_callback_bp
     #   from routes.admin import admin_bp
     #
-    #   for bp in (public_bp, auth_bp, dashboard_bp, payments_bp, invoices_bp,
-    #              payouts_bp, keys_webhooks_bp, kyc_bp, webhook_callback_bp, admin_bp):
+    #   for bp in (payments_bp, invoices_bp, payouts_bp, keys_webhooks_bp,
+    #              kyc_bp, webhook_callback_bp, admin_bp):
     #       app.register_blueprint(bp)
 
     @app.errorhandler(404)
