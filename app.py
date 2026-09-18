@@ -42,24 +42,21 @@ def create_app():
     from routes.public import public_bp
     from routes.auth import auth_bp
     from routes.dashboard import dashboard_bp
+    from routes.payments import payments_bp
+    from routes.invoices import invoices_bp
+    from routes.payouts import payouts_bp
+    from routes.keys_webhooks import keys_webhooks_bp
+    from routes.kyc import kyc_bp
+    from routes.webhook_callback import webhook_callback_bp
 
-    for bp in (public_bp, auth_bp, dashboard_bp):
+    for bp in (public_bp, auth_bp, dashboard_bp, payments_bp, invoices_bp,
+               payouts_bp, keys_webhooks_bp, kyc_bp, webhook_callback_bp):
         app.register_blueprint(bp)
 
-    # À enregistrer au fur et à mesure du découpage du reste des routes
-    # d'origine (paiements, factures, retraits, KYC, admin...) :
+    # Reste à découper : les routes admin (routes/admin/...).
     #
-    #   from routes.payments import payments_bp
-    #   from routes.invoices import invoices_bp
-    #   from routes.payouts import payouts_bp
-    #   from routes.keys_webhooks import keys_webhooks_bp
-    #   from routes.kyc import kyc_bp
-    #   from routes.webhook_callback import webhook_callback_bp
     #   from routes.admin import admin_bp
-    #
-    #   for bp in (payments_bp, invoices_bp, payouts_bp, keys_webhooks_bp,
-    #              kyc_bp, webhook_callback_bp, admin_bp):
-    #       app.register_blueprint(bp)
+    #   app.register_blueprint(admin_bp)
 
     @app.errorhandler(404)
     def not_found(e):
