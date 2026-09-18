@@ -18,6 +18,7 @@ ajoute un jeton CSRF en défense supplémentaire (double-submit cookie) via
 `generate_csrf_token()` / `csrf_protect`, à appliquer sur ces routes précises
 quand on les écrira.
 """
+import hashlib
 import logging
 import secrets
 from datetime import datetime, timedelta
@@ -174,6 +175,21 @@ def register_failed_login(user):
 def reset_failed_login(user_id):
     """Réinitialise le compteur d'échecs après une connexion réussie."""
     sb_patch('users', 'id', user_id, {'failed_login_count': 0, 'locked_until': None})
+
+
+# ── Clés API marchand ─────────────────────────────────
+def generate_api_key(environment: str):
+    """Génère une clé API marchand. On ne stocke JAMAIS la clé en clair en
+    base — seul son hash SHA-256 est persisté (voir routes/keys_webhooks.py) ;
+    la clé complète n'est montrée au marchand qu'une seule fois, au moment de
+    la création, exactement comme le fait Stripe. `secrets.token_hex` est
+    cryptographiquement sûr (contrairement à `random`)."""
+    raw = secrets.token_hex(24)
+    prefix = 'fp_live_' if environment == 'live' else 'fp_test_'
+    full_key = prefix + raw
+    key_hash = hashlib.sha256(full_key.encode()).hexdigest()
+    display_prefix = full_key[:14] + '…'
+    return full_key, key_hash, display_prefix
 
 
 # ── CSRF (double-submit cookie) ──────────────────────
