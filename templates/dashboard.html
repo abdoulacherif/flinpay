@@ -8,65 +8,75 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#0B0D17;--ink-soft:#141625;
-  --bg:#F5F6FB;--surface:#FFFFFF;
-  --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0A1FCC;--blue-tint:#EEF1FF;
-  --gold:#FFB400;--gold-tint:#FFF6E0;
-  --green:#00C48C;--green-tint:#E3FBF3;
-  --danger:#FF4D4D;--danger-tint:#FFEAEA;
-  --text:#12131C;--muted:#767A94;--muted-soft:#A6AABF;
-  --r-lg:18px;--r-md:14px;--r-sm:9px;
-  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
-  --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
+--ink:#0B0D17;--ink-soft:#141625;
+--bg:#F5F6FB;--surface:#FFFFFF;
+--border:#E7E9F3;--border-soft:#F0F1F8;
+--blue:#1A3CFF;--blue-deep:#0A1FCC;--blue-tint:#EEF1FF;
+--gold:#FFB400;--gold-tint:#FFF6E0;
+--green:#00C48C;--green-tint:#E3FBF3;
+--danger:#FF4D4D;--danger-tint:#FFEAEA;
+--text:#12131C;--muted:#767A94;--muted-soft:#A6AABF;
+--r-lg:18px;--r-md:14px;--r-sm:9px;
+--shadow-sm:0 1px 2px rgba(15,17,32,.04);
+--shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
+--sidebar-w:270px;
 }
-body{font-family:'Inter',sans-serif;background:#20222E;color:var(--text);-webkit-font-smoothing:antialiased}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
+a{color:inherit}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-.app-shell{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;box-shadow:0 0 60px rgba(0,0,0,.35);overflow-x:hidden}
+/* ── structure générale : sidebar + contenu ─────── */
+.shell{display:flex;min-height:100vh}
 
 .overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:250;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
-.drawer{
-  position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);
-  z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);
-  transition:transform .3s cubic-bezier(.4,0,.2,1)
+
+.sidebar{
+position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);
+z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);
+transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto
 }
-.drawer.open{transform:translateX(0)}
-.drawer-top{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative}
-.drawer-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar.open{transform:translateX(0)}
+.sidebar-top{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;flex-shrink:0}
+.sidebar-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;text-decoration:none;letter-spacing:-.01em}
 .logo-text span{color:#5B7CFF}
 .plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
-.close-drawer{background:none;border:none;color:rgba(255,255,255,0.45);font-size:1.2rem;cursor:pointer;padding:4px}
+.close-sidebar{background:none;border:none;color:rgba(255,255,255,0.45);font-size:1.2rem;cursor:pointer;padding:4px}
 
-.corridor{margin:14px 20px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
+.corridor{margin:14px 20px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px;flex-shrink:0}
 .corridor-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
 .corridor-label b{color:#8EA6FF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.9rem;line-height:1}
 
-.drawer-nav{flex:1;padding:8px 0;overflow-y:auto}
+.sidebar-nav{flex:1;padding:8px 0}
 .nav-group{font-size:.6rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:14px 20px 6px}
 .nav-link{
-  display:flex;align-items:center;gap:12px;padding:9px 20px;color:rgba(255,255,255,0.5);
-  font-size:.84rem;font-weight:500;cursor:pointer;transition:all .15s;
-  border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left
+display:flex;align-items:center;gap:12px;padding:9px 20px;color:rgba(255,255,255,0.5);
+font-size:.84rem;font-weight:500;cursor:pointer;transition:all .15s;
+border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left
 }
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
 .nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
 .nav-link.active .icon{color:#8EA6FF}
+.nav-link .badge-dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0}
 
-.drawer-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
+.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;flex-shrink:0}
 .user-row{display:flex;align-items:center;gap:10px}
 .user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
-.user-email{font-size:.68rem;color:rgba(255,255,255,0.32);margin-top:1px}
+.user-email{font-size:.68rem;color:rgba(255,255,255,0.32);margin-top:1px;word-break:break-all}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.76rem;padding:11px 20px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
+
+/* ── zone de contenu ─────────────────────────────── */
+.main{flex:1;min-width:0;background:var(--bg)}
 
 .header-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 6px;position:relative;z-index:2}
 .header-logo{display:flex;align-items:center;gap:10px}
@@ -90,15 +100,16 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.9}}
 .loading-dots.hide{display:none}
 
-.kyc-quick-btn{width:56px;height:56px;border-radius:16px;background:var(--gold);display:flex;align-items:center;justify-content:center;color:var(--ink);text-decoration:none;box-shadow:0 8px 20px rgba(255,180,0,.25);flex-shrink:0}
+.kyc-quick-btn{width:56px;height:56px;border-radius:16px;background:var(--gold);display:flex;align-items:center;justify-content:center;color:var(--ink);text-decoration:none;box-shadow:0 8px 20px rgba(255,180,0,.25);flex-shrink:0;transition:transform .15s}
+.kyc-quick-btn:hover{transform:translateY(-2px)}
 .kyc-quick-btn .icon{width:24px;height:24px}
 .kyc-quick-btn.verified{background:var(--green)}
 
-.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:18px 20px 0;position:relative;z-index:1}
-.hstat-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:var(--r-md);padding:14px 12px}
-.hstat-lbl{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px}
-.hstat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.28rem;color:white;letter-spacing:-.01em}
-.hstat-unit{font-size:.66rem;color:rgba(255,255,255,.45);margin-top:2px}
+.hero-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:18px 20px 0;position:relative;z-index:1}
+.hstat-card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:var(--r-md);padding:14px 12px;min-width:0}
+.hstat-lbl{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hstat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.28rem;color:white;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hstat-unit{font-size:.66rem;color:rgba(255,255,255,.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .page{padding:22px 20px 100px}
 .section-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
@@ -114,6 +125,13 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .breakdown-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;margin-bottom:2px}
 .breakdown-lbl{font-size:.68rem;color:var(--muted)}
 
+/* soldes par devise — absent du dashboard d'origine alors que la donnée existe côté API */
+.balances-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;margin-bottom:26px;-webkit-overflow-scrolling:touch}
+.balance-chip{flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 16px;box-shadow:var(--shadow-sm);min-width:120px}
+.balance-chip .cur{font-size:.64rem;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.balance-chip .amt{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.05rem;margin-top:4px}
+.balance-empty{font-size:.8rem;color:var(--muted);padding:14px 4px}
+
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:26px}
 .quick-card{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);padding:16px;display:flex;align-items:center;gap:12px;text-decoration:none;box-shadow:var(--shadow-sm);transition:all .15s}
 .quick-card:hover{border-color:var(--blue);transform:translateY(-1px)}
@@ -126,42 +144,56 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .quick-title{font-size:.86rem;font-weight:700;line-height:1.2}
 .quick-sub{font-size:.72rem;color:var(--muted);margin-top:2px}
 
+.content-grid{display:block}
+
 .card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:26px}
 .card-head{padding:16px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
 .card-title{font-size:.88rem;font-weight:700;letter-spacing:-.01em}
 .card-action{font-size:.76rem;color:var(--blue);font-weight:600;cursor:pointer;background:none;border:none;text-decoration:none}
 .card-action:hover{text-decoration:underline}
 
-.tbl{width:100%;border-collapse:collapse;font-size:.8rem}
-.tbl th{padding:9px 12px;text-align:left;font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFBFF;border-bottom:1px solid var(--border-soft)}
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.8rem;min-width:420px}
+.tbl th{padding:9px 12px;text-align:left;font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFBFF;border-bottom:1px solid var(--border-soft);white-space:nowrap}
 .tbl td{padding:11px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.66rem;font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:.66rem;font-weight:700;white-space:nowrap}
 .b-success{background:var(--green-tint);color:#0A7A50}
 .b-pending{background:var(--gold-tint);color:#8A5B00}
 .b-failed{background:var(--danger-tint);color:#B3271A}
-.tx-amt{font-family:'Space Grotesk',sans-serif;font-weight:700}
+.tx-amt{font-family:'Space Grotesk',sans-serif;font-weight:700;white-space:nowrap}
 .empty{text-align:center;padding:36px 16px;color:var(--muted)}
 .empty-icon{font-size:2rem;margin-bottom:8px;opacity:.7}
 .empty-text{font-size:.82rem;line-height:1.6}
+.empty-text .retry-btn{margin-top:10px;display:inline-block}
 
 .plan-hero{background:linear-gradient(135deg,var(--blue) 0%,var(--blue-deep) 60%,#5B2CFF 100%);border-radius:var(--r-lg);padding:20px;color:white;position:relative;overflow:hidden;margin-bottom:26px}
 .plan-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.07)}
 .plan-badge-inline{display:inline-block;background:rgba(255,255,255,0.16);font-size:.64rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 10px;border-radius:5px;margin-bottom:10px;position:relative;z-index:1}
+.plan-hero-title{font-size:1.15rem;font-weight:800;position:relative;z-index:1}
+.plan-hero-value{font-size:1.4rem;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:1}
+.plan-hero-expiry{font-size:.76rem;color:rgba(255,255,255,.65);margin-top:6px;position:relative;z-index:1}
 .plan-progress{height:6px;background:rgba(255,255,255,0.16);border-radius:3px;margin:10px 0 6px;position:relative;z-index:1}
 .plan-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.82rem;padding:9px 16px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn-gold{background:var(--gold);color:var(--ink);text-decoration:none}
+
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.82rem;padding:9px 16px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-gold{background:var(--gold);color:var(--ink)}
 .btn-gold:hover{filter:brightness(1.05)}
+.btn-ghost-light{background:rgba(255,255,255,.14);color:white}
+.btn-ghost-light:hover{background:rgba(255,255,255,.22)}
 .btn-sm{padding:6px 12px;font-size:.75rem}
 
-.kyc-note{display:none;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r-md);margin-bottom:20px;background:var(--gold-tint);border:1px solid rgba(255,180,0,.3)}
-.kyc-note.show{display:flex}
-.kyc-note strong{display:block;font-size:.82rem;color:#8A5B00}
-.kyc-note span{font-size:.74rem;color:#8A5B00;opacity:.85}
-.kyc-note .btn{margin-left:auto;flex-shrink:0}
+.note{display:none;align-items:center;gap:10px;padding:12px 14px;border-radius:var(--r-md);margin-bottom:20px}
+.note.show{display:flex}
+.note-warn{background:var(--gold-tint);border:1px solid rgba(255,180,0,.3)}
+.note-warn strong{display:block;font-size:.82rem;color:#8A5B00}
+.note-warn span{font-size:.74rem;color:#8A5B00;opacity:.85}
+.note-danger{background:var(--danger-tint);border:1px solid rgba(255,77,77,.3)}
+.note-danger strong{display:block;font-size:.82rem;color:#B3271A}
+.note-danger span{font-size:.74rem;color:#B3271A;opacity:.9}
+.note .btn{margin-left:auto;flex-shrink:0}
 
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:120;box-shadow:0 -4px 16px rgba(15,17,32,.06)}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:120;box-shadow:0 -4px 16px rgba(15,17,32,.06)}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 12px;text-decoration:none;color:var(--muted-soft);transition:color .15s}
 .bnav-item .icon{width:20px;height:20px}
 .bnav-item span{font-size:.64rem;font-weight:600}
@@ -169,304 +201,459 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.83rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ── Desktop (≥960px) : sidebar fixe, plus de tiroir/tab-bar ─── */
+@media(min-width:960px){
+.overlay{display:none !important}
+.sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar-w);max-width:var(--sidebar-w);transform:none;flex-shrink:0}
+.close-sidebar{display:none}
+.burger-btn{display:none}
+.bottom-nav{display:none}
+.page{max-width:1180px;margin:0 auto;padding:0 40px 60px}
+.header-bar{max-width:1180px;margin:0 auto;padding:26px 40px 6px}
+.welcome-row{max-width:1180px;margin:0 auto;padding:18px 40px 4px}
+.hero-stats{max-width:1180px;margin:0 auto;grid-template-columns:repeat(4,1fr);padding:22px 40px 0}
+.quick-grid{grid-template-columns:repeat(4,1fr)}
+.content-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start}
+.content-grid .card{margin-bottom:0}
+.plan-hero{margin-bottom:0}
+.balances-row{overflow-x:visible;flex-wrap:wrap}
+}
+
+@media(min-width:1280px){
+:root{--sidebar-w:280px}
+}
+
+@media(prefers-reduced-motion:reduce){
+*{transition-duration:.001ms !important;animation-duration:.001ms !important}
+}
 </style>
 </head>
 <body>
 
 <svg width="0" height="0" style="position:absolute">
-  <defs>
-    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
-    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
-    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
-    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
-    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
-    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
-    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
-    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
-    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
-    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
-    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
-    <symbol id="ic-check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
-    <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
-    <symbol id="ic-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
-    <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
-    <symbol id="ic-invoice" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
-  </defs>
+<defs>
+<symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+<symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+<symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+<symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+<symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+<symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+<symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+<symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+<symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+<symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+<symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="ic-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+<symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="ic-invoice" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+<symbol id="ic-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+</defs>
 </svg>
 
-<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="shell">
 
-<aside class="drawer" id="drawer">
-  <div class="drawer-top">
-    <div>
-      <a href="/" class="logo-text">Flin<span>pay</span></a>
-      <div class="plan-badge-pill">🚀 Starter</div>
-    </div>
-    <button class="close-drawer" onclick="closeDrawer()">✕</button>
-  </div>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-  <div class="corridor">
-    <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-    <div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">
-      🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦
-    </div>
-  </div>
-
-  <nav class="drawer-nav">
-    <div class="nav-group">Principal</div>
-    <a class="nav-link active" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
-    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
-    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
-    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
-    <a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
-
-    <div class="nav-group">Développeur</div>
-    <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
-    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
-    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
-
-    <div class="nav-group">Compte</div>
-    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
-    <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
-    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
-    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
-  </nav>
-
-  <div class="drawer-user">
-    <div class="user-row">
-      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
-      <div>
-        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
-        <div class="user-email" id="user-email">{{ user.email }}</div>
-      </div>
-    </div>
-  </div>
-  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
-</aside>
-
-<div class="app-shell">
-
-  <div class="hero">
-    <div class="header-bar">
-      <div class="header-logo">
-        <div class="header-logo-mark">F</div>
-        <div class="header-logo-text">Flin<span>pay</span></div>
-      </div>
-      <button class="burger-btn" onclick="openDrawer()">
-        <span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span>
-      </button>
-    </div>
-
-    <div class="welcome-row">
-      <div>
-        <div class="welcome-text">Bienvenue 👋</div>
-        <div class="welcome-sub" id="welcome-sub">Voici l'activité de votre compte</div>
-        <div class="loading-dots" id="loading-dots"><span></span><span></span><span></span></div>
-      </div>
-      <a class="kyc-quick-btn" id="kyc-quick-btn" href="/kyc" title="Statut de vérification">
-        <span class="icon"><svg><use href="#ic-shield-check"/></svg></span>
-      </a>
-    </div>
-
-    <div class="hero-stats">
-      <div class="hstat-card">
-        <div class="hstat-lbl">Transactions</div>
-        <div class="hstat-val" id="ov-tx-count">0</div>
-        <div class="hstat-unit">ce mois</div>
-      </div>
-      <div class="hstat-card">
-        <div class="hstat-lbl">Volume</div>
-        <div class="hstat-val" id="ov-volume">0</div>
-        <div class="hstat-unit">XOF encaissés</div>
-      </div>
-      <div class="hstat-card">
-        <div class="hstat-lbl">Succès</div>
-        <div class="hstat-val" id="ov-success">0%</div>
-        <div class="hstat-unit">taux global</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="page">
-
-    <div class="kyc-note" id="kyc-note"></div>
-
-    <div class="section-head"><h2>Statistiques transactions</h2><div class="rule"></div></div>
-    <div class="breakdown-grid">
-      <div class="breakdown-card">
-        <div class="breakdown-icon ok"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-check"/></svg></span></div>
-        <div class="breakdown-val" id="bd-success">0</div>
-        <div class="breakdown-lbl">Réussies</div>
-      </div>
-      <div class="breakdown-card">
-        <div class="breakdown-icon pend"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-clock"/></svg></span></div>
-        <div class="breakdown-val" id="bd-pending">0</div>
-        <div class="breakdown-lbl">En attente</div>
-      </div>
-      <div class="breakdown-card">
-        <div class="breakdown-icon fail"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-x"/></svg></span></div>
-        <div class="breakdown-val" id="bd-failed">0</div>
-        <div class="breakdown-lbl">Échouées</div>
-      </div>
-    </div>
-
-    <div class="section-head"><h2>Accès rapide</h2><div class="rule"></div></div>
-    <div class="quick-grid">
-      <a class="quick-card" href="/api-keys">
-        <div class="quick-ic blue"><span class="icon"><svg><use href="#ic-key"/></svg></span></div>
-        <div><div class="quick-title">Clés API</div><div class="quick-sub">Intégration</div></div>
-      </a>
-      <a class="quick-card" href="/payment-links">
-        <div class="quick-ic gold"><span class="icon"><svg><use href="#ic-link"/></svg></span></div>
-        <div><div class="quick-title">Liens</div><div class="quick-sub">de paiement</div></div>
-      </a>
-      <a class="quick-card" href="/payouts">
-        <div class="quick-ic green"><span class="icon"><svg><use href="#ic-send"/></svg></span></div>
-        <div><div class="quick-title">Payouts</div><div class="quick-sub">Envoyer des fonds</div></div>
-      </a>
-      <a class="quick-card" href="/webhooks">
-        <div class="quick-ic ink"><span class="icon"><svg><use href="#ic-zap"/></svg></span></div>
-        <div><div class="quick-title">Webhooks</div><div class="quick-sub">Événements</div></div>
-      </a>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">Dernières transactions</div>
-        <a class="card-action" href="/transactions">Voir tout →</a>
-      </div>
-      <div id="ov-tx-list">
-        <div class="empty">
-          <div class="empty-icon">💳</div>
-          <div class="empty-text">Chargement...</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="plan-hero">
-      <div class="plan-badge-inline">🚀 Plan Starter</div>
-      <div style="font-size:1.15rem;font-weight:800;position:relative;z-index:1">Transactions utilisées</div>
-      <div style="font-size:1.4rem;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:1" id="plan-usage">0 / 300</div>
-      <div class="plan-progress"><div class="plan-fill" id="plan-bar" style="width:0%"></div></div>
-      <a href="/billing" class="btn btn-gold btn-sm" style="margin-top:12px">⬆ Passer au Pro</a>
-    </div>
-
-  </div>
-
-  <nav class="bottom-nav">
-    <a class="bnav-item active" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span><span>Accueil</span></a>
-    <a class="bnav-item" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span><span>Transactions</span></a>
-    <a class="bnav-item" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span><span>Payouts</span></a>
-    <a class="bnav-item" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span><span>Profil</span></a>
-  </nav>
-
+<aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+<div class="sidebar-top">
+<div>
+<a href="/" class="logo-text">Flin<span>pay</span></a>
+<div class="plan-badge-pill" id="plan-badge-pill">🚀 {{ 'Pro' if user.plan == 'pro' else 'Starter' }}</div>
+</div>
+<button class="close-sidebar" onclick="closeSidebar()" aria-label="Fermer le menu">✕</button>
 </div>
 
-<div id="toast"></div>
+<div class="corridor">
+<div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
+<div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">
+🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦
+</div>
+</div>
+
+<nav class="sidebar-nav">
+<div class="nav-group">Principal</div>
+<a class="nav-link active" href="/dashboard" aria-current="page"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+<a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+<a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+<a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
+<a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
+
+<div class="nav-group">Développeur</div>
+<a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+<a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+<a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
+
+<div class="nav-group">Compte</div>
+<a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+<a class="nav-link" href="/kyc" id="nav-kyc-link"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+<a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+<a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
+</nav>
+
+<div class="sidebar-user">
+<div class="user-row">
+<div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+<div>
+<div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+<div class="user-email" id="user-email">{{ user.email }}</div>
+</div>
+</div>
+</div>
+<a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
+</aside>
+
+<div class="main">
+
+<div class="hero">
+<div class="header-bar">
+<div class="header-logo">
+<div class="header-logo-mark">F</div>
+<div class="header-logo-text">Flin<span>pay</span></div>
+</div>
+<button class="burger-btn" onclick="openSidebar()" aria-label="Ouvrir le menu">
+<span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span>
+</button>
+</div>
+
+<div class="welcome-row">
+<div>
+<div class="welcome-text">Bienvenue 👋</div>
+<div class="welcome-sub" id="welcome-sub">Voici l'activité de votre compte</div>
+<div class="loading-dots" id="loading-dots"><span></span><span></span><span></span></div>
+</div>
+<a class="kyc-quick-btn" id="kyc-quick-btn" href="/kyc" title="Statut de vérification">
+<span class="icon"><svg><use href="#ic-shield-check"/></svg></span>
+</a>
+</div>
+
+<div class="hero-stats">
+<div class="hstat-card">
+<div class="hstat-lbl">Transactions</div>
+<div class="hstat-val" id="ov-tx-count">0</div>
+<div class="hstat-unit">ce mois</div>
+</div>
+<div class="hstat-card">
+<div class="hstat-lbl">Volume</div>
+<div class="hstat-val" id="ov-volume">0</div>
+<div class="hstat-unit" id="ov-volume-unit">encaissés</div>
+</div>
+<div class="hstat-card">
+<div class="hstat-lbl">Succès</div>
+<div class="hstat-val" id="ov-success">0%</div>
+<div class="hstat-unit">taux global</div>
+</div>
+<div class="hstat-card">
+<div class="hstat-lbl">Solde</div>
+<div class="hstat-val" id="ov-balance">0</div>
+<div class="hstat-unit" id="ov-balance-unit">disponible</div>
+</div>
+</div>
+</div>
+
+<div class="page">
+
+<div class="note note-danger" id="error-note">
+<span class="icon" style="color:#B3271A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+<div><strong>Connexion au serveur impossible</strong><span>Vérifiez votre connexion et réessayez.</span></div>
+<button class="btn btn-gold btn-sm" onclick="retryLoad()"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-refresh"/></svg></span> Réessayer</button>
+</div>
+
+<div class="note note-warn" id="kyc-note"></div>
+
+<div class="section-head"><h2>Soldes disponibles</h2><div class="rule"></div></div>
+<div class="balances-row" id="balances-row">
+<div class="balance-empty">Chargement des soldes…</div>
+</div>
+
+<div class="section-head"><h2>Statistiques transactions</h2><div class="rule"></div></div>
+<div class="breakdown-grid">
+<div class="breakdown-card">
+<div class="breakdown-icon ok"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-check"/></svg></span></div>
+<div class="breakdown-val" id="bd-success">0</div>
+<div class="breakdown-lbl">Réussies</div>
+</div>
+<div class="breakdown-card">
+<div class="breakdown-icon pend"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-clock"/></svg></span></div>
+<div class="breakdown-val" id="bd-pending">0</div>
+<div class="breakdown-lbl">En attente</div>
+</div>
+<div class="breakdown-card">
+<div class="breakdown-icon fail"><span class="icon" style="width:16px;height:16px"><svg><use href="#ic-x"/></svg></span></div>
+<div class="breakdown-val" id="bd-failed">0</div>
+<div class="breakdown-lbl">Échouées</div>
+</div>
+</div>
+
+<div class="section-head"><h2>Accès rapide</h2><div class="rule"></div></div>
+<div class="quick-grid">
+<a class="quick-card" href="/api-keys">
+<div class="quick-ic blue"><span class="icon"><svg><use href="#ic-key"/></svg></span></div>
+<div><div class="quick-title">Clés API</div><div class="quick-sub">Intégration</div></div>
+</a>
+<a class="quick-card" href="/payment-links">
+<div class="quick-ic gold"><span class="icon"><svg><use href="#ic-link"/></svg></span></div>
+<div><div class="quick-title">Liens</div><div class="quick-sub">de paiement</div></div>
+</a>
+<a class="quick-card" href="/payouts">
+<div class="quick-ic green"><span class="icon"><svg><use href="#ic-send"/></svg></span></div>
+<div><div class="quick-title">Payouts</div><div class="quick-sub">Envoyer des fonds</div></div>
+</a>
+<a class="quick-card" href="/webhooks">
+<div class="quick-ic ink"><span class="icon"><svg><use href="#ic-zap"/></svg></span></div>
+<div><div class="quick-title">Webhooks</div><div class="quick-sub">Événements</div></div>
+</a>
+</div>
+
+<div class="content-grid">
+<div class="card">
+<div class="card-head">
+<div class="card-title">Dernières transactions</div>
+<a class="card-action" href="/transactions">Voir tout →</a>
+</div>
+<div class="tbl-wrap" id="ov-tx-list">
+<div class="empty">
+<div class="empty-icon">💳</div>
+<div class="empty-text">Chargement...</div>
+</div>
+</div>
+</div>
+
+<div class="plan-hero">
+<div class="plan-badge-inline" id="plan-badge-inline">🚀 Plan Starter</div>
+<div class="plan-hero-title">Transactions utilisées</div>
+<div class="plan-hero-value" id="plan-usage">0 / 300</div>
+<div class="plan-progress"><div class="plan-fill" id="plan-bar" style="width:0%"></div></div>
+<div class="plan-hero-expiry" id="plan-expiry"></div>
+<a href="/billing" class="btn btn-gold btn-sm" id="plan-cta" style="margin-top:12px">⬆ Passer au Pro</a>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<nav class="bottom-nav" aria-label="Navigation rapide">
+<a class="bnav-item active" href="/dashboard" aria-current="page"><span class="icon"><svg><use href="#ic-grid"/></svg></span><span>Accueil</span></a>
+<a class="bnav-item" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span><span>Transactions</span></a>
+<a class="bnav-item" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span><span>Payouts</span></a>
+<a class="bnav-item" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span><span>Profil</span></a>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-function openDrawer(){
-  document.getElementById('drawer').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-  document.body.style.overflow='hidden';
+"use strict";
+
+function openSidebar(){
+document.getElementById('sidebar').classList.add('open');
+document.getElementById('overlay').classList.add('show');
+document.body.style.overflow='hidden';
 }
-function closeDrawer(){
-  document.getElementById('drawer').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-  document.body.style.overflow='';
+function closeSidebar(){
+document.getElementById('sidebar').classList.remove('open');
+document.getElementById('overlay').classList.remove('show');
+document.body.style.overflow='';
 }
 
 function toast(msg, ok=true){
-  const t=document.getElementById('toast');
-  t.textContent=(ok?'✅ ':'❌ ')+msg;
-  t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3000);
+const t=document.getElementById('toast');
+t.textContent=(ok?'✅ ':'❌ ')+msg;
+t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
+t.classList.add('show');
+clearTimeout(t._hideTimer);
+t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000);
 }
 
+function escapeHtml(str){
+const div=document.createElement('div');
+div.textContent=str==null?'':String(str);
+return div.innerHTML;
+}
+
+function fmtNumber(n){
+return (Number(n)||0).toLocaleString('fr-FR');
+}
+
+function fmtDate(iso){
+if(!iso) return '';
+try{
+const d=new Date(iso);
+return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}catch(e){ return ''; }
+}
+
+let lastLoadFailed=false;
+
 async function loadProfile(){
-  try{
-    const r=await fetch('/api/me');
-    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-    const data=await r.json();
-    if(!data.ok) return;
-    const user=data.user;
-    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
-    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
-    document.getElementById('user-email').textContent=user.email||'';
-    document.getElementById('welcome-sub').textContent='Bonjour '+(user.firstname||'')+', voici votre activité';
+try{
+const r=await fetch('/api/me');
+if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+if(!r.ok) throw new Error('http '+r.status);
+const data=await r.json();
+if(!data.ok) throw new Error('payload not ok');
+const user=data.user;
 
-    // Utilisation du plan — basée sur la vraie limite renvoyée par le backend
-    // (300/mois sur Starter), pas sur un plafond fixe côté frontend.
-    const limit=user.monthly_limit||300;
-    const used=user.usage_this_month||0;
-    const pct=limit>0?Math.min(100, Math.round(used/limit*100)):0;
-    document.getElementById('plan-usage').textContent=used+' / '+limit;
-    document.getElementById('plan-bar').style.width=pct+'%';
+document.getElementById('error-note').classList.remove('show');
+lastLoadFailed=false;
 
-    const kyc=user.kyc_status||'unverified';
-    const kycBtn=document.getElementById('kyc-quick-btn');
-    const note=document.getElementById('kyc-note');
-    if(kyc==='verified'){
-      kycBtn.classList.add('verified');
-      note.classList.remove('show');
-    }else if(kyc==='pending'){
-      note.innerHTML=`<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-        <div><strong>Vérification en cours</strong><span>Document en cours de revue (24-48h).</span></div>`;
-      note.classList.add('show');
-    }else{
-      note.innerHTML=`<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-        <div><strong>${kyc==='rejected' ? "Vérification refusée" : "Vérifiez votre identité"}</strong><span>${kyc==='rejected' ? "Soumettez un nouveau document." : "Requis pour générer des clés API."}</span></div>
-        <a href="/kyc" class="btn btn-gold btn-sm">Vérifier</a>`;
-      note.classList.add('show');
-    }
-  }catch(e){}
+document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
+document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
+document.getElementById('user-email').textContent=user.email||'';
+document.getElementById('welcome-sub').textContent='Bonjour '+(user.firstname||'')+', voici votre activité';
+
+const isPro=user.plan==='pro';
+document.getElementById('plan-badge-pill').textContent=isPro?'🚀 Pro':'🚀 Starter';
+document.getElementById('plan-badge-inline').textContent=isPro?'🚀 Plan Pro':'🚀 Plan Starter';
+
+const limit=user.monthly_limit||300;
+const used=user.usage_this_month||0;
+const planCta=document.getElementById('plan-cta');
+const planExpiry=document.getElementById('plan-expiry');
+if(isPro){
+document.getElementById('plan-usage').textContent=fmtNumber(used)+' transactions';
+document.getElementById('plan-bar').style.width='100%';
+planCta.style.display='none';
+planExpiry.textContent=user.plan_expires_at ? ('Renouvellement le '+fmtDate(user.plan_expires_at)) : '';
+}else{
+const pct=limit>0?Math.min(100, Math.round(used/limit*100)):0;
+document.getElementById('plan-usage').textContent=fmtNumber(used)+' / '+fmtNumber(limit);
+document.getElementById('plan-bar').style.width=pct+'%';
+planCta.style.display='inline-flex';
+planExpiry.textContent='';
+}
+
+// Soldes par devise — la donnée existait déjà côté API (/api/me -> balances)
+// mais n'était affichée nulle part sur le dashboard d'origine.
+renderBalances(user.balances||{}, user.available_balance);
+
+const kyc=user.kyc_status||'unverified';
+const kycBtn=document.getElementById('kyc-quick-btn');
+const note=document.getElementById('kyc-note');
+if(kyc==='verified'){
+kycBtn.classList.add('verified');
+note.classList.remove('show');
+}else if(kyc==='pending'){
+note.innerHTML=`<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+<div><strong>Vérification en cours</strong><span>Document en cours de revue (24-48h).</span></div>`;
+note.classList.add('show');
+}else{
+const reason=kyc==='rejected' ? (user.kyc_rejection_reason||"Document invalide ou illisible.") : "Requis pour générer des clés API.";
+note.innerHTML=`<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+<div><strong>${kyc==='rejected' ? "Vérification refusée" : "Vérifiez votre identité"}</strong><span>${escapeHtml(reason)}</span></div>
+<a href="/kyc" class="btn btn-gold btn-sm">Vérifier</a>`;
+note.classList.add('show');
+}
+}catch(e){
+lastLoadFailed=true;
+document.getElementById('error-note').classList.add('show');
+}
+}
+
+function renderBalances(balances, fallbackTotal){
+const row=document.getElementById('balances-row');
+const entries=Object.entries(balances).filter(([,v])=>v!==null && v!==undefined);
+
+if(!entries.length){
+row.innerHTML='<div class="balance-empty">Aucun solde pour le moment — il se remplira après votre premier paiement encaissé.</div>';
+document.getElementById('ov-balance').textContent=fmtNumber(fallbackTotal||0);
+document.getElementById('ov-balance-unit').textContent='disponible';
+return;
+}
+
+row.innerHTML=entries.map(([cur,val])=>`
+<div class="balance-chip">
+<div class="cur">${escapeHtml(cur)}</div>
+<div class="amt">${fmtNumber(val)}</div>
+</div>
+`).join('');
+
+// Carte "Solde" du hero : la devise avec le plus gros montant, +N autres si besoin.
+const sorted=entries.slice().sort((a,b)=>(Number(b[1])||0)-(Number(a[1])||0));
+const [topCur, topVal]=sorted[0];
+document.getElementById('ov-balance').textContent=fmtNumber(topVal);
+document.getElementById('ov-balance-unit').textContent=topCur+(sorted.length>1?` +${sorted.length-1}`:'');
 }
 
 async function loadTransactions(){
-  try{
-    const r=await fetch('/api/transactions');
-    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-    const data=await r.json();
-    const txs=data.ok?(data.transactions||[]):[];
-    updateOverviewStats(txs);
-  }catch(e){
-    updateOverviewStats([]);
-  }finally{
-    document.getElementById('loading-dots').classList.add('hide');
-  }
+try{
+const r=await fetch('/api/transactions');
+if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+if(!r.ok) throw new Error('http '+r.status);
+const data=await r.json();
+const txs=data.ok?(data.transactions||[]):[];
+updateOverviewStats(txs);
+}catch(e){
+updateOverviewStats([], true);
+}finally{
+document.getElementById('loading-dots').classList.add('hide');
 }
-function updateOverviewStats(rawTxs){
-  const txs=rawTxs.map(tx=>({
-    client:tx.client_name||'—',
-    amount:Number(tx.amount)||0,
-    status:tx.status||'pending'
-  }));
-  const paid=txs.filter(t=>t.status==='paid');
-  const pending=txs.filter(t=>t.status==='pending');
-  const failed=txs.filter(t=>t.status!=='paid'&&t.status!=='pending');
-  const vol=paid.reduce((s,t)=>s+t.amount,0);
-  const rate=txs.length?Math.round(paid.length/txs.length*100):0;
+}
 
-  document.getElementById('ov-tx-count').textContent=txs.length;
-  document.getElementById('ov-volume').textContent=vol.toLocaleString();
-  document.getElementById('ov-success').textContent=rate+'%';
-  document.getElementById('bd-success').textContent=paid.length;
-  document.getElementById('bd-pending').textContent=pending.length;
-  document.getElementById('bd-failed').textContent=failed.length;
+function updateOverviewStats(rawTxs, failed){
+const txs=rawTxs.map(tx=>({
+client:tx.client_name||'—',
+amount:Number(tx.amount)||0,
+currency:tx.currency||'XOF',
+status:tx.status||'pending',
+date:tx.created_at
+}));
 
-  const ovList=document.getElementById('ov-tx-list');
-  if(!txs.length){
-    ovList.innerHTML='<div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction.<br>Intégrez l\'API pour commencer.</div></div>';
-    return;
-  }
-  ovList.innerHTML=`<table class="tbl"><thead><tr><th>Client</th><th>Montant</th><th>Statut</th></tr></thead><tbody>
-  ${txs.slice(0,4).map(tx=>`<tr>
-    <td>${tx.client}</td>
-    <td class="tx-amt">${tx.amount.toLocaleString()} XOF</td>
-    <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">${tx.status==='paid'?'✅':tx.status==='pending'?'⏳':'❌'} ${tx.status}</span></td>
-  </tr>`).join('')}
-  </tbody></table>`;
+const paid=txs.filter(t=>t.status==='paid');
+const pending=txs.filter(t=>t.status==='pending');
+const failedTx=txs.filter(t=>t.status!=='paid'&&t.status!=='pending');
+
+// Le volume peut être réparti sur plusieurs devises (le client final paie dans
+// SA devise, pas forcément celle du marchand) — on regroupe au lieu de tout
+// additionner comme si c'était une seule monnaie, ce que faisait la version
+// précédente et qui donnait un total sans aucun sens dès qu'un marchand
+// recevait des paiements dans 2 pays différents.
+const volumeByCurrency={};
+paid.forEach(t=>{ volumeByCurrency[t.currency]=(volumeByCurrency[t.currency]||0)+t.amount; });
+const volEntries=Object.entries(volumeByCurrency).sort((a,b)=>b[1]-a[1]);
+
+const rate=txs.length?Math.round(paid.length/txs.length*100):0;
+
+document.getElementById('ov-tx-count').textContent=fmtNumber(txs.length);
+if(volEntries.length){
+const [topCur, topVal]=volEntries[0];
+document.getElementById('ov-volume').textContent=fmtNumber(topVal);
+document.getElementById('ov-volume-unit').textContent=topCur+' encaissés'+(volEntries.length>1?` (+${volEntries.length-1})`:'');
+}else{
+document.getElementById('ov-volume').textContent='0';
+document.getElementById('ov-volume-unit').textContent='encaissés';
+}
+document.getElementById('ov-success').textContent=rate+'%';
+document.getElementById('bd-success').textContent=fmtNumber(paid.length);
+document.getElementById('bd-pending').textContent=fmtNumber(pending.length);
+document.getElementById('bd-failed').textContent=fmtNumber(failedTx.length);
+
+const ovList=document.getElementById('ov-tx-list');
+if(failed){
+ovList.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Impossible de charger les transactions.<br><button class="btn btn-gold btn-sm retry-btn" onclick="retryLoad()">Réessayer</button></div></div>';
+return;
+}
+if(!txs.length){
+ovList.innerHTML='<div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction pour le moment.<br>Intégrez l\'API ou créez un lien de paiement pour commencer.</div></div>';
+return;
+}
+
+ovList.innerHTML=`<table class="tbl"><thead><tr><th>Client</th><th>Montant</th><th>Statut</th></tr></thead><tbody>
+${txs.slice(0,5).map(tx=>`<tr>
+<td>${escapeHtml(tx.client)}</td>
+<td class="tx-amt">${fmtNumber(tx.amount)} ${escapeHtml(tx.currency)}</td>
+<td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">${tx.status==='paid'?'✅':tx.status==='pending'?'⏳':'❌'} ${escapeHtml(tx.status)}</span></td>
+</tr>`).join('')}
+</tbody></table>`;
+}
+
+function retryLoad(){
+document.getElementById('error-note').classList.remove('show');
+document.getElementById('loading-dots').classList.remove('hide');
+loadProfile();
+loadTransactions();
 }
 
 loadProfile();
@@ -474,3 +661,5 @@ loadTransactions();
 </script>
 </body>
 </html>
+
+
