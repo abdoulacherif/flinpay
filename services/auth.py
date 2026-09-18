@@ -87,6 +87,7 @@ def _login_success_response(user):
         secure=config.IS_PRODUCTION,
         max_age=7 * 24 * 3600
     )
+    generate_csrf_token(resp)  # voir la section CSRF plus bas dans ce fichier
     return resp
 
 
@@ -96,10 +97,10 @@ def user_required(f):
     def decorated(*args, **kwargs):
         token = request.cookies.get('fp_user_token')
         if not token:
-            return redirect(url_for('login_page'))
+            return redirect(url_for('public.login_page'))
         payload = verify_token(token)
         if not payload or payload.get('type') != 'user':
-            return redirect(url_for('login_page'))
+            return redirect(url_for('public.login_page'))
         request.user_id = payload.get('sub')
         request.user_email = payload.get('email')
         touch_last_seen(request.user_id)
@@ -112,17 +113,17 @@ def admin_required(f):
     def decorated(*args, **kwargs):
         token = request.cookies.get('fp_user_token')
         if not token:
-            return redirect(url_for('login_page'))
+            return redirect(url_for('public.login_page'))
         payload = verify_token(token)
         if not payload or payload.get('type') != 'user':
-            return redirect(url_for('login_page'))
+            return redirect(url_for('public.login_page'))
         # Le statut admin est vérifié en base à CHAQUE requête (pas dans le
         # JWT) : ça permet de révoquer immédiatement les droits admin d'un
         # compte sans attendre l'expiration du token (7 jours).
         user = sb_get_one('users', 'id', payload.get('sub'))
         if not user or not user.get('is_admin'):
             logger.warning(f"[admin_required] tentative d'accès admin refusée pour user={payload.get('sub')}")
-            return redirect(url_for('login_page'))
+            return redirect(url_for('public.login_page'))
         request.user_id = payload.get('sub')
         request.user_email = payload.get('email')
         return f(*args, **kwargs)
@@ -134,6 +135,17 @@ def touch_last_seen(user_id):
         sb_patch('users', 'id', user_id, {'last_seen_at': datetime.utcnow().isoformat()})
     except Exception as e:
         logger.debug(f"[touch_last_seen] échec non bloquant: {e}")
+
+
+def get_current_user():
+    """Recharge l'utilisateur courant depuis la base à partir de request.user_id
+    (posé par @user_required/@admin_required). On ne fait jamais confiance aux
+    données du JWT pour autre chose que l'identité (sub/email) : le reste
+    (plan, kyc_status, is_admin...) doit toujours venir d'une lecture fraîche,
+    sinon un JWT valide émis avant une modification de compte (ex: passage en
+    plan Pro, ou révocation admin) resterait valable avec les anciennes
+    données jusqu'à expiration."""
+    return sb_get_one('users', 'id', request.user_id) or {}
 
 
 # ── Anti-bruteforce sur la connexion ─────────────────
