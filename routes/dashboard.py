@@ -22,7 +22,10 @@ from services.billing import (
     get_balance_for_currency, credit_user_balance, debit_user_balance,
     amount_with_markup, get_subscription_price, ensure_referral_code,
 )
-from services.soleaspay import soleaspay_convert, soleaspay_collect, get_service_id
+from services.restrictions import is_login_blocked
+from services.activity_log import log_user_activity
+from services import gateway
+from services import fx
 from db.supabase import sb_get_eq
 
 logger = logging.getLogger('flinpay.routes.dashboard')
@@ -115,11 +118,9 @@ def api_fx_preview():
 
     fee = round(amount * config.CONVERSION_FEE_PERCENT / 100, 2)
     amount_after_fee = round(amount - fee, 2)
-    converted = soleaspay_convert(amount_after_fee, from_currency, to_currency)
-    try:
-        converted = round(float(converted), 2)
-    except (TypeError, ValueError):
-        converted = 0
+    converted = fx.convert(amount_after_fee, from_currency, to_currency)
+    if converted is None:
+        return jsonify({'ok': False, 'error': f'Conversion {from_currency} → {to_currency} non disponible pour le moment'}), 400
     return jsonify({'ok': True, 'fee': fee, 'amount_after_fee': amount_after_fee, 'converted_amount': converted})
 
 
@@ -149,11 +150,9 @@ def api_convert_balance():
 
     fee = round(amount * config.CONVERSION_FEE_PERCENT / 100, 2)
     amount_after_fee = round(amount - fee, 2)
-    converted_amount = soleaspay_convert(amount_after_fee, from_currency, to_currency)
-    try:
-        converted_amount = round(float(converted_amount), 2)
-    except (TypeError, ValueError):
-        return jsonify({'ok': False, 'error': 'Erreur lors de la conversion. Réessayez.'}), 502
+    converted_amount = fx.convert(amount_after_fee, from_currency, to_currency)
+    if converted_amount is None:
+        return jsonify({'ok': False, 'error': f'Conversion {from_currency} → {to_currency} non disponible pour le moment'}), 400
 
     # Remarque : ces deux opérations ne sont pas atomiques entre elles (voir
     # l'avertissement en tête de services/billing.py). Dans le pire cas, un
@@ -164,6 +163,9 @@ def api_convert_balance():
     # transaction SQL).
     debit_user_balance(request.user_id, from_currency, amount)
     credit_user_balance(request.user_id, to_currency, converted_amount)
+    log_user_activity(request.user_id, 'balance_converted', {
+        'from_currency': from_currency, 'to_currency': to_currency, 'amount': amount
+    })
 
     return jsonify({
         'ok': True,
@@ -183,39 +185,56 @@ def api_convert_balance():
 @limiter.limit('10 per hour')
 def api_billing_subscribe():
     user = get_current_user()
+    if is_login_blocked(user):
+        return jsonify({'ok': False, 'error': 'Ce compte est actuellement restreint'}), 403
+    if user.get('plan') == 'pro':
+        return jsonify({'ok': False, 'error': 'Vous êtes déjà abonné au plan Pro'}), 400
+
     data = request.get_json() or {}
     phone = (data.get('phone') or user.get('phone') or '').strip()
     operator = data.get('operator', '')
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
 
-    service_id = get_service_id(user.get('country', ''), operator)
-    if not service_id:
+    service = gateway.find_service(user.get('country', ''), operator, for_operation='collect')
+    if not service:
         return jsonify({'ok': False, 'error': "Opérateur non disponible pour votre pays"}), 400
 
     price = get_subscription_price()
-    total = amount_with_markup(price)
     merchant_currency = next((c['currency'] for c in config.COUNTRIES if c['code'] == user.get('country')), 'XOF')
-    xaf_total = soleaspay_convert(total, merchant_currency, 'XAF')
+    base_price = price if merchant_currency == service['currency'] else fx.convert(price, merchant_currency, service['currency'])
+    if base_price is None:
+        return jsonify({'ok': False, 'error': f"Cet opérateur ({service['currency']}) n'est pas compatible avec votre devise ({merchant_currency}) pour le moment"}), 400
+    total = amount_with_markup(base_price)
 
-    checkout_ref = 'sub_' + uuid_lib.uuid4().hex[:16]
+    # La souscription est désormais un vrai abonnement récurrent côté
+    # passerelle (fréquence mensuelle), pas un paiement unique déguisé comme
+    # avant — voir services/gateway.subscription_create. La clé d'idempotence
+    # empêche la création de deux abonnements si la requête est rejouée.
+    idempotency_key = f"sub-{request.user_id}-{uuid_lib.uuid4().hex[:10]}"
+    try:
+        sub = gateway.subscription_create(
+            customer_email=user.get('email', ''),
+            customer_phone=phone,
+            amount=total,
+            currency=service['currency'],
+            frequency='MONTHLY',
+            description='Abonnement Flinpay Pro (mensuel)',
+            metadata={'user_id': request.user_id, 'plan': 'pro'},
+            idempotency_key=idempotency_key,
+        )
+    except gateway.GatewayError as e:
+        return jsonify({'ok': False, 'error': f"Impossible de créer l'abonnement: {e}"}), 502
 
-    collect = soleaspay_collect(
-        wallet=phone,
-        amount=xaf_total,
-        currency='XAF',
-        order_id=checkout_ref,
-        description='Abonnement Flinpay Pro (mensuel)',
-        payer=f"{user.get('firstname', '')} {user.get('lastname', '')}".strip(),
-        payer_email=user.get('email', ''),
-        success_url='https://www.flinpay.cfd/billing?upgraded=1',
-        failure_url='https://www.flinpay.cfd/billing',
-        service_id=service_id
-    )
-    if not collect['ok']:
-        return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
+    subscription_reference = sub.get('reference') or sub.get('subscription_reference')
+    if not subscription_reference:
+        return jsonify({'ok': False, 'error': "Réponse inattendue du prestataire de paiement"}), 502
 
-    sb_patch('users', 'id', request.user_id, {'pending_upgrade_checkout_id': checkout_ref})
+    sb_patch('users', 'id', request.user_id, {
+        'pending_upgrade_checkout_id': subscription_reference,
+        'pending_upgrade_currency': service['currency'],
+    })
+    log_user_activity(request.user_id, 'subscription_requested', {'reference': subscription_reference})
     return jsonify({'ok': True, 'message': 'Une confirmation de paiement a été envoyée sur votre téléphone.'})
 
 
