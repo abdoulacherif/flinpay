@@ -186,6 +186,28 @@ def sb_patch_if_pending(table, token_field, token_value, data):
         return False
 
 
+def sb_patch_if_field_equals(table, id_field, id_value, guard_field, guard_value, data):
+    """Généralisation de sb_patch_if_pending : met à jour une ligne
+    UNIQUEMENT si `guard_field` vaut encore `guard_value` au moment de
+    l'écriture, de façon atomique. Utilisé quand la condition de garde n'est
+    pas le status='pending' habituel des transactions — par exemple pour
+    confirmer un abonnement une seule fois même si deux webhooks arrivent en
+    même temps (voir routes/webhook_callback.py)."""
+    try:
+        qs = f'{id_field}=eq.{eq(id_value)}&{guard_field}=eq.{eq(guard_value)}'
+        r = requests.patch(f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}', headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT)
+        if not r.ok:
+            logger.error(f"[sb_patch_if_field_equals] {table} failed: status={r.status_code}")
+            return False
+        return bool(r.json())
+    except requests.RequestException as e:
+        logger.error(f"[sb_patch_if_field_equals] {table} error: {e}")
+        return False
+    except ValueError as e:
+        logger.error(f"[sb_patch_if_field_equals] {table} invalid JSON: {e}")
+        return False
+
+
 def sb_delete_multi(table, filters: dict):
     try:
         qs = _build_filter_qs(filters)
