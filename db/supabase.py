@@ -1,7 +1,7 @@
 """
 db/supabase.py — accès à Supabase via son API REST (PostgREST) et à son Storage.
 
-RÈGLE DE SÉCURITÉ — injection via les filtres PostgREST
+RÈGLE DE SÉCURITÉ — injections via les filtres PostgREST
 ---------------------------------------------------------
 PostgREST accepte ses filtres sous forme de chaîne de requête, par ex. :
     /users?email=eq.jean@example.com
