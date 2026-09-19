@@ -49,15 +49,22 @@ class Config:
     JWT_SECRET = _require('JWT_SECRET')
     SUPABASE_URL = _require('SUPABASE_URL')
     SUPABASE_KEY = _require('SUPABASE_KEY')
-    SOLEASPAY_API_KEY = _require('SOLEASPAY_API_KEY')
-    SOLEASPAY_CALLBACK_SECRET = _require('SOLEASPAY_CALLBACK_SECRET')
+    # ── Passerelle de paiement (ex-SoleasPay, aujourd'hui l'écosystème
+    # Mysoleas). Ce nom n'apparaît jamais côté utilisateur — voir
+    # services/gateway.py — mais reste nécessaire ici en interne.
+    GATEWAY_CLIENT_ID = _require('GATEWAY_CLIENT_ID')
+    GATEWAY_CLIENT_SECRET = _require('GATEWAY_CLIENT_SECRET')
+    # Optionnelle : uniquement utilisée pour la vérification de numéro de
+    # téléphone (/phone-numbers/verify), qui s'authentifie par clé API et non
+    # par JWT. Fonctionnalité de confort — dégradable si absente.
+    GATEWAY_MERCHANT_API_KEY = _optional('GATEWAY_MERCHANT_API_KEY')
 
     # ── Garde-fou supplémentaire : longueur minimale des secrets ──
     # Un secret JWT de 4 caractères techniquement "présent" reste catastrophique.
     for _name, _val, _min_len in [
         ('SECRET_KEY', SECRET_KEY, 32),
         ('JWT_SECRET', JWT_SECRET, 32),
-        ('SOLEASPAY_CALLBACK_SECRET', SOLEASPAY_CALLBACK_SECRET, 16),
+        ('GATEWAY_CLIENT_SECRET', GATEWAY_CLIENT_SECRET, 16),
     ]:
         if len(_val) < _min_len:
             sys.stderr.write(
@@ -79,8 +86,22 @@ class Config:
     LEEKPAY_PUBLIC_KEY = _optional('LEEKPAY_PUBLIC_KEY')
     LEEKPAY_API_BASE = 'https://leekpay.fr/api/v1'
 
-    SOLEASPAY_BASE = 'https://soleaspay.com'
-    SOLEASPAY_MIN_AMOUNT = 100  # XAF/XOF — en dessous, SoleasPay refuse la transaction
+    # ── Domaines de la passerelle (voir services/gateway.py) ────
+    GATEWAY_BASE_URL = 'https://api.mysoleas.com'
+    IDENTITY_BASE_URL = 'https://account.mysoleas.com'
+    GATEWAY_MIN_AMOUNT = 100  # plancher de sécurité ; le vrai minimum dépend du service (catalogue)
+
+    # RÈGLE FINANCIÈRE IMPORTANTE — voir services/gateway.py::compute_customer_charge.
+    # Faute de pouvoir lire la configuration réelle de feeBearer sur le
+    # dashboard Mysoleas, on part du principe (confirmé par le comportement de
+    # l'ancienne intégration) que les frais du prestataire sont déduits de ce
+    # que Flinpay reçoit. Le code se couvre donc lui-même en les ajoutant au
+    # montant demandé au client, en se basant sur le devis réel
+    # (/transactions/fees/quote) plutôt qu'un pourcentage estimé à l'aveugle.
+    # À repasser à False seulement après avoir confirmé avec Mysoleas que
+    # feeBearer=CUSTOMER est actif sur l'application (sinon double-facturation
+    # du client).
+    GATEWAY_FEES_DEDUCTED_FROM_MERCHANT = True
 
     EMAIL_ADDRESS = _optional('EMAIL_ADDRESS')
     EMAIL_APP_PASSWORD = _optional('EMAIL_APP_PASSWORD')
@@ -111,16 +132,15 @@ class Config:
         {'code': 'GA', 'name': 'Gabon', 'flag': '🇬🇦', 'currency': 'XAF'},
     ]
 
-    # Services réellement actifs chez SoleasPay par pays (vérifié via /api/services-list).
-    # format : code_pays -> { clé_opérateur: (service_id, libellé) }
-    SOLEASPAY_SERVICES = {
-        'CM': {'momo': (1, 'MTN Mobile Money'), 'om': (2, 'Orange Money')},
-        'CI': {'om': (29, 'Orange Money'), 'momo': (30, 'MTN Money'), 'moov': (31, 'Moov Money'), 'wave': (32, 'Wave')},
-        'BF': {'moov': (33, 'Moov Money'), 'om': (34, 'Orange Money')},
-        'BJ': {'momo': (35, 'MTN Money'), 'moov': (36, 'Moov Money')},
-        'TG': {'tmoney': (37, 'T-Money'), 'moov': (38, 'Moov Money')},
-        'CD': {'vodacom': (52, 'Vodacom M-Pesa'), 'airtel': (53, 'Airtel Money'), 'om': (54, 'Orange Money')},
-        'GA': {'airtel': (57, 'Airtel Money')},
+    # Correspondance code pays interne (ISO alpha-2, utilisé dans nos URLs et
+    # notre base de données) -> code ISO alpha-3 attendu par la passerelle.
+    # La liste des services actifs n'est plus codée en dur ici : elle est
+    # désormais interrogée en direct (avec cache court) via
+    # services/gateway.list_services(), car elle peut changer côté
+    # prestataire sans que nous ayons à redéployer.
+    COUNTRY_ALPHA3 = {
+        'CM': 'CMR', 'CI': 'CIV', 'BF': 'BFA', 'BJ': 'BEN',
+        'TG': 'TGO', 'CD': 'COD', 'GA': 'GAB',
     }
 
     # ── Constantes métier (plans, quotas, retraits) ─
