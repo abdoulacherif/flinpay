@@ -12,8 +12,11 @@ from config import config
 from extensions import limiter
 from db.supabase import sb_get_eq, sb_get_one, sb_post, sb_patch_multi, sb_delete_multi
 from services.auth import user_required, get_current_user, csrf_protect
+from services.restrictions import is_login_blocked, is_country_blocked, is_operator_blocked
+from services.activity_log import log_user_activity
 from services.billing import get_user_by_id, get_currency_for_country, check_quota, amount_with_markup
-from services.soleaspay import soleaspay_collect, get_service_id, soleaspay_convert
+from services import gateway
+from services import fx
 from services.invoices import generate_invoice_number, compute_invoice_amount, clean_invoice_items
 from services.tracking import get_request_client_info
 
@@ -49,8 +52,8 @@ def api_create_invoice():
         return jsonify({'ok': False, 'error': err}), 400
 
     amount = compute_invoice_amount(cleaned_items)
-    if amount < config.SOLEASPAY_MIN_AMOUNT:
-        return jsonify({'ok': False, 'error': f'Montant total minimum : {config.SOLEASPAY_MIN_AMOUNT} XOF'}), 400
+    if amount < config.GATEWAY_MIN_AMOUNT:
+        return jsonify({'ok': False, 'error': f'Montant total minimum : {config.GATEWAY_MIN_AMOUNT} XOF'}), 400
 
     token = 'inv_' + uuid_lib.uuid4().hex[:12]
     row = sb_post('invoices', {
@@ -127,7 +130,8 @@ def invoice_view(token):
     invoice = sb_get_one('invoices', 'token', token)
     merchant = get_user_by_id(invoice['user_id']) if invoice else {}
     return render_template('invoice_view.html', invoice=invoice, merchant=merchant, token=token,
-                            countries_operators=config.SOLEASPAY_SERVICES, available_countries=config.COUNTRIES)
+                            countries_operators=gateway.build_countries_operators([c['code'] for c in config.COUNTRIES]),
+                            available_countries=config.COUNTRIES)
 
 
 @invoices_bp.route('/api/invoice-pay/<token>', methods=['POST'])
@@ -151,47 +155,53 @@ def api_invoice_pay(token):
     customer_country = data.get('country', '')
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
+    if not customer_country:
+        return jsonify({'ok': False, 'error': 'Pays requis'}), 400
 
     amount = invoice['amount']
     merchant = get_user_by_id(invoice['user_id'])
-    merchant_currency = next((c['currency'] for c in config.COUNTRIES if c['code'] == merchant.get('country')), 'XOF')
+    merchant_currency = get_currency_for_country(merchant.get('country'))
 
-    service_id = get_service_id(customer_country, operator)
-    if not service_id:
+    if is_login_blocked(merchant) or is_country_blocked(merchant, customer_country) or is_operator_blocked(merchant, operator):
+        log_user_activity(invoice['user_id'], 'payment_blocked', {'country': customer_country, 'operator': operator, 'via': 'invoice'})
+        return jsonify({'ok': False, 'error': "Ce moyen de paiement est actuellement indisponible pour ce marchand"}), 403
+
+    service = gateway.find_service(customer_country, operator, for_operation='collect')
+    if not service:
         return jsonify({'ok': False, 'error': "Opérateur indisponible pour ce pays"}), 400
 
-    customer_currency = get_currency_for_country(customer_country) or merchant_currency
-    markup_amount = amount_with_markup(amount)
-    collect_amount = soleaspay_convert(markup_amount, merchant_currency, customer_currency)
-    if collect_amount < config.SOLEASPAY_MIN_AMOUNT:
-        return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {config.SOLEASPAY_MIN_AMOUNT} {customer_currency})"}), 400
+    base_price = amount if merchant_currency == service['currency'] else fx.convert(amount, merchant_currency, service['currency'])
+    if base_price is None:
+        return jsonify({'ok': False, 'error': f"Ce moyen de paiement ({service['currency']}) n'est pas encore compatible avec cette facture ({merchant_currency})"}), 400
+    base_amount = amount_with_markup(base_price)
+
+    result = gateway.collect_payment(
+        base_amount=base_amount, currency=service['currency'], service=service,
+        customer_wallet=phone, description=f"Facture {invoice['invoice_number']}",
+        invoice_reference=invoice['invoice_number'],
+    )
+    if not result['ok']:
+        return jsonify({'ok': False, 'error': result['error']}), 502
 
     tx_token = 'fp_tx_' + uuid_lib.uuid4().hex[:20]
     customer_name = invoice.get('client_name') or 'Client'
 
-    collect = soleaspay_collect(
-        wallet=phone, amount=collect_amount, currency=customer_currency, order_id=tx_token,
-        description=f"Facture {invoice['invoice_number']}", payer=customer_name,
-        payer_email=invoice.get('client_email') or '',
-        success_url=f'https://www.flinpay.cfd/invoice/{token}', failure_url=f'https://www.flinpay.cfd/invoice/{token}',
-        service_id=service_id
-    )
-    if not collect['ok']:
-        return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
-
-    credited_amount = amount if customer_currency == merchant_currency else soleaspay_convert(amount, merchant_currency, customer_currency)
-
     tx = sb_post('transactions', {
-        'token': tx_token, 'order_id': invoice['invoice_number'], 'amount': credited_amount,
-        'client_amount': collect_amount, 'fee_amount': round(collect_amount - credited_amount, 2),
+        'token': tx_token, 'order_id': invoice['invoice_number'], 'amount': base_price,
+        'client_amount': result['customer_charge'], 'fee_amount': round(result['customer_charge'] - base_price, 2),
         'client_name': customer_name, 'client_phone': phone, 'country': merchant.get('country', ''),
-        'currency': customer_currency, 'status': 'pending', 'environment': 'production',
+        'currency': service['currency'], 'status': 'pending', 'environment': 'production',
         'user_id': invoice['user_id'], 'operator': operator,
-        'gateway_reference': collect['data'].get('reference'), 'invoice_token': token,
+        'gateway_reference': result['transaction_reference'], 'invoice_token': token,
         **get_request_client_info(),
         'created_at': datetime.utcnow().isoformat()
     })
     if not tx or (isinstance(tx, dict) and tx.get('_error')):
         return jsonify({'ok': False, 'error': 'Erreur lors de la création du paiement'}), 500
 
-    return jsonify({'ok': True, 'tx_token': tx_token, 'message': 'Une confirmation de paiement a été envoyée sur le téléphone du client.'})
+    log_user_activity(invoice['user_id'], 'payment_created', {'token': tx_token, 'amount': base_price, 'via': 'invoice'})
+    return jsonify({
+        'ok': True, 'tx_token': tx_token,
+        'confirmation_helper': result.get('confirmation_helper'),
+        'message': 'Une confirmation de paiement a été envoyée sur le téléphone du client.'
+    })
