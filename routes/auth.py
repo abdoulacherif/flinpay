@@ -25,6 +25,8 @@ from services.auth import (
     is_locked_out, register_failed_login, reset_failed_login,
     user_required, get_current_user, csrf_protect,
 )
+from services.restrictions import is_login_blocked, login_block_message
+from services.activity_log import log_user_activity
 from services.billing import get_user_by_id, get_balances, get_monthly_transaction_count
 from services.email import send_verification_email
 
@@ -55,10 +57,15 @@ def api_login():
 
     if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
         register_failed_login(user)
+        log_user_activity(user['id'], 'login_failed', {'reason': 'wrong_password'})
         return jsonify({'ok': False, 'error': 'Identifiants incorrects'}), 401
 
     if not user.get('is_active', True):
         return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
+
+    if is_login_blocked(user):
+        log_user_activity(user['id'], 'login_blocked', {'level': user.get('restriction_level')})
+        return jsonify({'ok': False, 'error': login_block_message(user)}), 403
 
     if not user.get('email_verified', False):
         return jsonify({
@@ -73,6 +80,7 @@ def api_login():
         pending_token = generate_pending_2fa_token(user['id'])
         return jsonify({'ok': True, 'requires_2fa': True, 'pending_token': pending_token})
 
+    log_user_activity(user['id'], 'login_success', {})
     return _login_success_response(user)
 
 
@@ -96,15 +104,21 @@ def api_login_2fa():
     if not user.get('is_active', True):
         return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
 
+    if is_login_blocked(user):
+        log_user_activity(user['id'], 'login_blocked', {'level': user.get('restriction_level'), 'stage': '2fa'})
+        return jsonify({'ok': False, 'error': login_block_message(user)}), 403
+
     if is_locked_out(user):
         return jsonify({'ok': False, 'error': f'Trop de tentatives échouées. Réessayez dans {config.LOGIN_LOCKOUT_MINUTES} minutes.'}), 429
 
     totp = pyotp.TOTP((user.get('totp_secret') or '').strip())
     if not totp.verify(code.replace(' ', ''), valid_window=2):
         register_failed_login(user)
+        log_user_activity(user['id'], 'login_failed', {'reason': 'wrong_totp'})
         return jsonify({'ok': False, 'error': 'Code invalide'}), 401
 
     reset_failed_login(user['id'])
+    log_user_activity(user['id'], 'login_success', {'via': '2fa'})
     return _login_success_response(user)
 
 
