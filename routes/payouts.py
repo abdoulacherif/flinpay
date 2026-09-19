@@ -12,6 +12,8 @@ from config import config
 from extensions import limiter
 from db.supabase import sb_get_eq, sb_post, sb_delete_multi
 from services.auth import user_required, get_current_user, csrf_protect
+from services.restrictions import is_withdrawal_blocked, withdrawal_block_message
+from services.activity_log import log_user_activity
 from services.billing import (
     get_currency_for_country, get_balances, get_balance_for_currency,
     credit_user_balance, debit_user_balance,
@@ -43,6 +45,9 @@ def api_request_payout():
     user = get_current_user()
     if user.get('kyc_status') != 'verified':
         return jsonify({'ok': False, 'error': 'Vérifiez votre identité avant de demander un retrait'}), 403
+    if is_withdrawal_blocked(user):
+        log_user_activity(request.user_id, 'payout_blocked', {})
+        return jsonify({'ok': False, 'error': withdrawal_block_message(user)}), 403
 
     data = request.get_json() or {}
     try:
@@ -58,7 +63,7 @@ def api_request_payout():
     # Le pays choisi pour le retrait détermine la devise dans laquelle le
     # mobile money sera crédité. On ne retire que depuis la poche de solde
     # correspondante, pour ne jamais subir de conversion imposée par
-    # SoleasPay au moment du retrait.
+    # le prestataire de paiement au moment du retrait.
     withdraw_country = (data.get('country') or user.get('country') or '').strip()
     if withdraw_country not in {c['code'] for c in config.COUNTRIES}:
         return jsonify({'ok': False, 'error': 'Pays invalide'}), 400
@@ -76,7 +81,7 @@ def api_request_payout():
                 'error': (f"Solde insuffisant en {withdraw_currency} "
                           f"(disponible : {available_in_currency:,.0f} {withdraw_currency}). "
                           f"Vous avez {other_desc} sur une autre devise — convertissez-le "
-                          f"via l'E-Change de SoleasPay avant de retirer en {withdraw_currency}.")
+                          f"via la conversion interne avant de retirer en {withdraw_currency}.")
             }), 400
         return jsonify({'ok': False, 'error': f'Solde insuffisant (disponible : {available_in_currency:,.0f} {withdraw_currency})'}), 400
 
@@ -94,6 +99,9 @@ def api_request_payout():
         return jsonify({'ok': False, 'error': 'Erreur lors de la demande de retrait'}), 500
 
     debit_user_balance(request.user_id, withdraw_currency, amount)
+    log_user_activity(request.user_id, 'payout_requested', {
+        'amount': amount, 'currency': withdraw_currency, 'phone_last4': phone[-4:] if len(phone) >= 4 else phone
+    })
     return jsonify({'ok': True, 'payout': row[0] if isinstance(row, list) else row})
 
 
