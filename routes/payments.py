@@ -2,18 +2,27 @@
 routes/payments.py — cœur du système de paiement : API directe (clé API),
 liens de paiement publics, suivi de statut.
 
-Deux familles de routes bien distinctes ici, avec des modèles d'auth différents :
+Réécrit pour le nouveau flux de la passerelle de paiement : chaque
+encaissement se fait en intent -> execute (voir services/gateway.collect_payment),
+puis le statut est interrogé par polling (jamais fait confiance à un webhook
+seul, voir services/gateway.py et routes/webhook_callback.py).
+
+Avant toute création de paiement, on vérifie aussi les restrictions
+anti-fraude du marchand (services/restrictions.py) : pays ou opérateur
+bloqués spécifiquement pour ce compte. Un compte no_login/banned ne peut de
+toute façon plus se connecter (@user_required s'en charge) ni utiliser de
+clé API (vérifié ici pour /api/pay, qui ne passe pas par une session).
+
+Deux familles de routes, avec des modèles d'auth différents :
   - Routes marchand (cookie de session) : gestion des liens de paiement,
-    export CSV, synchro manuelle — protégées par @user_required (+ @csrf_protect
-    pour celles qui modifient des données).
+    export CSV, synchro manuelle — protégées par @user_required (+ @csrf_protect).
   - Routes publiques (aucune session) : /pay/<token>, /api/pay-link/<token>,
-    /api/pay-status/<token> — ce sont les pages que le CLIENT du marchand
-    utilise pour payer, jamais authentifiées par cookie.
-  - Route API pure (clé API Bearer) : /api/pay — utilisée par les serveurs des
-    marchands eux-mêmes, pas de cookie, pas de session, donc pas de CSRF à
-    prévoir (CSRF n'a de sens que pour une auth ambiante comme un cookie).
+    /api/pay-status/<token> — utilisées par le CLIENT du marchand pour payer.
+  - Route API pure (clé API Bearer) : /api/pay — utilisée par les serveurs
+    des marchands eux-mêmes ; pas de cookie, donc pas de CSRF à prévoir.
 """
 import csv
+import hashlib
 import io
 import logging
 import uuid as uuid_lib
@@ -32,7 +41,10 @@ from services.billing import (
     get_user_by_id, get_currency_for_country, check_quota,
     link_amount_with_markup, api_amount_with_markup,
 )
-from services.soleaspay import soleaspay_collect, soleaspay_verify, soleaspay_convert, get_service_id
+from services.restrictions import is_login_blocked, is_country_blocked, is_operator_blocked
+from services.activity_log import log_user_activity
+from services import gateway
+from services import fx
 from services.transactions import settle_transaction
 from services.tracking import get_request_client_info
 
@@ -41,11 +53,52 @@ logger = logging.getLogger('flinpay.routes.payments')
 payments_bp = Blueprint('payments', __name__)
 
 
+def _localize_merchant_price(price, merchant_currency, service_currency):
+    """Convertit le prix du marchand vers la devise du service choisi par le
+    client. Retourne None si la paire de devises n'est pas convertible (voir
+    services/fx.py) — l'appelant doit alors refuser proprement plutôt que de
+    deviner un taux."""
+    if merchant_currency == service_currency:
+        return price
+    return fx.convert(price, merchant_currency, service_currency)
+
+
+def _build_countries_operators():
+    """Construit, pour chaque pays couvert, la liste des services de paiement
+    actifs — remplace l'ancien dict figé codé en dur. Passé aux templates
+    publics (pay.html, invoice_view.html) pour peupler le choix d'opérateur.
+    Dégradé en liste vide par pays si le catalogue est momentanément
+    injoignable, plutôt que de faire échouer toute la page."""
+    result = {}
+    for c in config.COUNTRIES:
+        try:
+            result[c['code']] = gateway.list_services(c['code'])
+        except gateway.GatewayError as e:
+            logger.warning(f"[payments] catalogue indisponible pour {c['code']}: {e}")
+            result[c['code']] = []
+    return result
+
+
+def _check_merchant_restrictions(merchant: dict, country_code: str, operator_code: str):
+    """Retourne un message d'erreur si ce marchand n'est pas autorisé à
+    encaisser sur ce corridor pays/opérateur précis (restriction anti-fraude
+    ciblée, voir services/restrictions.py), sinon None. Le blocage
+    no_login/banned global est déjà couvert ailleurs (@user_required pour les
+    routes en session, vérifié explicitement ici pour /api/pay qui utilise
+    une clé API et ne passe pas par cette dépendance)."""
+    if is_login_blocked(merchant):
+        return "Ce compte marchand est actuellement restreint."
+    if is_country_blocked(merchant, country_code):
+        return "Ce corridor pays est actuellement indisponible pour ce compte."
+    if is_operator_blocked(merchant, operator_code):
+        return "Cet opérateur est actuellement indisponible pour ce compte."
+    return None
+
+
 # ── API directe (authentification par clé API) ──────
 @payments_bp.route('/api/pay', methods=['POST'])
 @limiter.limit('60 per minute')
 def api_pay():
-    import hashlib
     auth = request.headers.get('Authorization', '')
     if not auth.startswith('Bearer '):
         return jsonify({'ok': False, 'error': 'Clé API requise'}), 401
@@ -58,6 +111,10 @@ def api_pay():
     user_id = key_row['user_id']
     environment = key_row.get('environment', 'live')
     sb_patch('api_keys', 'id', key_row['id'], {'last_used_at': datetime.utcnow().isoformat()})
+
+    merchant = get_user_by_id(user_id)
+    if not merchant:
+        return jsonify({'ok': False, 'error': 'Compte marchand introuvable'}), 401
 
     data = request.get_json()
     if not data:
@@ -85,6 +142,12 @@ def api_pay():
     merchant_currency = next((c['currency'] for c in config.COUNTRIES if c['code'] == country_code), 'XOF')
     operator = data.get('operator', '')
 
+    if env_label == 'production':
+        restriction_error = _check_merchant_restrictions(merchant, country_code, operator)
+        if restriction_error:
+            log_user_activity(user_id, 'payment_blocked', {'country': country_code, 'operator': operator, 'via': 'api'})
+            return jsonify({'ok': False, 'error': restriction_error}), 403
+
     client_info = get_request_client_info()
     tx_payload = {
         'token': token,
@@ -98,8 +161,6 @@ def api_pay():
         'environment': env_label,
         'user_id': user_id,
         'operator': operator,
-        # Si le marchand transmet les infos de SON client (navigateur/IP côté
-        # client), on les garde ; sinon on capture ce qu'on voit nous-mêmes.
         'user_agent': (str(data.get('customer_user_agent') or client_info['user_agent']))[:500],
         'ip_address': (str(data.get('customer_ip') or client_info['ip_address']))[:100],
         'referer_url': (str(data.get('customer_referrer') or client_info['referer_url']))[:500],
@@ -107,33 +168,37 @@ def api_pay():
     }
 
     if env_label == 'production':
-        service_id = get_service_id(country_code, operator)
-        if not service_id:
+        service = gateway.find_service(country_code, operator, for_operation='collect')
+        if not service:
             return jsonify({'ok': False, 'error': f"Opérateur '{operator}' non disponible pour le pays '{country_code}'"}), 400
-        collect_amount = api_amount_with_markup(amount, operator)
-        if collect_amount < config.SOLEASPAY_MIN_AMOUNT:
-            return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {config.SOLEASPAY_MIN_AMOUNT} {merchant_currency})"}), 400
-        collect = soleaspay_collect(
-            wallet=data['phone'], amount=collect_amount, currency=merchant_currency,
-            order_id=token, description=f"Commande {data['order_id']}",
-            payer=data['client_name'], payer_email=data.get('email', ''),
-            success_url=f'https://www.flinpay.cfd/pay-status/{token}',
-            failure_url=f'https://www.flinpay.cfd/pay-status/{token}',
-            service_id=service_id
+
+        base_price = _localize_merchant_price(amount, merchant_currency, service['currency'])
+        if base_price is None:
+            return jsonify({'ok': False, 'error': f"Devise {service['currency']} non compatible avec {merchant_currency} pour le moment"}), 400
+        base_amount = api_amount_with_markup(base_price, operator)
+
+        result = gateway.collect_payment(
+            base_amount=base_amount, currency=service['currency'], service=service,
+            customer_wallet=data['phone'], description=f"Commande {data['order_id']}",
+            invoice_reference=data['order_id'],
         )
-        if not collect['ok']:
-            return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
-        tx_payload['gateway_reference'] = collect['data'].get('reference')
-        tx_payload['client_amount'] = collect_amount
-        tx_payload['fee_amount'] = round(collect_amount - amount, 2)
+        if not result['ok']:
+            return jsonify({'ok': False, 'error': result['error']}), 502
+
+        tx_payload['currency'] = service['currency']
+        tx_payload['gateway_reference'] = result['transaction_reference']
+        tx_payload['client_amount'] = result['customer_charge']
+        tx_payload['amount'] = base_price  # le marchand reçoit son prix plein, jamais la marge Flinpay
+        tx_payload['fee_amount'] = round(result['customer_charge'] - base_price, 2)
 
     tx = sb_post('transactions', tx_payload)
     if not tx or (isinstance(tx, dict) and tx.get('_error')):
         logger.error(f"[api_pay] échec création transaction pour user={user_id}")
         return jsonify({'ok': False, 'error': 'Erreur lors de la création de la transaction'}), 500
 
+    log_user_activity(user_id, 'payment_created', {'token': token, 'amount': tx_payload['amount'], 'via': 'api'})
     return jsonify({
-        'ok': True, 'token': token, 'order_id': data['order_id'], 'amount': amount, 'status': 'pending',
+        'ok': True, 'token': token, 'order_id': data['order_id'], 'amount': tx_payload['amount'], 'status': 'pending',
         'message': 'Une notification a été envoyée sur le téléphone du client pour confirmer le paiement.'
     })
 
@@ -168,8 +233,24 @@ def api_export_transactions():
     for tx in txs:
         writer.writerow([tx.get('token', ''), tx.get('client_name', ''), tx.get('amount', ''),
                           tx.get('status', ''), tx.get('country', ''), tx.get('created_at', '')])
+    log_user_activity(request.user_id, 'transactions_exported', {'count': len(txs)})
     return Response(output.getvalue(), mimetype='text/csv',
                      headers={'Content-Disposition': 'attachment; filename=transactions_flinpay.csv'})
+
+
+def _resolve_transaction_status(tx):
+    """Interroge le statut réel auprès de la passerelle et retourne le
+    nouveau statut interne. N'applique PAS les effets de bord ici — voir
+    l'appelant, qui doit d'abord gagner la transition atomique via
+    sb_patch_if_pending avant d'appeler settle_transaction()."""
+    if not tx.get('gateway_reference'):
+        return tx['status']
+    try:
+        status_data = gateway.collection_status(tx['gateway_reference'])
+    except gateway.GatewayError as e:
+        logger.info(f"[payments] statut indisponible pour {tx['token']}: {e}")
+        return tx['status']
+    return gateway.map_remote_status(status_data.get('status'))
 
 
 @payments_bp.route('/api/transactions/<token>/sync', methods=['POST'])
@@ -182,19 +263,14 @@ def api_sync_transaction(token):
     if not tx.get('gateway_reference'):
         return jsonify({'ok': False, 'error': "Pas de paiement associé à cette transaction"}), 400
 
-    check = soleaspay_verify(tx['token'], tx['gateway_reference'])
-    if not check['ok']:
-        return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {check['detail']}"}), 502
-
-    status_map = {'SUCCESS': 'paid', 'REFUND': 'failed'}
-    new_status = status_map.get(check.get('status'), tx['status'])
+    new_status = _resolve_transaction_status(tx)
     if new_status != tx['status']:
         update = {'status': new_status}
         if new_status == 'paid':
             update['paid_at'] = datetime.utcnow().isoformat()
         # Transition atomique : seule la requête qui fait réellement basculer
         # le statut depuis 'pending' applique les effets de bord — empêche le
-        # double crédit si le webhook SoleasPay arrive en même temps.
+        # double crédit si le webhook de la passerelle arrive en même temps.
         if sb_patch_if_pending('transactions', 'token', token, update):
             settle_transaction(tx, new_status)
 
@@ -234,8 +310,8 @@ def api_create_payment_link():
             amount = float(data.get('amount'))
         except (TypeError, ValueError):
             return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
-        if amount < config.SOLEASPAY_MIN_AMOUNT:
-            return jsonify({'ok': False, 'error': f'Montant minimum : {config.SOLEASPAY_MIN_AMOUNT} XOF'}), 400
+        if amount < config.GATEWAY_MIN_AMOUNT:
+            return jsonify({'ok': False, 'error': f'Montant minimum : {config.GATEWAY_MIN_AMOUNT} XOF'}), 400
     else:
         raw_min = data.get('min_amount')
         if raw_min:
@@ -243,8 +319,8 @@ def api_create_payment_link():
                 min_amount = float(raw_min)
             except (TypeError, ValueError):
                 return jsonify({'ok': False, 'error': 'Montant minimum invalide'}), 400
-            if min_amount < config.SOLEASPAY_MIN_AMOUNT:
-                return jsonify({'ok': False, 'error': f'Montant minimum : {config.SOLEASPAY_MIN_AMOUNT} XOF'}), 400
+            if min_amount < config.GATEWAY_MIN_AMOUNT:
+                return jsonify({'ok': False, 'error': f'Montant minimum : {config.GATEWAY_MIN_AMOUNT} XOF'}), 400
 
     image_path = None
     file = request.files.get('image')
@@ -275,6 +351,7 @@ def api_create_payment_link():
     link = sb_post('payment_links', payload)
     if not link or (isinstance(link, dict) and link.get('_error')):
         return jsonify({'ok': False, 'error': 'Erreur lors de la création du lien'}), 500
+    log_user_activity(request.user_id, 'payment_link_created', {'token': token, 'name': name})
     return jsonify({'ok': True, 'link': link[0] if isinstance(link, list) else link})
 
 
@@ -308,8 +385,8 @@ def api_update_payment_link(token):
                     amt = float(data.get('amount'))
                 except (TypeError, ValueError):
                     return jsonify({'ok': False, 'error': 'Montant invalide'}), 400
-                if amt < config.SOLEASPAY_MIN_AMOUNT:
-                    return jsonify({'ok': False, 'error': f'Montant minimum : {config.SOLEASPAY_MIN_AMOUNT} XOF'}), 400
+                if amt < config.GATEWAY_MIN_AMOUNT:
+                    return jsonify({'ok': False, 'error': f'Montant minimum : {config.GATEWAY_MIN_AMOUNT} XOF'}), 400
                 allowed['amount'] = amt
             allowed['min_amount'] = None
         else:
@@ -319,8 +396,8 @@ def api_update_payment_link(token):
                     min_amt = float(raw_min)
                 except (TypeError, ValueError):
                     return jsonify({'ok': False, 'error': 'Montant minimum invalide'}), 400
-                if min_amt < config.SOLEASPAY_MIN_AMOUNT:
-                    return jsonify({'ok': False, 'error': f'Montant minimum : {config.SOLEASPAY_MIN_AMOUNT} XOF'}), 400
+                if min_amt < config.GATEWAY_MIN_AMOUNT:
+                    return jsonify({'ok': False, 'error': f'Montant minimum : {config.GATEWAY_MIN_AMOUNT} XOF'}), 400
                 allowed['min_amount'] = min_amt
             else:
                 allowed['min_amount'] = None
@@ -370,8 +447,13 @@ def pay_page(token):
     if link and valid:
         sb_patch_multi('payment_links', {'token': token}, {'views': (link.get('views') or 0) + 1})
     image_url = sb_storage_public_url('payment-link-images', link['image_path']) if (link and link.get('image_path')) else None
+    # NOTE : la forme de countries_operators a changé (liste d'objets service
+    # du catalogue en direct, avec 'code'/'currency'/'is_need_otp'/...) au lieu
+    # de l'ancien dict figé {operateur: (id, libellé)}. Le template pay.html
+    # peut nécessiter une petite adaptation JS pour lire cette nouvelle forme.
     return render_template('pay.html', link=link, valid=valid, reason=reason, token=token, image_url=image_url,
-                            countries_operators=config.SOLEASPAY_SERVICES, available_countries=config.COUNTRIES)
+                            countries_operators=_build_countries_operators(), available_countries=config.COUNTRIES)
+
 
 @payments_bp.route('/api/pay-link/<token>', methods=['POST'])
 @limiter.limit('30 per minute')
@@ -395,6 +477,8 @@ def api_pay_link(token):
     customer_country = data.get('country', '')
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
+    if not customer_country:
+        return jsonify({'ok': False, 'error': 'Pays requis'}), 400
 
     if link.get('amount_type') == 'flexible':
         try:
@@ -408,41 +492,41 @@ def api_pay_link(token):
     else:
         amount = link['amount']
 
-    tx_token = 'fp_tx_' + uuid_lib.uuid4().hex[:20]
     customer_name = (data.get('name') or '').strip()[:120] or 'Client'
-
     merchant = get_user_by_id(link['user_id'])
-    merchant_currency = next((c['currency'] for c in config.COUNTRIES if c['code'] == merchant.get('country')), 'XOF')
+    merchant_currency = get_currency_for_country(merchant.get('country'))
 
-    service_id = get_service_id(customer_country, operator)
-    if not service_id:
+    restriction_error = _check_merchant_restrictions(merchant, customer_country, operator)
+    if restriction_error:
+        log_user_activity(link['user_id'], 'payment_blocked', {'country': customer_country, 'operator': operator, 'via': 'link'})
+        return jsonify({'ok': False, 'error': restriction_error}), 403
+
+    service = gateway.find_service(customer_country, operator, for_operation='collect')
+    if not service:
         return jsonify({'ok': False, 'error': "Opérateur indisponible pour ce pays"}), 400
 
-    customer_currency = get_currency_for_country(customer_country) or merchant_currency
-    markup_amount = link_amount_with_markup(amount, operator)
-    collect_amount = soleaspay_convert(markup_amount, merchant_currency, customer_currency)
-    if collect_amount < config.SOLEASPAY_MIN_AMOUNT:
-        return jsonify({'ok': False, 'error': f"Montant trop faible (minimum {config.SOLEASPAY_MIN_AMOUNT} {customer_currency})"}), 400
+    base_price = _localize_merchant_price(amount, merchant_currency, service['currency'])
+    if base_price is None:
+        return jsonify({'ok': False, 'error': f"Ce moyen de paiement ({service['currency']}) n'est pas encore compatible avec ce lien ({merchant_currency})"}), 400
+    base_amount = link_amount_with_markup(base_price, operator)
 
-    collect = soleaspay_collect(
-        wallet=phone, amount=collect_amount, currency=customer_currency, order_id=tx_token,
-        description=link.get('description') or link['name'], payer=customer_name, payer_email='',
-        success_url=f'https://www.flinpay.cfd/pay/{token}/merci', failure_url=f'https://www.flinpay.cfd/pay/{token}',
-        service_id=service_id
+    result = gateway.collect_payment(
+        base_amount=base_amount, currency=service['currency'], service=service,
+        customer_wallet=phone, description=link.get('description') or link['name'],
+        invoice_reference='link_' + uuid_lib.uuid4().hex[:10],
     )
-    if not collect['ok']:
-        return jsonify({'ok': False, 'error': f"Erreur SoleasPay: {collect['detail']}"}), 502
+    if not result['ok']:
+        return jsonify({'ok': False, 'error': result['error']}), 502
 
-    credited_amount = amount if customer_currency == merchant_currency else soleaspay_convert(amount, merchant_currency, customer_currency)
-
+    tx_token = 'fp_tx_' + uuid_lib.uuid4().hex[:20]
     tx = sb_post('transactions', {
         'token': tx_token, 'order_id': 'link_' + uuid_lib.uuid4().hex[:10],
-        'amount': credited_amount, 'client_amount': collect_amount,
-        'fee_amount': round(collect_amount - credited_amount, 2),
+        'amount': base_price, 'client_amount': result['customer_charge'],
+        'fee_amount': round(result['customer_charge'] - base_price, 2),
         'client_name': customer_name, 'client_phone': phone,
-        'country': merchant.get('country', ''), 'currency': customer_currency,
+        'country': merchant.get('country', ''), 'currency': service['currency'],
         'status': 'pending', 'environment': 'production', 'user_id': link['user_id'],
-        'operator': operator, 'gateway_reference': collect['data'].get('reference'),
+        'operator': operator, 'gateway_reference': result['transaction_reference'],
         'payment_link_token': token,
         **get_request_client_info(),
         'created_at': datetime.utcnow().isoformat()
@@ -450,7 +534,13 @@ def api_pay_link(token):
     if not tx or (isinstance(tx, dict) and tx.get('_error')):
         return jsonify({'ok': False, 'error': 'Erreur lors de la création du paiement'}), 500
 
-    return jsonify({'ok': True, 'tx_token': tx_token, 'message': 'Une confirmation de paiement a été envoyée sur le téléphone du client.'})
+    log_user_activity(link['user_id'], 'payment_created', {'token': tx_token, 'amount': base_price, 'via': 'link'})
+    return jsonify({
+        'ok': True, 'tx_token': tx_token,
+        'confirmation_helper': result.get('confirmation_helper'),
+        'confirmation_url': result.get('confirmation_url'),
+        'message': 'Une confirmation de paiement a été envoyée sur le téléphone du client.'
+    })
 
 
 @payments_bp.route('/api/pay-status/<tx_token>')
@@ -461,23 +551,18 @@ def api_pay_status(tx_token):
         return jsonify({'ok': False, 'error': 'Introuvable'}), 404
 
     if tx['status'] == 'pending' and tx.get('gateway_reference'):
-        check = soleaspay_verify(tx['token'], tx['gateway_reference'])
-        if check['ok']:
-            status_map = {'SUCCESS': 'paid', 'REFUND': 'failed'}
-            new_status = status_map.get(check.get('status'), tx['status'])
-            if new_status != tx['status']:
-                update = {'status': new_status}
-                if new_status == 'paid':
-                    update['paid_at'] = datetime.utcnow().isoformat()
-                if sb_patch_if_pending('transactions', 'token', tx_token, update):
-                    tx['status'] = new_status
-                    settle_transaction(tx, new_status)
-                else:
-                    # Un autre process (webhook) a déjà traité cette transition
-                    # entre-temps : on relit son état final.
-                    refreshed = sb_get_one('transactions', 'token', tx_token)
-                    if refreshed:
-                        tx = refreshed
+        new_status = _resolve_transaction_status(tx)
+        if new_status != tx['status']:
+            update = {'status': new_status}
+            if new_status == 'paid':
+                update['paid_at'] = datetime.utcnow().isoformat()
+            if sb_patch_if_pending('transactions', 'token', tx_token, update):
+                tx['status'] = new_status
+                settle_transaction(tx, new_status)
+            else:
+                refreshed = sb_get_one('transactions', 'token', tx_token)
+                if refreshed:
+                    tx = refreshed
 
     link = sb_get_one('payment_links', 'token', tx['payment_link_token']) if tx.get('payment_link_token') else None
     return jsonify({
