@@ -239,6 +239,24 @@ def find_service(country_code_alpha2: str, operator_key: str, for_operation: str
     return None
 
 
+def build_countries_operators(country_codes_alpha2):
+    """Construit, pour chaque pays donné (codes alpha-2 internes Flinpay), la
+    liste des services de paiement actifs — remplace l'ancien dict figé
+    autrefois codé en dur. Utilisé par les templates publics (pay.html,
+    invoice_view.html) pour peupler le choix d'opérateur. Dégradé en liste
+    vide par pays si le catalogue est momentanément injoignable, plutôt que
+    de faire échouer toute la page. Centralisé ici (plutôt que dupliqué dans
+    chaque blueprint) pour éviter tout import circulaire entre routes/."""
+    result = {}
+    for code in country_codes_alpha2:
+        try:
+            result[code] = list_services(code)
+        except GatewayError as e:
+            logger.warning(f"[gateway] catalogue indisponible pour {code}: {e}")
+            result[code] = []
+    return result
+
+
 def get_fee_quote(service_id: int, amount: float, currency: str):
     """Interroge le montant réel des frais prestataire pour ce service et ce
     montant, AVANT de lancer la transaction — c'est ce qui nous permet de
@@ -419,5 +437,4 @@ def verify_phone_number(wallet: str, country_code_alpha2: str):
         data = r.json()
         return data if data.get('valid') else None
     except (requests.RequestException, ValueError, GatewayError) as e:
-        logger.info(f"[gateway] vérification de numéro indisponible (non bloquant): {e}")
-        return None
+        logger.info(f"[gateway] vérification de numéro indisponible (non bloquant): {e
