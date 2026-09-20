@@ -8,121 +8,149 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
-  --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
-  --gold:#FFB400;--gold-tint:#FFF6E0;
-  --green:#00C48C;--green-tint:#E3FBF3;
-  --danger:#FF4D4D;--danger-tint:#FFEAEA;
-  --text:#12131C;--muted:#767A94;
-  --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
-  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
-  --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
+--ink:#0B0D17;--ink-soft:#141625;
+--bg:#F5F6FB;--surface:#FFFFFF;
+--border:#E7E9F3;--border-soft:#F0F1F8;
+--blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+--gold:#FFB400;--gold-tint:#FFF6E0;
+--green:#00C48C;--green-tint:#E3FBF3;
+--danger:#FF4D4D;--danger-tint:#FFEAEA;
+--text:#12131C;--muted:#767A94;--muted-soft:#A6AABF;
+--r-lg:18px;--r-md:14px;--r-sm:9px;
+--shadow-sm:0 1px 2px rgba(15,17,32,.04);
+--shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
+--sidebar-w:270px;
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+a{color:inherit}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-/* ── SIDEBAR (identique au dashboard) ── */
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
-.sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
-.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
-.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
+/* ── structure : sidebar + contenu (parité avec dashboard.html) ── */
+.shell{display:flex;min-height:100vh}
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:250;backdrop-filter:blur(2px)}
+.overlay.show{display:block}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto}
+.sidebar.open{transform:translateX(0)}
+.sidebar-top{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;flex-shrink:0}
+.sidebar-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;text-decoration:none;letter-spacing:-.01em}
 .logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
-.close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
-.corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
-.corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
+.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
+.close-sidebar{background:none;border:none;color:rgba(255,255,255,0.45);font-size:1.2rem;cursor:pointer;padding:4px}
+
+.corridor{margin:14px 20px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px;flex-shrink:0}
+.corridor-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
 .corridor-label b{color:#8EA6FF;font-weight:700}
-.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
-.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
-.nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
-.nav-link{display:flex;align-items:center;gap:12px;padding:9px 22px;color:rgba(255,255,255,0.5);font-size:.855rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.9rem;line-height:1}
+
+.sidebar-nav{flex:1;padding:8px 0}
+.nav-group{font-size:.6rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:14px 20px 6px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:9px 20px;color:rgba(255,255,255,0.5);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
 .nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
 .nav-link.active .icon{color:#8EA6FF}
-.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
+
+.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;flex-shrink:0}
 .user-row{display:flex;align-items:center;gap:10px}
 .user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
-.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
-.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
+.user-email{font-size:.68rem;color:rgba(255,255,255,0.32);margin-top:1px;word-break:break-all}
+.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.76rem;padding:11px 20px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
-.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
-.overlay.show{display:block}
-.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.topbar-left{display:flex;align-items:center;gap:14px}
-.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
+
+.main{flex:1;min-width:0}
+
+.topbar{background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
+.burger-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
 .burger-btn:hover{background:var(--bg)}
 .burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.02rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ── PAGE ── */
-.page{flex:1;padding:30px;animation:fadeUp .25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page{padding:20px;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-wrap .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted-soft)}
+.search-input{width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.85rem;background:var(--surface);outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--blue)}
+.filter-chips{display:flex;gap:6px;flex-wrap:wrap}
+.filter-chip{padding:9px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.filter-chip.active{border-color:var(--blue);background:var(--blue-tint);color:var(--blue)}
 
 .card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
-.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
-.card-title{font-size:.9rem;font-weight:700;letter-spacing:-.01em}
-.card-body{padding:22px}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card-title{font-size:.88rem;font-weight:700;letter-spacing:-.01em}
+.card-body{padding:16px}
 
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
 .btn-primary{background:var(--blue);color:white}
 .btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
 .btn-danger:hover{background:#e03e3e}
 .btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
 .btn-outline:hover{background:var(--blue-tint)}
-.btn-sm{padding:6px 12px;font-size:.76rem}
+.btn-sm{padding:7px 11px;font-size:.76rem}
+.btn-icon{padding:8px;width:34px;height:34px;justify-content:center}
 .btn-toggle-on{background:transparent;color:var(--green);border:1.5px solid var(--green)}
 .btn-toggle-on:hover{background:var(--green-tint)}
 .btn-toggle-off{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
 .btn-toggle-off:hover{background:var(--border-soft)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
 
-.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%}
+.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%;background:var(--surface)}
 .form-input:focus{border-color:var(--blue)}
 .form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
 .form-group{margin-bottom:14px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field-hint{font-size:.72rem;color:var(--muted);margin-top:5px}
 
-.link-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px;transition:all .2s}
+.link-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:16px 18px;margin-bottom:10px;transition:all .2s;opacity:0;transform:translateY(6px);animation:cardIn .35s ease forwards}
+@keyframes cardIn{to{opacity:1;transform:translateY(0)}}
 .link-card:hover{box-shadow:var(--shadow-md);border-color:var(--blue)}
-.link-card.is-inactive{opacity:.62}
+.link-card.is-inactive{opacity:.6}
 .link-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.link-name{font-weight:700;font-size:.95rem;margin-bottom:4px}
-.link-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.2rem;color:var(--blue)}
-.link-url{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted);margin-top:8px;word-break:break-all}
-.link-stats{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
-.link-stat{font-size:.76rem;color:var(--muted);display:flex;align-items:center;gap:5px}
+.link-name{font-weight:700;font-size:.94rem;margin-bottom:4px;word-break:break-word}
+.link-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.15rem;color:var(--blue)}
+.link-url{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--muted);margin-top:8px;word-break:break-all}
+.link-stats{display:flex;gap:14px;margin-top:11px;flex-wrap:wrap}
+.link-stat{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:5px}
 .link-stat strong{color:var(--text);font-weight:700}
-.link-actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
-.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.link-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:700;white-space:nowrap}
 .b-active{background:var(--green-tint);color:#0A7A50}
 .b-inactive{background:var(--border-soft);color:var(--muted)}
+.b-type{background:var(--blue-tint);color:var(--blue)}
 
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px}
 .modal-bg.show{display:flex}
-.modal{background:var(--surface);border-radius:20px;padding:30px;width:100%;max-width:520px;margin:20px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
-.modal h3{font-size:1.08rem;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:9px}
+.modal{background:var(--surface);border-radius:20px;padding:26px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25);opacity:0;transform:translateY(14px) scale(.98);transition:all .25s cubic-bezier(.16,.8,.3,1)}
+.modal-bg.show .modal{opacity:1;transform:translateY(0) scale(1)}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:9px}
 .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
-
-.preview-box{background:var(--ink);border-radius:16px;padding:28px;text-align:center;margin-top:20px}
-.preview-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;margin-bottom:16px}
+.preview-box{background:var(--ink);border-radius:16px;padding:26px;text-align:center;margin-top:18px}
+.preview-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.25rem;color:white;margin-bottom:14px}
 .preview-logo span{color:#5B7CFF}
-.preview-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.5rem;color:white;letter-spacing:-.02em}
-.preview-desc{color:rgba(255,255,255,0.5);font-size:.85rem;margin-top:6px}
-.preview-btn{background:var(--blue);color:white;border:none;border-radius:10px;padding:14px 32px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;margin-top:20px;cursor:pointer;width:100%}
-
+.preview-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.2rem;color:white;letter-spacing:-.02em}
+.preview-desc{color:rgba(255,255,255,0.5);font-size:.84rem;margin-top:6px}
+.preview-btn{background:var(--blue);color:white;border:none;border-radius:10px;padding:13px 32px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.92rem;margin-top:18px;cursor:pointer;width:100%}
 .amount-type-toggle{display:flex;gap:8px;margin-bottom:14px}
-.amount-type-btn{flex:1;padding:9px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--muted);text-align:center}
+.amount-type-btn{flex:1;padding:9px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;font-size:.82rem;font-weight:600;color:var(--muted);text-align:center;transition:all .15s}
 .amount-type-btn.active{border-color:var(--blue);background:var(--blue-tint);color:var(--blue)}
-.img-drop{border:2px dashed var(--border);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;background:var(--bg);font-size:.82rem;color:var(--muted)}
+
+.img-drop{border:1.5px dashed var(--border);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;background:var(--bg);font-size:.82rem;color:var(--muted);transition:all .15s;display:block}
+.img-drop:hover, .img-drop.drag-over{border-color:var(--blue);background:var(--blue-tint);color:var(--blue)}
 .img-drop input{display:none}
-.img-preview{max-width:100%;max-height:120px;border-radius:10px;margin-top:8px;display:none}
+.img-preview-wrap{position:relative;display:none;margin-top:10px}
+.img-preview{max-width:100%;max-height:120px;border-radius:10px;display:block}
+.img-remove{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;background:var(--danger);color:white;border:2px solid var(--surface);cursor:pointer;font-size:.8rem;line-height:1;display:flex;align-items:center;justify-content:center}
 
 .status-toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:16px}
 .status-toggle-label{font-size:.83rem;font-weight:600}
@@ -134,567 +162,87 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 input:checked + .slider{background-color:var(--green)}
 input:checked + .slider:before{transform:translateX(18px)}
 
-.empty{text-align:center;padding:42px 20px;color:var(--muted)}
-.empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-icon{font-size:2.2rem;margin-bottom:10px;opacity:.7}
 .empty-text{font-size:.85rem;line-height:1.65}
 
-#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
-#toast.show{transform:translateY(0);opacity:1}
+.skeleton{background:linear-gradient(90deg,var(--border-soft) 25%,var(--bg) 50%,var(--border-soft) 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:var(--r-md);height:96px;margin-bottom:10px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-@media(max-width:900px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
-  .main{margin-left:0}
-  .burger-btn{display:flex}
-  .close-sidebar{display:block}
-  .page{padding:16px}
-  .form-grid{grid-template-columns:1fr}
-  .link-top{flex-direction:column}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+@media(min-width:960px){
+.overlay{display:none !important}
+.sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar-w);max-width:var(--sidebar-w);transform:none;flex-shrink:0}
+.close-sidebar{display:none}
+.burger-btn{display:none}
+.page{max-width:1100px;margin:0 auto;padding:26px 32px 60px}
+.topbar{padding:0 32px}
+}
+@media(max-width:520px){
+.form-grid{grid-template-columns:1fr}
+.link-top{flex-direction:column}
+.link-actions{width:100%;justify-content:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+*{animation-duration:.001ms !important;transition-duration:.001ms !important}
 }
 </style>
 </head>
 <body>
 
 <svg width="0" height="0" style="position:absolute">
-  <defs>
-    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
-    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
-    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
-    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
-    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
-    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
-    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
-    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
-    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
-    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
-    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
-    <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
-    <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
-    <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
-    <symbol id="ic-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
-    <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
-    <symbol id="ic-check-count" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
-    <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
-    <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></symbol>
-    <symbol id="ic-power" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></symbol>
-  </defs>
+<defs>
+<symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+<symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+<symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+<symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+<symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+<symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+<symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+<symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+<symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+<symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+<symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+<symbol id="ic-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="ic-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="ic-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+<symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="ic-check-count" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+<symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+<symbol id="ic-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></symbol>
+<symbol id="ic-power" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></symbol>
+<symbol id="ic-invoice" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+<symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+</defs>
 </svg>
 
+<div class="shell">
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <div>
-      <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
-      <div class="plan-badge-pill">🚀 Starter</div>
-    </div>
-    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
-  </div>
-
-  <div class="corridor">
-    <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-    <div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">
-      🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦
-    </div>
-  </div>
-
-  <nav class="sidebar-nav">
-    <div class="nav-group">Principal</div>
-    <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
-    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
-    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
-    <a class="nav-link active" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
-
-    <div class="nav-group">Développeur</div>
-    <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
-    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
-    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
-
-    <div class="nav-group">Compte</div>
-    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
-    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
-    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
-  </nav>
-
-  <div class="sidebar-user">
-    <div class="user-row">
-      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
-      <div>
-        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
-        <div class="user-email" id="user-email">{{ user.email }}</div>
-      </div>
-    </div>
-  </div>
-  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
-</aside>
-
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <button class="burger-btn" id="burger" onclick="openSidebar()">
-        <span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span>
-      </button>
-      <div class="topbar-title"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</div>
-    </div>
-    <button class="btn btn-primary btn-sm" onclick="openModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Créer un lien</button>
-  </div>
-
-  <div class="page">
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">Mes liens <span id="links-count" style="color:var(--muted);font-weight:400"></span></div>
-      </div>
-      <div class="card-body" id="links-list">
-        <div class="empty"><div class="empty-text">Chargement...</div></div>
-      </div>
-    </div>
-  </div>
+<aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+<div class="sidebar-top">
+<div>
+<a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+<div class="plan-badge-pill" id="plan-badge-pill">🚀 Starter</div>
+</div>
+<button class="close-sidebar" onclick="closeSidebar()" aria-label="Fermer le menu">✕</button>
 </div>
 
-<!-- MODAL CRÉATION -->
-<div class="modal-bg" id="modal">
-  <div class="modal">
-    <h3><span class="icon"><svg><use href="#ic-link"/></svg></span> Créer un lien de paiement</h3>
-    <div class="form-grid">
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Nom du produit / service *</label>
-        <input class="form-input" id="lk-name" type="text" placeholder="Ex: Abonnement mensuel" oninput="updatePreview()">
-      </div>
-
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Type de montant</label>
-        <div class="amount-type-toggle">
-          <button type="button" class="amount-type-btn active" id="btn-type-fixed" onclick="setAmountType('fixed')">💰 Montant fixe</button>
-          <button type="button" class="amount-type-btn" id="btn-type-flexible" onclick="setAmountType('flexible')">✏️ Montant libre</button>
-        </div>
-      </div>
-
-      <div class="form-group" id="fixed-amount-group">
-        <label class="form-label">Montant (XOF) *</label>
-        <input class="form-input" id="lk-amount" type="number" placeholder="5000" oninput="updatePreview()">
-      </div>
-      <div class="form-group" id="min-amount-group" style="display:none">
-        <label class="form-label">Montant minimum (optionnel)</label>
-        <input class="form-input" id="lk-min-amount" type="number" placeholder="1000">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Limite d'utilisation</label>
-        <input class="form-input" id="lk-limit" type="number" placeholder="Illimité">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Date d'expiration</label>
-        <input class="form-input" id="lk-expire" type="date">
-      </div>
-
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Description</label>
-        <input class="form-input" id="lk-desc" type="text" placeholder="Description optionnelle" oninput="updatePreview()">
-      </div>
-
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Photo du produit (optionnel)</label>
-        <label class="img-drop" id="img-drop-label">
-          📷 Cliquez pour choisir une image (jpg, png, webp — 5 Mo max)
-          <input type="file" id="lk-image" accept=".jpg,.jpeg,.png,.webp" onchange="onImageChange()">
-        </label>
-        <img class="img-preview" id="img-preview">
-      </div>
-
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">URL de redirection après paiement (optionnel)</label>
-        <input class="form-input" id="lk-redirect" type="url" placeholder="https://monsite.com/merci">
-      </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Message de remerciement (optionnel)</label>
-        <input class="form-input" id="lk-thankyou" type="text" placeholder="Merci pour votre achat !">
-      </div>
-    </div>
-
-    <div class="preview-box">
-      <div class="preview-logo">Flin<span>pay</span></div>
-      <div class="preview-amount" id="prev-amount">0 XOF</div>
-      <div class="preview-desc" id="prev-desc">Description du produit</div>
-      <button class="preview-btn">💳 Payer maintenant</button>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
-      <button class="btn btn-primary" id="btn-create-link" onclick="createLink()">Créer le lien</button>
-    </div>
-  </div>
+<div class="corridor">
+<div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
+<div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
 </div>
 
-<!-- MODAL ÉDITION -->
-<div class="modal-bg" id="edit-modal">
-  <div class="modal">
-    <h3><span class="icon"><svg><use href="#ic-edit"/></svg></span> Modifier le lien</h3>
+<nav class="sidebar-nav">
+<div class="nav-group">Principal</div>
+<a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+<a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+<a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+<a class="nav-link active" href="/payment-links" aria-current="page"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
+<a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
 
-    <div class="status-toggle-row">
-      <div>
-        <div class="status-toggle-label">Lien actif</div>
-        <div class="status-toggle-sub">Désactivez pour bloquer temporairement les paiements</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="ed-active">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="form-grid">
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Nom du produit / service *</label>
-        <input class="form-input" id="ed-name" type="text" oninput="updateEditPreview()">
-      </div>
-
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Type de montant</label>
-        <div class="amount-type-toggle">
-          <button type="button" class="amount-type-btn active" id="ed-btn-type-fixed" onclick="setEditAmountType('fixed')">💰 Montant fixe</button>
-          <button type="button" class="amount-type-btn" id="ed-btn-type-flexible" onclick="setEditAmountType('flexible')">✏️ Montant libre</button>
-        </div>
-      </div>
-
-      <div class="form-group" id="ed-fixed-amount-group">
-        <label class="form-label">Montant (XOF) *</label>
-        <input class="form-input" id="ed-amount" type="number" oninput="updateEditPreview()">
-      </div>
-      <div class="form-group" id="ed-min-amount-group" style="display:none">
-        <label class="form-label">Montant minimum (optionnel)</label>
-        <input class="form-input" id="ed-min-amount" type="number">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Limite d'utilisation</label>
-        <input class="form-input" id="ed-limit" type="number" placeholder="Illimité">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Date d'expiration</label>
-        <input class="form-input" id="ed-expire" type="date">
-      </div>
-
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Description</label>
-        <input class="form-input" id="ed-desc" type="text" oninput="updateEditPreview()">
-      </div>
-
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">URL de redirection après paiement (optionnel)</label>
-        <input class="form-input" id="ed-redirect" type="url" placeholder="https://monsite.com/merci">
-      </div>
-      <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">Message de remerciement (optionnel)</label>
-        <input class="form-input" id="ed-thankyou" type="text" placeholder="Merci pour votre achat !">
-      </div>
-    </div>
-
-    <div class="preview-box">
-      <div class="preview-logo">Flin<span>pay</span></div>
-      <div class="preview-amount" id="ed-prev-amount">0 XOF</div>
-      <div class="preview-desc" id="ed-prev-desc">Description du produit</div>
-      <button class="preview-btn">💳 Payer maintenant</button>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeEditModal()">Annuler</button>
-      <button class="btn btn-primary" id="btn-save-edit" onclick="saveEdit()">Enregistrer</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-<script>
-function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
-function openModal(){document.getElementById('modal').classList.add('show')}
-function closeModal(){document.getElementById('modal').classList.remove('show')}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal()})
-document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-modal'))closeEditModal()})
-
-let currentAmountType='fixed';
-function setAmountType(type){
-  currentAmountType=type;
-  document.getElementById('btn-type-fixed').classList.toggle('active', type==='fixed');
-  document.getElementById('btn-type-flexible').classList.toggle('active', type==='flexible');
-  document.getElementById('fixed-amount-group').style.display=type==='fixed'?'block':'none';
-  document.getElementById('min-amount-group').style.display=type==='flexible'?'block':'none';
-  updatePreview();
-}
-function onImageChange(){
-  const f=document.getElementById('lk-image').files[0];
-  const prev=document.getElementById('img-preview');
-  if(f){
-    const reader=new FileReader();
-    reader.onload=e=>{ prev.src=e.target.result; prev.style.display='block'; };
-    reader.readAsDataURL(f);
-  }else{
-    prev.style.display='none';
-  }
-}
-
-function updatePreview(){
-  const amount=document.getElementById('lk-amount').value;
-  const desc=document.getElementById('lk-desc').value||document.getElementById('lk-name').value||'Description du produit';
-  document.getElementById('prev-amount').textContent = currentAmountType==='flexible'
-    ? 'Montant libre'
-    : (parseInt(amount)||0).toLocaleString()+' XOF';
-  document.getElementById('prev-desc').textContent=desc;
-}
-
-// ── PROFIL (sidebar) — via /api/me ────────────────
-async function loadProfile(){
-  try{
-    const r=await fetch('/api/me');
-    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-    const data=await r.json();
-    if(!data.ok) return;
-    const user=data.user;
-    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
-    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
-    document.getElementById('user-email').textContent=user.email||'';
-  }catch(e){}
-}
-
-// ── LIENS DE PAIEMENT — via /api/payment-links ────
-let links=[];
-async function loadLinks(){
-  const el=document.getElementById('links-list');
-  try{
-    const r=await fetch('/api/payment-links');
-    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-    const data=await r.json();
-    if(!data.ok){ toast(data.error||'Erreur de chargement',false); links=[]; renderLinks(); return; }
-    links=(data.links||[]).map(l=>({
-      token:l.token, name:l.name, amount:Number(l.amount)||0,
-      amountType:l.amount_type||'fixed', minAmount:l.min_amount,
-      desc:l.description||'', limit:l.usage_limit||'∞', expire:l.expires_at||null,
-      imageUrl:l.image_url||null,
-      redirect:l.redirect_url||'', thankyou:l.thank_you_message||'',
-      url:`https://www.flinpay.cfd/pay/${l.token}`,
-      active:l.active!==false, views:l.views||0, paid:l.paid_count||0
-    }));
-    renderLinks();
-  }catch(e){
-    toast('Impossible de charger les liens',false);
-    links=[]; renderLinks();
-  }
-}
-
-async function createLink(){
-  const name=document.getElementById('lk-name').value.trim();
-  const amount=document.getElementById('lk-amount').value;
-  const minAmount=document.getElementById('lk-min-amount').value;
-  const desc=document.getElementById('lk-desc').value.trim();
-  const limit=document.getElementById('lk-limit').value;
-  const expire=document.getElementById('lk-expire').value;
-  const redirect=document.getElementById('lk-redirect').value.trim();
-  const thankyou=document.getElementById('lk-thankyou').value.trim();
-  const imageFile=document.getElementById('lk-image').files[0];
-
-  if(!name){toast('Le nom est requis',false);return}
-  if(currentAmountType==='fixed' && !amount){toast('Le montant est requis',false);return}
-
-  const btn=document.getElementById('btn-create-link');
-  btn.disabled=true; btn.textContent='Création...';
-
-  const fd=new FormData();
-  fd.append('name', name);
-  fd.append('amount_type', currentAmountType);
-  if(currentAmountType==='fixed') fd.append('amount', amount);
-  else if(minAmount) fd.append('min_amount', minAmount);
-  fd.append('description', desc);
-  if(limit) fd.append('usage_limit', limit);
-  if(expire) fd.append('expires_at', expire);
-  if(redirect) fd.append('redirect_url', redirect);
-  if(thankyou) fd.append('thank_you_message', thankyou);
-  if(imageFile) fd.append('image', imageFile);
-
-  try{
-    const r=await fetch('/api/payment-links',{ method:'POST', body:fd });
-    const data=await r.json();
-    if(data.ok){
-      closeModal();
-      ['lk-name','lk-amount','lk-min-amount','lk-desc','lk-limit','lk-expire','lk-redirect','lk-thankyou'].forEach(id=>document.getElementById(id).value='');
-      document.getElementById('lk-image').value='';
-      document.getElementById('img-preview').style.display='none';
-      setAmountType('fixed');
-      updatePreview();
-      toast('Lien créé ! Partagez-le avec vos clients.');
-      loadLinks();
-    }else{
-      toast(data.error||'Erreur lors de la création',false);
-    }
-  }catch(e){
-    toast('Erreur de connexion',false);
-  }
-  btn.disabled=false; btn.textContent='Créer le lien';
-}
-
-// ── ÉDITION D'UN LIEN ──────────────────────────────
-let editingToken=null;
-let editAmountType='fixed';
-
-function setEditAmountType(type){
-  editAmountType=type;
-  document.getElementById('ed-btn-type-fixed').classList.toggle('active', type==='fixed');
-  document.getElementById('ed-btn-type-flexible').classList.toggle('active', type==='flexible');
-  document.getElementById('ed-fixed-amount-group').style.display=type==='fixed'?'block':'none';
-  document.getElementById('ed-min-amount-group').style.display=type==='flexible'?'block':'none';
-  updateEditPreview();
-}
-
-function updateEditPreview(){
-  const amount=document.getElementById('ed-amount').value;
-  const desc=document.getElementById('ed-desc').value||document.getElementById('ed-name').value||'Description du produit';
-  document.getElementById('ed-prev-amount').textContent = editAmountType==='flexible'
-    ? 'Montant libre'
-    : (parseInt(amount)||0).toLocaleString()+' XOF';
-  document.getElementById('ed-prev-desc').textContent=desc;
-}
-
-function openEditModal(token){
-  const l=links.find(x=>x.token===token);
-  if(!l) return;
-  editingToken=token;
-  document.getElementById('ed-name').value=l.name||'';
-  document.getElementById('ed-amount').value=l.amount||'';
-  document.getElementById('ed-min-amount').value=l.minAmount||'';
-  document.getElementById('ed-desc').value=l.desc||'';
-  document.getElementById('ed-limit').value=(l.limit==='∞'?'':l.limit)||'';
-  document.getElementById('ed-expire').value=l.expire||'';
-  document.getElementById('ed-redirect').value=l.redirect||'';
-  document.getElementById('ed-thankyou').value=l.thankyou||'';
-  document.getElementById('ed-active').checked=l.active;
-  setEditAmountType(l.amountType||'fixed');
-  updateEditPreview();
-  document.getElementById('edit-modal').classList.add('show');
-}
-function closeEditModal(){ document.getElementById('edit-modal').classList.remove('show'); editingToken=null; }
-
-async function saveEdit(){
-  if(!editingToken) return;
-  const name=document.getElementById('ed-name').value.trim();
-  const amount=document.getElementById('ed-amount').value;
-  if(!name){toast('Le nom est requis',false);return}
-  if(editAmountType==='fixed' && !amount){toast('Le montant est requis',false);return}
-
-  const btn=document.getElementById('btn-save-edit');
-  btn.disabled=true; btn.textContent='Enregistrement...';
-
-  const payload={
-    name,
-    amount_type: editAmountType,
-    description: document.getElementById('ed-desc').value.trim(),
-    usage_limit: document.getElementById('ed-limit').value || null,
-    expires_at: document.getElementById('ed-expire').value || null,
-    redirect_url: document.getElementById('ed-redirect').value.trim(),
-    thank_you_message: document.getElementById('ed-thankyou').value.trim(),
-    active: document.getElementById('ed-active').checked
-  };
-  if(editAmountType==='fixed') payload.amount=amount;
-  else payload.min_amount=document.getElementById('ed-min-amount').value || null;
-
-  try{
-    const r=await fetch('/api/payment-links/'+editingToken,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-    const data=await r.json();
-    if(data.ok){
-      closeEditModal();
-      toast('Lien mis à jour');
-      loadLinks();
-    }else{
-      toast(data.error||'Erreur lors de la mise à jour',false);
-    }
-  }catch(e){
-    toast('Erreur de connexion',false);
-  }
-  btn.disabled=false; btn.textContent='Enregistrer';
-}
-
-// ── ACTIVER / DÉSACTIVER RAPIDE ────────────────────
-async function toggleActive(token, current){
-  try{
-    const r=await fetch('/api/payment-links/'+token,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ active: !current })
-    });
-    const data=await r.json();
-    if(data.ok){
-      toast(!current ? 'Lien activé' : 'Lien désactivé');
-      loadLinks();
-    }else{
-      toast(data.error||'Erreur lors du changement de statut',false);
-    }
-  }catch(e){
-    toast('Erreur de connexion',false);
-  }
-}
-
-function renderLinks(){
-  const el=document.getElementById('links-list');
-  document.getElementById('links-count').textContent=links.length?`(${links.length})`:'';
-  if(!links.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">🔗</div><div class="empty-text">Aucun lien créé.<br>Créez un lien de paiement partageable sans code.</div></div>';
-    return;
-  }
-  el.innerHTML=links.map((l,i)=>`
-    <div class="link-card ${l.active?'':'is-inactive'}">
-      <div class="link-top">
-        ${l.imageUrl?`<img src="${l.imageUrl}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;flex-shrink:0">`:''}
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap">
-            <div class="link-name">${l.name}</div>
-            <span class="badge ${l.active?'b-active':'b-inactive'}">${l.active?'Actif':'Inactif'}</span>
-            <span class="badge" style="background:var(--blue-tint);color:var(--blue)">${l.amountType==='flexible'?'✏️ Libre':'💰 Fixe'}</span>
-          </div>
-          <div class="link-amount">${l.amountType==='flexible' ? (l.minAmount?`Dès ${Number(l.minAmount).toLocaleString()} XOF`:'Montant libre') : l.amount.toLocaleString()+' XOF'}</div>
-          ${l.desc?`<div style="font-size:.78rem;color:var(--muted);margin-top:4px">${l.desc}</div>`:''}
-          <div class="link-url">${l.url}</div>
-          <div class="link-stats">
-            <div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-eye"/></svg></span> <strong>${l.views}</strong> vues</div>
-            <div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-check-count"/></svg></span> <strong>${l.paid}</strong> paiements</div>
-            <div class="link-stat">🔢 Limite: <strong>${l.limit}</strong></div>
-            ${l.expire?`<div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-calendar"/></svg></span> Expire: <strong>${l.expire}</strong></div>`:''}
-          </div>
-        </div>
-        <div class="link-actions">
-          <button class="btn ${l.active?'btn-toggle-on':'btn-toggle-off'} btn-sm" onclick="toggleActive('${l.token}', ${l.active})" title="${l.active?'Désactiver':'Activer'}"><span class="icon"><svg><use href="#ic-power"/></svg></span></button>
-          <button class="btn btn-outline btn-sm" onclick="openEditModal('${l.token}')" title="Modifier"><span class="icon"><svg><use href="#ic-edit"/></svg></span></button>
-          <button class="btn btn-outline btn-sm" onclick="copyLink('${l.url}')" title="Copier"><span class="icon"><svg><use href="#ic-copy"/></svg></span></button>
-          <button class="btn btn-outline btn-sm" onclick="shareLink('${l.url}',this)" data-name="${l.name.replace(/"/g,'&quot;')}" title="Partager"><span class="icon"><svg><use href="#ic-share"/></svg></span></button>
-          <button class="btn btn-danger btn-sm" onclick="deleteLink('${l.token}')" title="Supprimer"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function copyLink(url){navigator.clipboard.writeText(url).then(()=>toast('Lien copié !'))}
-function shareLink(url,btn){
-  const name=btn.closest('button').dataset.name||'';
-  if(navigator.share){navigator.share({title:'Payer — '+name,url}).catch(()=>copyLink(url))}
-  else copyLink(url)
-}
-async function deleteLink(token){
-  if(!confirm('Supprimer ce lien ?')) return;
-  try{
-    const r=await fetch('/api/payment-links/'+token,{method:'DELETE'});
-    const data=await r.json();
-    if(data.ok){ toast('Lien supprimé'); loadLinks(); }
-    else{ toast(data.error||'Erreur lors de la suppression',false); }
-  }catch(e){
-    toast('Erreur de connexion',false);
-  }
-}
-
-// ── INIT ─────────────────────────────────────────
-loadProfile();
-loadLinks();
-</script>
-</body>
-</html>
+<div class="nav-group">D
