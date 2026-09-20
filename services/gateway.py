@@ -435,4 +435,12 @@ def verify_phone_number(wallet: str, country_code_alpha2: str):
     try:
         r = requests.post(
             f'{config.GATEWAY_BASE_URL}/phone-numbers/verify',
-            headers={'X-API-Key': config.GATEWAY_MERCHANT_API_KEY, 'Content-Type': 'application/j
+            headers={'X-API-Key': config.GATEWAY_MERCHANT_API_KEY, 'Content-Type': 'application/json'},
+            json={'wallet': wallet, 'country': alpha3(country_code_alpha2)},
+            timeout=DEFAULT_TIMEOUT
+        )
+        data = r.json()
+        return data if data.get('valid') else None
+    except (requests.RequestException, ValueError, GatewayError) as e:
+        logger.info(f"[gateway] vérification de numéro indisponible (non bloquant): {e}")
+        return None
