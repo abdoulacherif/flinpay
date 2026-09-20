@@ -293,8 +293,6 @@ def compute_customer_charge(base_amount: float, service_id: int, currency: str):
         # (feeBearer=CUSTOMER confirmé) : on ne les rajoute pas une seconde fois.
         customer_charge = round(base_amount, 2)
     return customer_charge, fee, base_amount
-
-
 # ── Collections (encaissement) ──────────────────────
 def collection_intent(amount, currency, provider_code, customer_wallet, description, transaction_uuid=None, channel='PROVIDER'):
     transaction_uuid = transaction_uuid or uuid_lib.uuid4().hex
@@ -437,4 +435,5 @@ def verify_phone_number(wallet: str, country_code_alpha2: str):
         data = r.json()
         return data if data.get('valid') else None
     except (requests.RequestException, ValueError, GatewayError) as e:
-        logger.info(f"[gateway] vérification de numéro indisponible (non bloquant): {e
+        logger.info(f"[gateway] vérification de numéro indisponible (non bloquant): {e}")
+        return None
