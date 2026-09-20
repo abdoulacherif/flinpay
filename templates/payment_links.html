@@ -245,4 +245,219 @@ input:checked + .slider:before{transform:translateX(18px)}
 <a class="nav-link active" href="/payment-links" aria-current="page"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
 <a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
 
-<div class="nav-group">D
+<div class="nav-group">Développeur</div>
+<a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+<a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+<a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
+
+<div class="nav-group">Compte</div>
+<a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+<a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+<a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+<a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
+</nav>
+
+<div class="sidebar-user">
+<div class="user-row">
+<div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+<div>
+<div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+<div class="user-email" id="user-email">{{ user.email }}</div>
+</div>
+</div>
+</div>
+<a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
+</aside>
+
+<div class="main">
+<div class="topbar">
+<div class="topbar-left">
+<button class="burger-btn" id="burger" onclick="openSidebar()" aria-label="Ouvrir le menu"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+<div class="topbar-title"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</div>
+</div>
+<button class="btn btn-primary btn-sm" onclick="openModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> <span class="hide-xs">Créer un lien</span></button>
+</div>
+
+<div class="page">
+
+<div class="toolbar">
+<div class="search-wrap">
+<span class="icon"><svg><use href="#ic-search"/></svg></span>
+<input class="search-input" id="search-input" type="search" placeholder="Rechercher un lien..." oninput="renderLinks()" aria-label="Rechercher un lien">
+</div>
+<div class="filter-chips" role="group" aria-label="Filtrer par statut">
+<button class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">Tous</button>
+<button class="filter-chip" data-filter="active" onclick="setFilter('active',this)">Actifs</button>
+<button class="filter-chip" data-filter="inactive" onclick="setFilter('inactive',this)">Inactifs</button>
+</div>
+</div>
+
+<div class="card">
+<div class="card-head">
+<div class="card-title">Mes liens <span id="links-count" style="color:var(--muted);font-weight:400"></span></div>
+</div>
+<div class="card-body" id="links-list">
+<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- MODAL CRÉATION -->
+<div class="modal-bg" id="modal">
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+<h3 id="modal-title"><span class="icon"><svg><use href="#ic-link"/></svg></span> Créer un lien de paiement</h3>
+<div class="form-grid">
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label" for="lk-name">Nom du produit / service *</label>
+<input class="form-input" id="lk-name" type="text" placeholder="Ex: Abonnement mensuel" maxlength="120" oninput="updatePreview()">
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label">Type de montant</label>
+<div class="amount-type-toggle">
+<button type="button" class="amount-type-btn active" id="btn-type-fixed" onclick="setAmountType('fixed')">💰 Montant fixe</button>
+<button type="button" class="amount-type-btn" id="btn-type-flexible" onclick="setAmountType('flexible')">✏️ Montant libre</button>
+</div>
+</div>
+<div class="form-group" id="fixed-amount-group">
+<label class="form-label" id="lk-amount-label" for="lk-amount">Montant *</label>
+<input class="form-input" id="lk-amount" type="number" min="0" placeholder="5000" oninput="updatePreview()">
+</div>
+<div class="form-group" id="min-amount-group" style="display:none">
+<label class="form-label" for="lk-min-amount">Montant minimum (optionnel)</label>
+<input class="form-input" id="lk-min-amount" type="number" min="0" placeholder="1000">
+</div>
+<div class="form-group">
+<label class="form-label" for="lk-limit">Limite d'utilisation</label>
+<input class="form-input" id="lk-limit" type="number" min="1" placeholder="Illimité">
+</div>
+<div class="form-group">
+<label class="form-label" for="lk-expire">Date d'expiration</label>
+<input class="form-input" id="lk-expire" type="date">
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label" for="lk-desc">Description</label>
+<input class="form-input" id="lk-desc" type="text" maxlength="500" placeholder="Description optionnelle" oninput="updatePreview()">
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label">Photo du produit (optionnel)</label>
+<label class="img-drop" id="img-drop-label" for="lk-image">
+<span id="img-drop-text">📷 Cliquez ou glissez une image (jpg, png, webp — 5 Mo max)</span>
+<input type="file" id="lk-image" accept=".jpg,.jpeg,.png,.webp" onchange="onImageChange()">
+</label>
+<div class="img-preview-wrap" id="img-preview-wrap">
+<img class="img-preview" id="img-preview">
+<button type="button" class="img-remove" onclick="removeImage()" aria-label="Retirer l'image">✕</button>
+</div>
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label" for="lk-redirect">URL de redirection après paiement (optionnel)</label>
+<input class="form-input" id="lk-redirect" type="url" placeholder="https://monsite.com/merci">
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label" for="lk-thankyou">Message de remerciement (optionnel)</label>
+<input class="form-input" id="lk-thankyou" type="text" maxlength="500" placeholder="Merci pour votre achat !">
+</div>
+</div>
+
+<div class="preview-box">
+<div class="preview-logo">Flin<span>pay</span></div>
+<div class="preview-amount" id="prev-amount">0</div>
+<div class="preview-desc" id="prev-desc">Description du produit</div>
+<button class="preview-btn" type="button" disabled>💳 Payer maintenant</button>
+</div>
+
+<div class="modal-actions">
+<button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+<button class="btn btn-primary" id="btn-create-link" onclick="createLink()">Créer le lien</button>
+</div>
+</div>
+</div>
+
+<!-- MODAL ÉDITION -->
+<div class="modal-bg" id="edit-modal">
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+<h3 id="edit-modal-title"><span class="icon"><svg><use href="#ic-edit"/></svg></span> Modifier le lien</h3>
+
+<div class="status-toggle-row">
+<div>
+<div class="status-toggle-label">Lien actif</div>
+<div class="status-toggle-sub">Désactivez pour bloquer temporairement les paiements</div>
+</div>
+<label class="switch">
+<input type="checkbox" id="ed-active">
+<span class="slider"></span>
+</label>
+</div>
+
+<div class="form-grid">
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label" for="ed-name">Nom du produit / service *</label>
+<input class="form-input" id="ed-name" type="text" maxlength="120" oninput="updateEditPreview()">
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label">Type de montant</label>
+<div class="amount-type-toggle">
+<button type="button" class="amount-type-btn active" id="ed-btn-type-fixed" onclick="setEditAmountType('fixed')">💰 Montant fixe</button>
+<button type="button" class="amount-type-btn" id="ed-btn-type-flexible" onclick="setEditAmountType('flexible')">✏️ Montant libre</button>
+</div>
+</div>
+<div class="form-group" id="ed-fixed-amount-group">
+<label class="form-label" id="ed-amount-label" for="ed-amount">Montant *</label>
+<input class="form-input" id="ed-amount" type="number" min="0" oninput="updateEditPreview()">
+</div>
+<div class="form-group" id="ed-min-amount-group" style="display:none">
+<label class="form-label" for="ed-min-amount">Montant minimum (optionnel)</label>
+<input class="form-input" id="ed-min-amount" type="number" min="0">
+</div>
+<div class="form-group">
+<label class="form-label" for="ed-limit">Limite d'utilisation</label>
+<input class="form-input" id="ed-limit" type="number" min="1" placeholder="Illimité">
+</div>
+<div class="form-group">
+<label class="form-label" for="ed-expire">Date d'expiration</label>
+<input class="form-input" id="ed-expire" type="date">
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label" for="ed-desc">Description</label>
+<input class="form-input" id="ed-desc" type="text" maxlength="500" oninput="updateEditPreview()">
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label" for="ed-redirect">URL de redirection après paiement (optionnel)</label>
+<input class="form-input" id="ed-redirect" type="url" placeholder="https://monsite.com/merci">
+</div>
+<div class="form-group" style="grid-column:1/-1">
+<label class="form-label" for="ed-thankyou">Message de remerciement (optionnel)</label>
+<input class="form-input" id="ed-thankyou" type="text" maxlength="500" placeholder="Merci pour votre achat !">
+</div>
+</div>
+
+<div class="preview-box">
+<div class="preview-logo">Flin<span>pay</span></div>
+<div class="preview-amount" id="ed-prev-amount">0</div>
+<div class="preview-desc" id="ed-prev-desc">Description du produit</div>
+<button class="preview-btn" type="button" disabled>💳 Payer maintenant</button>
+</div>
+
+<div class="modal-actions">
+<button class="btn btn-outline" onclick="closeEditModal()">Annuler</button>
+<button class="btn btn-primary" id="btn-save-edit" onclick="saveEdit()">Enregistrer</button>
+</div>
+</div>
+</div>
+
+<!-- MODAL CONFIRMATION SUPPRESSION -->
+<div class="modal-bg" id="confirm-modal">
+<div class="modal" style="max-width:380px" role="dialog" aria-modal="true">
+<h3>🗑️ Supprimer ce lien ?</h3>
+<p style="font-size:.87rem;color:var(--muted);line-height:1.6">Cette action est définitive. Le lien ne sera plus accessible et ne pourra plus recevoir de paiement.</p>
+<div class="modal-actions">
+<button class="btn btn-outline" onclick="closeConfirmModal()">Annuler</button>
+<button class="btn btn-danger" id="btn-confirm-delete" onclick="confirmDelete()">Supprimer</button>
+</div>
+</div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
