@@ -461,3 +461,409 @@ input:checked + .slider:before{transform:translateX(18px)}
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
+<script>
+"use strict";
+
+// ── Devise du marchand : jamais figée sur XOF, dépend de son pays ──
+const COUNTRY_CURRENCY = {CM:'XAF',CI:'XOF',BF:'XOF',BJ:'XOF',TG:'XOF',CD:'CDF',GA:'XAF'};
+let merchantCurrency = 'XOF';
+
+function $(id){ return document.getElementById(id); }
+
+function escapeHtml(str){
+const div=document.createElement('div');
+div.textContent = str==null ? '' : String(str);
+return div.innerHTML;
+}
+
+function fmtAmount(n){
+return (Number(n)||0).toLocaleString('fr-FR');
+}
+
+// ── CSRF : lu depuis le cookie posé à la connexion, renvoyé dans
+// l'en-tête X-CSRF-Token sur toute requête qui modifie une donnée
+// (voir services/auth.py côté serveur — csrf_protect). ────────────
+function getCsrfToken(){
+const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
+return m ? decodeURIComponent(m[1]) : '';
+}
+async function apiFetch(url, options={}){
+const headers = Object.assign({}, options.headers || {});
+if(options.method && options.method !== 'GET'){
+headers['X-CSRF-Token'] = getCsrfToken();
+}
+return fetch(url, Object.assign({}, options, {headers}));
+}
+
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
+
+function toast(msg,ok=true){
+const t=document.getElementById('toast');
+t.textContent=(ok?'✅ ':'❌ ')+msg;
+t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
+t.classList.add('show');
+clearTimeout(t._hideTimer);
+t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+function openModal(){document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal()})
+document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-modal'))closeEditModal()})
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeEditModal(); closeConfirmModal(); }});
+
+let currentAmountType='fixed';
+function setAmountType(type){
+currentAmountType=type;
+document.getElementById('btn-type-fixed').classList.toggle('active', type==='fixed');
+document.getElementById('btn-type-flexible').classList.toggle('active', type==='flexible');
+document.getElementById('fixed-amount-group').style.display=type==='fixed'?'block':'none';
+document.getElementById('min-amount-group').style.display=type==='flexible'?'block':'none';
+updatePreview();
+}
+
+function onImageChange(){
+const f=document.getElementById('lk-image').files[0];
+const wrap=document.getElementById('img-preview-wrap');
+const prev=document.getElementById('img-preview');
+if(f){
+if(f.size > 5*1024*1024){ toast('Image trop volumineuse (5 Mo max)', false); document.getElementById('lk-image').value=''; return; }
+const reader=new FileReader();
+reader.onload=e=>{ prev.src=e.target.result; wrap.style.display='block'; };
+reader.readAsDataURL(f);
+}else{
+wrap.style.display='none';
+}
+}
+function removeImage(){
+document.getElementById('lk-image').value='';
+document.getElementById('img-preview-wrap').style.display='none';
+}
+
+function updatePreview(){
+const amount=document.getElementById('lk-amount').value;
+const desc=document.getElementById('lk-desc').value||document.getElementById('lk-name').value||'Description du produit';
+document.getElementById('prev-amount').textContent = currentAmountType==='flexible'
+? 'Montant libre'
+: fmtAmount(amount)+' '+merchantCurrency;
+document.getElementById('prev-desc').textContent=desc;
+}
+
+// ── PROFIL (sidebar + devise) — via /api/me ───────
+async function loadProfile(){
+try{
+const r=await fetch('/api/me');
+if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+const data=await r.json();
+if(!data.ok) return;
+const user=data.user;
+document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
+document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
+document.getElementById('user-email').textContent=user.email||'';
+document.getElementById('plan-badge-pill').textContent = user.plan==='pro' ? '🚀 Pro' : '🚀 Starter';
+merchantCurrency = COUNTRY_CURRENCY[user.country] || 'XOF';
+document.getElementById('lk-amount-label').textContent = `Montant (${merchantCurrency}) *`;
+document.getElementById('ed-amount-label').textContent = `Montant (${merchantCurrency}) *`;
+}catch(e){}
+}
+
+// ── LIENS DE PAIEMENT — via /api/payment-links ────
+let links=[];
+let currentFilter='all';
+
+function setFilter(filter, btn){
+currentFilter=filter;
+document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+btn.classList.add('active');
+renderLinks();
+}
+
+async function loadLinks(){
+try{
+const r=await fetch('/api/payment-links');
+if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+const data=await r.json();
+if(!data.ok){ toast(data.error||'Erreur de chargement',false); links=[]; renderLinks(); return; }
+links=(data.links||[]).map(l=>({
+token:l.token, name:l.name||'', amount:Number(l.amount)||0,
+amountType:l.amount_type||'fixed', minAmount:l.min_amount,
+desc:l.description||'', limit:l.usage_limit||'∞', expire:l.expires_at||null,
+imageUrl:l.image_url||null,
+redirect:l.redirect_url||'', thankyou:l.thank_you_message||'',
+url:`https://www.flinpay.cfd/pay/${l.token}`,
+active:l.active!==false, views:l.views||0, paid:l.paid_count||0
+}));
+renderLinks();
+}catch(e){
+toast('Impossible de charger les liens',false);
+links=[]; renderLinks();
+}
+}
+
+async function createLink(){
+const name=document.getElementById('lk-name').value.trim();
+const amount=document.getElementById('lk-amount').value;
+const minAmount=document.getElementById('lk-min-amount').value;
+const desc=document.getElementById('lk-desc').value.trim();
+const limit=document.getElementById('lk-limit').value;
+const expire=document.getElementById('lk-expire').value;
+const redirect=document.getElementById('lk-redirect').value.trim();
+const thankyou=document.getElementById('lk-thankyou').value.trim();
+const imageFile=document.getElementById('lk-image').files[0];
+
+if(!name){toast('Le nom est requis',false);return}
+if(currentAmountType==='fixed' && !amount){toast('Le montant est requis',false);return}
+
+const btn=document.getElementById('btn-create-link');
+btn.disabled=true; btn.textContent='Création...';
+
+const fd=new FormData();
+fd.append('name', name);
+fd.append('amount_type', currentAmountType);
+if(currentAmountType==='fixed') fd.append('amount', amount);
+else if(minAmount) fd.append('min_amount', minAmount);
+fd.append('description', desc);
+if(limit) fd.append('usage_limit', limit);
+if(expire) fd.append('expires_at', expire);
+if(redirect) fd.append('redirect_url', redirect);
+if(thankyou) fd.append('thank_you_message', thankyou);
+if(imageFile) fd.append('image', imageFile);
+
+try{
+const r=await apiFetch('/api/payment-links',{ method:'POST', body:fd });
+const data=await r.json();
+if(data.ok){
+closeModal();
+['lk-name','lk-amount','lk-min-amount','lk-desc','lk-limit','lk-expire','lk-redirect','lk-thankyou'].forEach(id=>document.getElementById(id).value='');
+removeImage();
+setAmountType('fixed');
+updatePreview();
+toast('Lien créé ! Partagez-le avec vos clients.');
+loadLinks();
+}else{
+toast(data.error||'Erreur lors de la création',false);
+}
+}catch(e){
+toast('Erreur de connexion',false);
+}
+btn.disabled=false; btn.textContent='Créer le lien';
+}
+
+// ── ÉDITION D'UN LIEN ──────────────────────────────
+let editingToken=null;
+let editAmountType='fixed';
+
+function setEditAmountType(type){
+editAmountType=type;
+document.getElementById('ed-btn-type-fixed').classList.toggle('active', type==='fixed');
+document.getElementById('ed-btn-type-flexible').classList.toggle('active', type==='flexible');
+document.getElementById('ed-fixed-amount-group').style.display=type==='fixed'?'block':'none';
+document.getElementById('ed-min-amount-group').style.display=type==='flexible'?'block':'none';
+updateEditPreview();
+}
+
+function updateEditPreview(){
+const amount=document.getElementById('ed-amount').value;
+const desc=document.getElementById('ed-desc').value||document.getElementById('ed-name').value||'Description du produit';
+document.getElementById('ed-prev-amount').textContent = editAmountType==='flexible'
+? 'Montant libre'
+: fmtAmount(amount)+' '+merchantCurrency;
+document.getElementById('ed-prev-desc').textContent=desc;
+}
+
+function openEditModal(token){
+const l=links.find(x=>x.token===token);
+if(!l) return;
+editingToken=token;
+document.getElementById('ed-name').value=l.name||'';
+document.getElementById('ed-amount').value=l.amount||'';
+document.getElementById('ed-min-amount').value=l.minAmount||'';
+document.getElementById('ed-desc').value=l.desc||'';
+document.getElementById('ed-limit').value=(l.limit==='∞'?'':l.limit)||'';
+document.getElementById('ed-expire').value=l.expire||'';
+document.getElementById('ed-redirect').value=l.redirect||'';
+document.getElementById('ed-thankyou').value=l.thankyou||'';
+document.getElementById('ed-active').checked=l.active;
+setEditAmountType(l.amountType||'fixed');
+updateEditPreview();
+document.getElementById('edit-modal').classList.add('show');
+}
+function closeEditModal(){ document.getElementById('edit-modal').classList.remove('show'); editingToken=null; }
+
+async function saveEdit(){
+if(!editingToken) return;
+const name=document.getElementById('ed-name').value.trim();
+const amount=document.getElementById('ed-amount').value;
+if(!name){toast('Le nom est requis',false);return}
+if(editAmountType==='fixed' && !amount){toast('Le montant est requis',false);return}
+
+const btn=document.getElementById('btn-save-edit');
+btn.disabled=true; btn.textContent='Enregistrement...';
+
+const payload={
+name,
+amount_type: editAmountType,
+description: document.getElementById('ed-desc').value.trim(),
+usage_limit: document.getElementById('ed-limit').value || null,
+expires_at: document.getElementById('ed-expire').value || null,
+redirect_url: document.getElementById('ed-redirect').value.trim(),
+thank_you_message: document.getElementById('ed-thankyou').value.trim(),
+active: document.getElementById('ed-active').checked
+};
+if(editAmountType==='fixed') payload.amount=amount;
+else payload.min_amount=document.getElementById('ed-min-amount').value || null;
+
+try{
+const r=await apiFetch('/api/payment-links/'+editingToken,{
+method:'PUT',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(payload)
+});
+const data=await r.json();
+if(data.ok){
+closeEditModal();
+toast('Lien mis à jour');
+loadLinks();
+}else{
+toast(data.error||'Erreur lors de la mise à jour',false);
+}
+}catch(e){
+toast('Erreur de connexion',false);
+}
+btn.disabled=false; btn.textContent='Enregistrer';
+}
+
+// ── ACTIVER / DÉSACTIVER RAPIDE ────────────────────
+async function toggleActive(token, current){
+try{
+const r=await apiFetch('/api/payment-links/'+token,{
+method:'PUT',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({ active: !current })
+});
+const data=await r.json();
+if(data.ok){
+toast(!current ? 'Lien activé' : 'Lien désactivé');
+loadLinks();
+}else{
+toast(data.error||'Erreur lors du changement de statut',false);
+}
+}catch(e){
+toast('Erreur de connexion',false);
+}
+}
+
+// ── SUPPRESSION (avec confirmation dans un modal, pas confirm()) ──
+let pendingDeleteToken=null;
+function deleteLink(token){
+pendingDeleteToken=token;
+document.getElementById('confirm-modal').classList.add('show');
+}
+function closeConfirmModal(){
+document.getElementById('confirm-modal').classList.remove('show');
+pendingDeleteToken=null;
+}
+async function confirmDelete(){
+if(!pendingDeleteToken) return;
+const btn=document.getElementById('btn-confirm-delete');
+btn.disabled=true; btn.textContent='Suppression...';
+try{
+const r=await apiFetch('/api/payment-links/'+pendingDeleteToken,{method:'DELETE'});
+const data=await r.json();
+if(data.ok){ toast('Lien supprimé'); loadLinks(); }
+else{ toast(data.error||'Erreur lors de la suppression',false); }
+}catch(e){
+toast('Erreur de connexion',false);
+}
+btn.disabled=false; btn.textContent='Supprimer';
+closeConfirmModal();
+}
+
+function copyLink(url){
+navigator.clipboard.writeText(url).then(()=>toast('Lien copié !')).catch(()=>toast('Impossible de copier',false));
+}
+function shareLink(url, name){
+if(navigator.share){ navigator.share({title:'Payer — '+name, url}).catch(()=>{}); }
+else copyLink(url);
+}
+
+function renderLinks(){
+const el=document.getElementById('links-list');
+const query=(document.getElementById('search-input').value||'').toLowerCase().trim();
+
+let filtered=links.filter(l=>{
+if(currentFilter==='active' && !l.active) return false;
+if(currentFilter==='inactive' && l.active) return false;
+if(query && !(l.name.toLowerCase().includes(query) || l.desc.toLowerCase().includes(query))) return false;
+return true;
+});
+
+document.getElementById('links-count').textContent=links.length?`(${links.length})`:'';
+
+if(!links.length){
+el.innerHTML='<div class="empty"><div class="empty-icon">🔗</div><div class="empty-text">Aucun lien créé.<br>Créez un lien de paiement partageable, sans écrire de code.</div></div>';
+return;
+}
+if(!filtered.length){
+el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">Aucun lien ne correspond à cette recherche.</div></div>';
+return;
+}
+
+el.innerHTML=filtered.map((l,i)=>{
+const amountLabel = l.amountType==='flexible'
+? (l.minAmount ? `Dès ${fmtAmount(l.minAmount)} ${merchantCurrency}` : 'Montant libre')
+: `${fmtAmount(l.amount)} ${merchantCurrency}`;
+return `
+<div class="link-card ${l.active?'':'is-inactive'}" style="animation-delay:${Math.min(i*.04,.4)}s">
+<div class="link-top">
+${l.imageUrl?`<img src="${escapeHtml(l.imageUrl)}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:10px;flex-shrink:0">`:''}
+<div style="flex:1;min-width:0">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+<div class="link-name">${escapeHtml(l.name)}</div>
+<span class="badge ${l.active?'b-active':'b-inactive'}">${l.active?'Actif':'Inactif'}</span>
+<span class="badge b-type">${l.amountType==='flexible'?'✏️ Libre':'💰 Fixe'}</span>
+</div>
+<div class="link-amount">${amountLabel}</div>
+${l.desc?`<div style="font-size:.78rem;color:var(--muted);margin-top:4px">${escapeHtml(l.desc)}</div>`:''}
+<div class="link-url">${escapeHtml(l.url)}</div>
+<div class="link-stats">
+<div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-eye"/></svg></span> <strong>${fmtAmount(l.views)}</strong> vues</div>
+<div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-check-count"/></svg></span> <strong>${fmtAmount(l.paid)}</strong> paiements</div>
+<div class="link-stat">🔢 Limite : <strong>${l.limit==='∞'?'∞':fmtAmount(l.limit)}</strong></div>
+${l.expire?`<div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-calendar"/></svg></span> Expire : <strong>${escapeHtml(l.expire)}</strong></div>`:''}
+</div>
+</div>
+<div class="link-actions">
+<button class="btn ${l.active?'btn-toggle-on':'btn-toggle-off'} btn-sm btn-icon" data-action="toggle" data-token="${l.token}" data-active="${l.active}" aria-label="${l.active?'Désactiver':'Activer'} ce lien"><span class="icon"><svg><use href="#ic-power"/></svg></span></button>
+<button class="btn btn-outline btn-sm btn-icon" data-action="edit" data-token="${l.token}" aria-label="Modifier ce lien"><span class="icon"><svg><use href="#ic-edit"/></svg></span></button>
+<button class="btn btn-outline btn-sm btn-icon" data-action="copy" data-url="${escapeHtml(l.url)}" aria-label="Copier le lien"><span class="icon"><svg><use href="#ic-copy"/></svg></span></button>
+<button class="btn btn-outline btn-sm btn-icon" data-action="share" data-url="${escapeHtml(l.url)}" data-name="${escapeHtml(l.name)}" aria-label="Partager le lien"><span class="icon"><svg><use href="#ic-share"/></svg></span></button>
+<button class="btn btn-danger btn-sm btn-icon" data-action="delete" data-token="${l.token}" aria-label="Supprimer ce lien"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
+</div>
+</div>
+</div>`;
+}).join('');
+}
+
+// Délégation d'événements : les data-attributes portent les valeurs (jamais
+// interpolées dans un attribut onclick="") — évite toute possibilité
+// d'injection via un nom de lien contenant des guillemets ou des caractères
+// spéciaux, même si escapeHtml() protège déjà le HTML affiché.
+document.getElementById('links-list').addEventListener('click', function(e){
+const btn = e.target.closest('button[data-action]');
+if(!btn) return;
+const action = btn.dataset.action;
+if(action==='toggle') toggleActive(btn.dataset.token, btn.dataset.active==='true');
+if(action==='edit') openEditModal(btn.dataset.token);
+if(action==='copy') copyLink(btn.dataset.url);
+if(action==='share') shareLink(btn.dataset.url, btn.dataset.name);
+if(action==='delete') deleteLink(btn.dataset.token);
+});
+
+// ── INIT ─────────────────────────────────────────
+loadProfile();
+loadLinks();
+</script>
+</body>
+</html>
