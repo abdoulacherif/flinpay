@@ -293,6 +293,8 @@ def compute_customer_charge(base_amount: float, service_id: int, currency: str):
         # (feeBearer=CUSTOMER confirmé) : on ne les rajoute pas une seconde fois.
         customer_charge = round(base_amount, 2)
     return customer_charge, fee, base_amount
+
+
 # ── Collections (encaissement) ──────────────────────
 def collection_intent(amount, currency, provider_code, customer_wallet, description, transaction_uuid=None, channel='PROVIDER'):
     transaction_uuid = transaction_uuid or uuid_lib.uuid4().hex
@@ -318,15 +320,21 @@ def collection_status(transaction_reference):
     return _gateway_request('POST', '/collection/status', json_body={'transaction_reference': transaction_reference})
 
 
-def collect_payment(*, base_amount, currency, service, customer_wallet, description, invoice_reference):
+def collect_payment(*, base_amount, currency, service, customer_wallet, description, invoice_reference, otp=None):
     """Enchaîne intent -> execute pour une collection, en calculant d'abord
     le montant réel à demander au client via compute_customer_charge().
+    `otp` est transmis tel quel à l'exécution si l'opérateur choisi l'exige
+    (service['is_need_otp']) — avant, ce champ était toujours écrasé à None
+    par erreur, ce qui aurait cassé tout paiement sur un opérateur
+    nécessitant un code de confirmation à la soumission.
     Retourne un dict prêt à être stocké dans `transactions` :
     {ok, transaction_reference, customer_charge, provider_fee, base_amount, confirmation_url, confirmation_helper}
     ou {ok: False, error}."""
     customer_charge, provider_fee, base_amount = compute_customer_charge(base_amount, service['id'], currency)
     if customer_charge < config.GATEWAY_MIN_AMOUNT:
         return {'ok': False, 'error': f"Montant trop faible (minimum {config.GATEWAY_MIN_AMOUNT} {currency})"}
+    if service.get('is_need_otp') and not otp:
+        return {'ok': False, 'error': "Code de confirmation (OTP) requis pour cet opérateur", 'requires_otp': True}
 
     try:
         intent = collection_intent(
@@ -337,8 +345,7 @@ def collect_payment(*, base_amount, currency, service, customer_wallet, descript
         if not tx_ref:
             return {'ok': False, 'error': "Réponse inattendue du prestataire de paiement"}
 
-        exec_result = collection_execute(tx_ref, invoice_reference=invoice_reference,
-                                          otp=None if not service.get('is_need_otp') else None)
+        exec_result = collection_execute(tx_ref, invoice_reference=invoice_reference, otp=otp)
         return {
             'ok': True,
             'transaction_reference': tx_ref,
@@ -428,12 +435,4 @@ def verify_phone_number(wallet: str, country_code_alpha2: str):
     try:
         r = requests.post(
             f'{config.GATEWAY_BASE_URL}/phone-numbers/verify',
-            headers={'X-API-Key': config.GATEWAY_MERCHANT_API_KEY, 'Content-Type': 'application/json'},
-            json={'wallet': wallet, 'country': alpha3(country_code_alpha2)},
-            timeout=DEFAULT_TIMEOUT
-        )
-        data = r.json()
-        return data if data.get('valid') else None
-    except (requests.RequestException, ValueError, GatewayError) as e:
-        logger.info(f"[gateway] vérification de numéro indisponible (non bloquant): {e}")
-        return None
+            headers={'X-API-Key': config.GATEWAY_MERCHANT_API_KEY, 'Content-Type': 'application/j
