@@ -46,13 +46,18 @@ def api_admin_payments():
     users_map = {u['id']: u for u in all_users}
 
     items = []
-    total_fees_paid = 0.0
+    # Les frais sont regroupés PAR DEVISE plutôt qu'additionnés dans un seul
+    # total — avant, un marchand en XAF et un autre en CDF voyaient leurs
+    # marges sommées comme si c'était la même monnaie, ce qui n'a aucun sens
+    # et fausse complètement le chiffre affiché à l'admin.
+    total_fees_by_currency = {}
     for t in txs:
         merchant = users_map.get(t.get('user_id'), {})
         fee = t.get('fee_amount')
+        currency = t.get('currency') or 'XOF'
         if fee is not None and t.get('status') == 'paid':
             try:
-                total_fees_paid += float(fee)
+                total_fees_by_currency[currency] = round(total_fees_by_currency.get(currency, 0.0) + float(fee), 2)
             except (TypeError, ValueError):
                 pass
         source = 'Lien' if t.get('payment_link_token') else ('Facture' if t.get('invoice_token') else 'API')
@@ -64,14 +69,14 @@ def api_admin_payments():
             'client_amount': t.get('client_amount'),
             'merchant_amount': t.get('amount'),
             'fee_amount': t.get('fee_amount'),
-            'currency': t.get('currency') or 'XOF',
+            'currency': currency,
             'status': t.get('status'),
             'source': source,
             'operator': t.get('operator'),
             'created_at': t.get('created_at')
         })
 
-    return jsonify({'ok': True, 'items': items, 'total_fees_paid': round(total_fees_paid, 2)})
+    return jsonify({'ok': True, 'items': items, 'total_fees_by_currency': total_fees_by_currency})
 
 
 @admin_payments_bp.route('/api/admin/transactions', methods=['GET'])
