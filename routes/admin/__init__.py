@@ -15,6 +15,7 @@ from routes.admin.kyc import admin_kyc_bp
 from routes.admin.config import admin_config_bp
 from routes.admin.audit import admin_audit_bp
 from routes.admin.restrictions import admin_restrictions_bp
+from routes.admin.diagnostics import admin_diagnostics_bp
 
 admin_blueprints = [
     admin_core_bp,
@@ -25,4 +26,5 @@ admin_blueprints = [
     admin_config_bp,
     admin_audit_bp,
     admin_restrictions_bp,
+    admin_diagnostics_bp,
 ]
