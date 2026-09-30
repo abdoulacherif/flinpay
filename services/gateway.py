@@ -116,8 +116,23 @@ def _get_access_token() -> str:
 
         token = data.get('access_token')
         if not r.ok or not token:
-            logger.error(f"[gateway] authentification refusée: status={r.status_code}")
-            raise GatewayError("Authentification auprès du prestataire de paiement refusée")
+            logger.error(f"[gateway] authentification refusée: status={r.status_code} body={r.text[:300]}")
+            # On remonte le vrai statut et le corps de la réponse (sans les
+            # secrets envoyés, seulement ce que Mysoleas a répondu) pour que
+            # le diagnostic admin (/api/admin/gateway-check) puisse dire
+            # précisément ce qui cloche plutôt qu'un message générique.
+            error_detail = data if isinstance(data, dict) else {'raw': r.text[:300]}
+            # Ajouté uniquement pour le diagnostic admin : quel endpoint a été
+            # appelé et un fragment tronqué du client_id (jamais le secret),
+            # pour confirmer que les bonnes variables d'environnement sont
+            # bien celles utilisées, sans jamais les exposer en entier.
+            error_detail['_debug_endpoint'] = endpoint
+            error_detail['_debug_client_id_prefix'] = (config.GATEWAY_CLIENT_ID or '')[:6] + '…'
+            raise GatewayError(
+                "Authentification auprès du prestataire de paiement refusée",
+                detail=error_detail,
+                status_code=r.status_code,
+            )
 
         expires_in = data.get('expires_in') or 3600
         # Le format de la doc "démarrage rapide" renvoie parfois un timestamp absolu
