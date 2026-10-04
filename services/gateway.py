@@ -108,7 +108,10 @@ def _get_access_token() -> str:
             'scope': 'payments services countries providers',
         }
         try:
-            r = requests.post(endpoint, json=payload, timeout=DEFAULT_TIMEOUT)
+            r = requests.post(
+                endpoint, json=payload, timeout=DEFAULT_TIMEOUT,
+                headers={'X-SP-Environment': config.GATEWAY_ENVIRONMENT},
+            )
             data = r.json()
         except (requests.RequestException, ValueError) as e:
             logger.error(f"[gateway] échec d'authentification: {e}")
@@ -159,6 +162,7 @@ def _gateway_request(method, path, json_body=None, params=None, extra_headers=No
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-Request-Id': uuid_lib.uuid4().hex,
+        'X-SP-Environment': config.GATEWAY_ENVIRONMENT,
     }
     if extra_headers:
         headers.update(extra_headers)
