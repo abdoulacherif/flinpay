@@ -58,6 +58,14 @@ class Config:
     # téléphone (/phone-numbers/verify), qui s'authentifie par clé API et non
     # par JWT. Fonctionnalité de confort — dégradable si absente.
     GATEWAY_MERCHANT_API_KEY = _optional('GATEWAY_MERCHANT_API_KEY')
+    # L'application OAuth2 créée côté Mysoleas est elle-même déclarée comme
+    # "sandbox" ou "production" (visible sur leur dashboard, section
+    # Applications OAuth2). On doit le préciser dans nos appels via l'en-tête
+    # X-SP-Environment, sinon l'authentification échoue parfois même avec
+    # les bons identifiants si le client est scoppé à un seul environnement.
+    # Repasser à 'production' une fois l'app Mysoleas elle-même basculée en
+    # production de leur côté.
+    GATEWAY_ENVIRONMENT = _optional('GATEWAY_ENVIRONMENT', 'sandbox')
 
     # ── Garde-fou supplémentaire : longueur minimale des secrets ──
     # Un secret JWT de 4 caractères techniquement "présent" reste catastrophique.
