@@ -36,6 +36,20 @@ def create_app():
     # proxy immédiatement devant moi" — à ajuster selon l'infra réelle.
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+    # ── Domaine canonique ────────────────────────────
+    # Les cookies de session et CSRF sont posés pour un hôte précis — s'ils
+    # sont posés sur flinpay.cfd mais que la navigation continue sur
+    # www.flinpay.cfd (ou l'inverse), le navigateur ne les envoie pas et tout
+    # paraît cassé ("jeton de sécurité invalide", déconnexions mystérieuses)
+    # sans qu'il y ait de vrai bug applicatif. On force une seule adresse
+    # canonique pour que ce problème ne puisse plus se poser nulle part.
+    @app.before_request
+    def _redirect_to_canonical_host():
+        from flask import request, redirect
+        host = request.host.split(':')[0].lower()
+        if host == 'flinpay.cfd':
+            return redirect(f'https://www.flinpay.cfd{request.full_path.rstrip("?")}', code=301)
+
     init_extensions(app)
 
     # ── Blueprints ──────────────────────────────────
