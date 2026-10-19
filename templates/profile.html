@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Profil</title>
-<meta name="csrf-token" content="{{ csrf_token_value() }}">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script nonce="{{ csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style nonce="{{ csp_nonce }}">
@@ -28,27 +28,10 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-/* ── OVERLAY ── */
-.overlay{
-  display:none;
-  position:fixed;top:0;left:0;right:0;bottom:0;
-  background:rgba(8,9,16,0.55);
-  z-index:250;
-  backdrop-filter:blur(2px);
-}
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,9,16,0.55);z-index:250;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
 
-/* ── SIDEBAR ── */
-.sidebar{
-  position:fixed;top:0;left:0;bottom:0;
-  width:82%;max-width:320px;
-  background:var(--ink);
-  z-index:300;
-  display:flex;flex-direction:column;
-  transform:translateX(-100%);
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-  overflow-y:auto;
-}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto}
 .sidebar.open{transform:translateX(0)}
 
 .sidebar-logo{padding:22px 20px 16px;position:relative;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -78,24 +61,14 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.76rem;padding:11px 20px 15px;text-decoration:none;transition:color .15s;flex-shrink:0}
 .logout-link:hover{color:#ff7d7d}
 
-/* ── MAIN ── */
 .main{margin-left:0;min-height:100vh;display:flex;flex-direction:column;width:100%}
 
-.topbar{
-  background:rgba(255,255,255,0.86);
-  backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--border);
-  padding:0 20px;
-  height:64px;
-  display:flex;align-items:center;gap:14px;
-  position:sticky;top:0;z-index:100;
-}
+.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 20px;height:64px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
 .burger-btn{display:flex;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
 .burger-btn:hover{background:var(--bg)}
 .burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
 .topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
 
-/* ── PAGE ── */
 .page{flex:1;padding:22px 20px 60px;max-width:920px;width:100%;margin:0 auto;animation:fadeUp .25s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .grid-2{display:grid;grid-template-columns:1fr;gap:18px}
@@ -150,16 +123,8 @@ input:checked + .slider:before{transform:translateX(20px)}
 #toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateY(0);opacity:1}
 
-/* ── Desktop (≥900px) ─── */
 @media(min-width:900px){
-  .sidebar{
-    position:sticky;top:0;
-    height:100vh;
-    width:var(--sidebar);
-    max-width:var(--sidebar);
-    transform:none;
-    flex-shrink:0;
-  }
+  .sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar);max-width:var(--sidebar);transform:none;flex-shrink:0}
   .close-sidebar{display:none}
   .burger-btn{display:none}
   .overlay{display:none !important}
@@ -357,7 +322,6 @@ input:checked + .slider:before{transform:translateX(20px)}
   </div>
 </div>
 
-<!-- MODAL ACTIVATION 2FA -->
 <div class="modal-bg" id="twofa-setup-modal">
   <div class="modal">
     <h3><span class="icon"><svg><use href="#ic-shield"/></svg></span> Activer le 2FA</h3>
@@ -375,7 +339,6 @@ input:checked + .slider:before{transform:translateX(20px)}
   </div>
 </div>
 
-<!-- MODAL DÉSACTIVATION 2FA -->
 <div class="modal-bg" id="twofa-disable-modal">
   <div class="modal">
     <h3><span class="icon"><svg><use href="#ic-shield"/></svg></span> Désactiver le 2FA</h3>
@@ -395,7 +358,6 @@ input:checked + .slider:before{transform:translateX(20px)}
   </div>
 </div>
 
-<!-- MODAL SUPPRESSION DE COMPTE -->
 <div class="modal-bg" id="delete-account-modal">
   <div class="modal">
     <h3><span class="icon" style="color:var(--danger)"><svg><use href="#ic-trash"/></svg></span> Supprimer mon compte</h3>
@@ -417,7 +379,6 @@ input:checked + .slider:before{transform:translateX(20px)}
 <script nonce="{{ csp_nonce }}">
 "use strict";
 
-// ── CSRF ─────────────────────────────────────────
 function getCsrfToken() {
   const meta = document.querySelector('meta[name="csrf-token"]');
   return meta ? meta.getAttribute('content') : '';
@@ -436,7 +397,6 @@ async function apiFetch(url, options = {}) {
   return fetch(url, opts);
 }
 
-// ── UI ───────────────────────────────────────────
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.add('show');
@@ -470,7 +430,6 @@ function checkStr(v){
 let twofaEnabled=false;
 let emailLinkEnabled=false;
 
-// ── CHARGEMENT ───────────────────────────────────
 async function loadProfile(){
   try{
     const r=await apiFetch('/api/me');
@@ -525,7 +484,6 @@ function renderTwofaStatus(){
   }
 }
 
-// ── ACTIONS ──────────────────────────────────────
 async function toggleEmailLink(enabled){
   try{
     const r=await apiFetch('/api/settings/toggle-email-link',{
@@ -662,7 +620,6 @@ async function confirmTwofaDisable(){
   btn.disabled=false; btn.textContent='Désactiver';
 }
 
-// ── INIT ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('burger-btn').addEventListener('click', openSidebar);
   document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
