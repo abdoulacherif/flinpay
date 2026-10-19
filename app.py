@@ -7,7 +7,10 @@ from extensions import init_extensions, logger
 
 
 _CSRF_EXEMPT_ENDPOINTS = frozenset({
+    # ── Webhooks (signés par la passerelle) ──
     'webhook_callback.webhook_payment_events',
+
+    # ── Paiements publics (Bearer ou pas de session) ──
     'payments.api_pay',
     'payments.api_pay_link',
     'payments.api_pay_status',
@@ -15,14 +18,20 @@ _CSRF_EXEMPT_ENDPOINTS = frozenset({
     'payments.pay_thank_you',
     'invoices.api_invoice_pay',
     'invoices.invoice_view',
+
+    # ── Pages publiques ──
     'public.index',
     'public.register',
     'public.login_page',
     'public.docs',
     'public.favicon',
     'public.flinpay_widget_js',
+
+    # ── Authentification (pas de session avant login) ──
     'auth.api_login',
     'auth.api_login_2fa',
+    'auth.api_login_email_link',
+    'auth.api_login_verify_link',
     'auth.api_logout',
     'auth.verify_email',
     'auth.api_resend_verification',
