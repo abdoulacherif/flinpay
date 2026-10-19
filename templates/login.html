@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Connexion</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:'Inter',sans-serif;
@@ -56,9 +56,11 @@ input{
 input:focus{border-color:#1A3CFF}
 input::placeholder{color:rgba(255,255,255,0.2)}
 .code-input{letter-spacing:.5em;text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.15rem}
-.forgot-row{display:flex;justify-content:flex-end;margin:-6px 0 16px}
+.forgot-row{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 16px}
 .forgot-row a{font-size:.78rem;color:rgba(255,255,255,0.4);text-decoration:none}
 .forgot-row a:hover{color:white}
+.link-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:.78rem;cursor:pointer;text-decoration:underline}
+.link-btn:hover{color:white}
 .btn-login{
   width:100%;padding:14px;
   background:#1A3CFF;color:white;
@@ -82,6 +84,13 @@ input::placeholder{color:rgba(255,255,255,0.2)}
   background:rgba(255,68,68,0.1);
   border:1px solid rgba(255,68,68,0.3);
   color:#ff7070;border-radius:8px;
+  padding:10px 14px;font-size:0.83rem;
+  margin-top:14px;display:none;text-align:center
+}
+.success{
+  background:rgba(0,196,140,0.1);
+  border:1px solid rgba(0,196,140,0.3);
+  color:#00C48C;border-radius:8px;
   padding:10px 14px;font-size:0.83rem;
   margin-top:14px;display:none;text-align:center
 }
@@ -110,18 +119,17 @@ input::placeholder{color:rgba(255,255,255,0.2)}
   <div id="step1">
     <div class="field">
       <label>Email</label>
-      <input type="email" id="email" placeholder="vous@entreprise.com" autocomplete="email"
-        onkeydown="if(event.key==='Enter') doLogin()">
+      <input type="email" id="email" placeholder="vous@entreprise.com" autocomplete="email">
     </div>
     <div class="field">
       <label>Mot de passe</label>
-      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
-        onkeydown="if(event.key==='Enter') doLogin()">
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
     </div>
-    <div class="forgot-row"><a href="/forgot-password">Mot de passe oublié ?</a></div>
-    <button class="btn-login" id="btn-login" onclick="doLogin()">
-      Se connecter →
-    </button>
+    <div class="forgot-row">
+      <button type="button" class="link-btn" onclick="doMagicLink()">Recevoir un lien de connexion</button>
+      <a href="/forgot-password">Mot de passe oublié ?</a>
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Se connecter →</button>
     <div class="signup-link">
       Pas encore de compte ? <a href="/register">Créer un compte</a>
     </div>
@@ -131,60 +139,128 @@ input::placeholder{color:rgba(255,255,255,0.2)}
     <div class="step2-desc">Entrez le code à 6 chiffres généré par votre application d'authentification (Google Authenticator ou équivalent).</div>
     <div class="field">
       <label>Code de vérification</label>
-      <input type="text" id="twofa-code" class="code-input" maxlength="6" inputmode="numeric" placeholder="000000"
-        onkeydown="if(event.key==='Enter') doVerify2fa()">
+      <input type="text" id="twofa-code" class="code-input" maxlength="6" inputmode="numeric" placeholder="000000">
     </div>
-    <button class="btn-login" id="btn-verify" onclick="doVerify2fa()">
-      Vérifier →
-    </button>
+    <button class="btn-login" id="btn-verify" onclick="doVerify2fa()">Vérifier →</button>
     <button class="btn-back-step" onclick="backToStep1()">← Retour</button>
   </div>
 
   <div class="error" id="error-msg"></div>
+  <div class="success" id="success-msg"></div>
   <div class="back"><a href="/">← Retour au site</a></div>
 </div>
 
-<script>
-let pendingToken=null;
+<script nonce="{{ csp_nonce }}">
+let pendingToken = null;
+let magicLinkToken = null;
 
+// --- Vérification au chargement si on vient d'un lien magique ---
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('link_token');
+    if (token) {
+        magicLinkToken = token;
+        // On bascule directement sur l'étape de vérification du code
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('step2').style.display = 'block';
+        document.getElementById('subtitle').textContent = 'Vérification par lien';
+        document.querySelector('.step2-desc').textContent = 'Entrez le code de secours reçu dans votre email.';
+        
+        // On pré-remplit si le code est passé en clair dans l'URL (ce qui est le cas)
+        const urlCode = urlParams.get('code'); 
+        if(urlCode) {
+            document.getElementById('twofa-code').value = urlCode;
+        }
+    }
+});
+
+// --- Connexion classique ---
 async function doLogin() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const btn = document.getElementById('btn-login');
   const err = document.getElementById('error-msg');
 
-  if (!email || !password) {
-    showError('Veuillez remplir tous les champs');
-    return;
-  }
+  if (!email || !password) { showError('Veuillez remplir tous les champs'); return; }
 
-  btn.textContent = 'Connexion...';
-  btn.classList.add('loading');
-  err.style.display = 'none';
+  btn.textContent = 'Connexion...'; btn.classList.add('loading'); err.style.display = 'none';
 
   try {
     const r = await fetch('/api/login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({email, password})
     });
     const data = await r.json();
     if (data.ok && data.requires_2fa) {
-      pendingToken = data.pending_token;
-      goToStep2();
+      pendingToken = data.pending_token; goToStep2();
     } else if (data.ok) {
       window.location.href = '/dashboard';
-    } else {
-      showError(data.error || 'Identifiants incorrects');
-    }
-  } catch(e) {
-    showError('Erreur de connexion. Réessayez.');
-  }
+    } else { showError(data.error || 'Identifiants incorrects'); }
+  } catch(e) { showError('Erreur de connexion.'); }
 
-  btn.textContent = 'Se connecter →';
-  btn.classList.remove('loading');
+  btn.textContent = 'Se connecter →'; btn.classList.remove('loading');
 }
 
+// --- Demande de lien magique ---
+async function doMagicLink() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    if (!email || !password) {
+        showError("Entrez votre email et mot de passe pour recevoir le lien.");
+        return;
+    }
+    const btn = document.getElementById('btn-login');
+    btn.textContent = 'Envoi...'; btn.classList.add('loading');
+    
+    try {
+        const r = await fetch('/api/login/email-link', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email, password})
+        });
+        const data = await r.json();
+        if (data.ok) { showSuccess("Lien envoyé ! Vérifiez votre boîte mail."); }
+        else { showError(data.error); }
+    } catch(e) { showError("Erreur réseau."); }
+    
+    btn.textContent = 'Se connecter →'; btn.classList.remove('loading');
+}
+
+// --- Vérification (2FA ou Magic Link) ---
+async function doVerify2fa(){
+  const code = document.getElementById('twofa-code').value.trim();
+  const btn = document.getElementById('btn-verify');
+  if(!/^\d{6}$/.test(code)){ showError('Entrez un code à 6 chiffres'); return; }
+  
+  if(!pendingToken && !magicLinkToken){
+    showError('Session expirée, reconnectez-vous');
+    backToStep1(); return;
+  }
+
+  btn.textContent='Vérification...'; btn.classList.add('loading');
+  document.getElementById('error-msg').style.display='none';
+
+  try{
+    let endpoint = '/api/login/2fa';
+    let payload = {pending_token: pendingToken, code: code};
+    
+    if (magicLinkToken) {
+        endpoint = '/api/login/verify-link';
+        payload = {token: magicLinkToken, code: code};
+    }
+
+    const r = await fetch(endpoint, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json();
+    if(data.ok) { window.location.href='/dashboard'; }
+    else { showError(data.error || 'Code invalide'); }
+  } catch(e) { showError('Erreur de connexion.'); }
+
+  btn.textContent='Vérifier →'; btn.classList.remove('loading');
+}
+
+// --- UI ---
 function goToStep2(){
   document.getElementById('step1').style.display='none';
   document.getElementById('step2').style.display='block';
@@ -193,8 +269,9 @@ function goToStep2(){
   document.getElementById('twofa-code').value='';
   document.getElementById('twofa-code').focus();
 }
+
 function backToStep1(){
-  pendingToken=null;
+  pendingToken = null; magicLinkToken = null;
   document.getElementById('step1').style.display='block';
   document.getElementById('step2').style.display='none';
   document.getElementById('subtitle').textContent='Connexion à votre compte';
@@ -202,47 +279,15 @@ function backToStep1(){
   document.getElementById('password').value='';
 }
 
-async function doVerify2fa(){
-  const code=document.getElementById('twofa-code').value.trim();
-  const btn=document.getElementById('btn-verify');
-  if(!/^\d{6}$/.test(code)){
-    showError('Entrez un code à 6 chiffres');
-    return;
-  }
-  if(!pendingToken){
-    showError('Session expirée, reconnectez-vous');
-    backToStep1();
-    return;
-  }
-
-  btn.textContent='Vérification...';
-  btn.classList.add('loading');
-  document.getElementById('error-msg').style.display='none';
-
-  try{
-    const r=await fetch('/api/login/2fa',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({pending_token:pendingToken, code})
-    });
-    const data=await r.json();
-    if(data.ok){
-      window.location.href='/dashboard';
-    }else{
-      showError(data.error||'Code invalide');
-    }
-  }catch(e){
-    showError('Erreur de connexion. Réessayez.');
-  }
-
-  btn.textContent='Vérifier →';
-  btn.classList.remove('loading');
-}
-
 function showError(msg) {
   const el = document.getElementById('error-msg');
-  el.textContent = '⚠ ' + msg;
-  el.style.display = 'block';
+  el.textContent = '⚠ ' + msg; el.style.display = 'block';
+  document.getElementById('success-msg').style.display = 'none';
+}
+function showSuccess(msg) {
+  const el = document.getElementById('success-msg');
+  el.textContent = '✅ ' + msg; el.style.display = 'block';
+  document.getElementById('error-msg').style.display = 'none';
 }
 </script>
 </body>
