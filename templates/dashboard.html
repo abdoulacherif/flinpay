@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
 --ink:#0B0D17;--ink-soft:#141625;
@@ -444,7 +444,7 @@ border-left:3px solid transparent;text-decoration:none;background:none;width:100
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 
 function openSidebar(){
@@ -661,5 +661,3 @@ loadTransactions();
 </script>
 </body>
 </html>
-
-
