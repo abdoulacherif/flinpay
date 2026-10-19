@@ -4,17 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay Admin — Revue KYC</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1A3CFF;--blue-tint:#EEF1FF;--gold:#FFB400;--green:#00C48C;--green-tint:#E3FBF3;--ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;--danger:#FF4D4D;--danger-tint:#FFEAEA;--border:#E7E9F3;--border-soft:#F0F1F8}
+:root{
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:10px}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
 .topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:8px}
-.topbar-logo span{color:#5B7CFF}
+.topbar-logo span{color:var(--cyan)}
 .topbar-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem}
 .topbar-right a:hover{color:white}
 
@@ -22,18 +31,29 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;disp
 .page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .count-badge{color:var(--muted);font-weight:400;font-size:1rem}
 
-.card{background:white;border-radius:16px;border:1px solid var(--border);padding:20px 22px;margin-bottom:14px;box-shadow:0 1px 2px rgba(15,17,32,.04);opacity:0;transform:translateY(6px);animation:cardIn .3s ease forwards}
+.section-head{display:flex;align-items:center;gap:10px;margin:26px 0 12px}
+.section-head h2{font-size:.85rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.section-head .count{font-size:.75rem;font-weight:700;background:var(--border-soft);color:var(--text);padding:2px 9px;border-radius:20px}
+.section-head.pending .count{background:var(--gold-tint);color:#8A5B00}
+.section-head.history .count{background:var(--border-soft);color:var(--muted)}
+.section-head .rule{flex:1;height:1px;background:var(--border)}
+
+.card{background:white;border-radius:16px;border:1px solid var(--border-soft);padding:20px 22px;margin-bottom:14px;box-shadow:0 4px 16px rgba(10,50,150,.05);opacity:0;transform:translateY(6px);animation:cardIn .3s ease forwards}
 @keyframes cardIn{to{opacity:1;transform:translateY(0)}}
 .row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
 .name{font-weight:700;font-size:1rem;margin-bottom:2px}
 .email{font-size:.8rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
 .meta{font-size:.8rem;color:var(--muted);margin-top:8px;line-height:1.8}
 .meta b{color:var(--text)}
-.waiting-badge{display:inline-flex;align-items:center;gap:5px;background:var(--blue-tint);color:var(--blue);font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:20px;margin-top:6px}
+.badge-status{display:inline-flex;align-items:center;gap:5px;font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:20px;margin-top:6px}
+.status-pending{background:var(--gold-tint);color:#8A5B00}
+.status-verified{background:var(--green-tint);color:#0A7A50}
+.status-rejected{background:var(--danger-tint);color:#B3271A}
+.rejection-reason{margin-top:8px;font-size:.78rem;color:#B3271A;background:var(--danger-tint);border-radius:8px;padding:8px 12px;line-height:1.5}
 
 .actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
 .doc-buttons{display:flex;gap:8px;flex-wrap:wrap}
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.82rem;padding:9px 16px;border-radius:9px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.82rem;padding:9px 16px;border-radius:9px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
 .btn-doc{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
 .btn-doc:hover{border-color:var(--blue);color:var(--blue)}
 .btn-approve{background:var(--green);color:white}
@@ -42,8 +62,11 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;disp
 .btn-reject:hover{filter:brightness(1.05)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline:hover{background:var(--blue-tint)}
 
-.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty{text-align:center;padding:44px 20px;color:var(--muted);font-size:.88rem;background:white;border-radius:16px;border:1px dashed var(--border)}
+.empty-icon{font-size:2rem;margin-bottom:8px;opacity:.7}
+
 .doc-thumbs{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
 .doc-thumb{display:flex;flex-direction:column;align-items:center;gap:6px}
 .doc-thumb img{width:110px;height:80px;object-fit:cover;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;background:var(--bg);transition:transform .15s}
@@ -51,14 +74,13 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;disp
 .doc-thumb span{font-size:.68rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
 .doc-missing{width:110px;height:80px;border-radius:8px;border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:.68rem;color:var(--muted);text-align:center;padding:6px}
 
-/* ── modales (remplacent confirm()/prompt() natifs) ── */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px}
 .modal-bg.show{display:flex}
 .modal{background:white;border-radius:18px;padding:24px;width:100%;max-width:420px;box-shadow:0 30px 60px rgba(10,12,25,0.25);opacity:0;transform:translateY(12px) scale(.98);transition:all .22s cubic-bezier(.16,.8,.3,1)}
 .modal-bg.show .modal{opacity:1;transform:translateY(0) scale(1)}
 .modal h3{font-size:1rem;font-weight:800;margin-bottom:12px}
 .modal p{font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:14px}
-.modal textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;font-family:'Inter',sans-serif;min-height:80px;outline:none;resize:vertical}
+.modal textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;font-family:'Inter',sans-serif;min-height:80px;outline:none;resize:vertical;background:white;color:var(--text)}
 .modal textarea:focus{border-color:var(--blue)}
 .modal-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
 
@@ -69,210 +91,420 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;disp
 <body>
 
 <div class="topbar">
-<div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
-<div class="topbar-right"><a href="/admin">← Retour à l'admin</a></div>
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
+  <div class="topbar-right"><a href="/admin">← Retour à l'admin</a></div>
 </div>
 
 <div class="page">
-<div class="page-head">
-<h1>🪪 Demandes de vérification KYC <span class="count-badge">({{ pending|length }})</span></h1>
-</div>
+  <div class="page-head">
+    <h1>🪪 Revue KYC</h1>
+  </div>
 
-<div id="list">
-{% if not pending %}
-<div class="empty">Aucune demande en attente. 🎉</div>
-{% endif %}
-{% for u in pending %}
-<div class="card" data-user-id="{{ u.id }}" style="animation-delay:{{ loop.index0 * 0.04 }}s">
-<div class="row">
-<div>
-<div class="name">{{ u.kyc_full_name or (u.firstname ~ ' ' ~ u.lastname) }}</div>
-<div class="email">{{ u.email }}</div>
-<div class="meta">
-<b>Pièce :</b> {{ u.kyc_id_type }} — {{ u.kyc_id_number }}<br>
-<b>Pays :</b> {{ u.country }} &nbsp; <b>Entreprise :</b> {{ u.company or '—' }}<br>
-<b>Soumis le :</b> <span class="submit-date" data-iso="{{ u.kyc_submitted_at }}">{{ u.kyc_submitted_at }}</span>
-</div>
-<div class="waiting-badge" data-wait="{{ u.kyc_submitted_at }}">⏳ en attente</div>
-<div class="doc-thumbs" id="thumbs-{{ u.id }}">
-<div class="doc-missing">Chargement…</div>
-</div>
-</div>
-<div class="actions">
-<div class="doc-buttons">
-<button class="btn btn-doc" onclick="viewDoc('{{ u.id }}','front')">📄 Recto</button>
-<button class="btn btn-doc" onclick="viewDoc('{{ u.id }}','back')">📄 Verso</button>
-<button class="btn btn-doc" onclick="viewDoc('{{ u.id }}','selfie')">🤳 Selfie</button>
-</div>
-<button class="btn btn-approve" data-id="{{ u.id }}" onclick="confirmApprove(this)">✅ Approuver</button>
-<button class="btn btn-reject" data-id="{{ u.id }}" onclick="openRejectModal(this)">❌ Rejeter</button>
-</div>
-</div>
-</div>
-{% endfor %}
-</div>
+  <!-- ══ SECTION 1 : EN ATTENTE ══ -->
+  <div class="section-head pending">
+    <h2>⏳ En attente de revue</h2>
+    <span class="count" id="pending-count">{{ pending|length }}</span>
+    <div class="rule"></div>
+  </div>
+
+  <div id="list-pending">
+    {% if not pending %}
+    <div class="empty">
+      <div class="empty-icon">🎉</div>
+      Aucune demande en attente.
+    </div>
+    {% endif %}
+    {% for u in pending %}
+    <div class="card" data-user-id="{{ u.id }}" data-status="pending" style="animation-delay:{{ loop.index0 * 0.04 }}s">
+      <div class="row">
+        <div>
+          <div class="name">{{ u.kyc_full_name or (u.firstname ~ ' ' ~ u.lastname) }}</div>
+          <div class="email">{{ u.email }}</div>
+          <div class="meta">
+            <b>Pièce :</b> {{ u.kyc_id_type }} — {{ u.kyc_id_number }}<br>
+            <b>Pays :</b> {{ u.country }} &nbsp; <b>Entreprise :</b> {{ u.company or '—' }}<br>
+            <b>Soumis le :</b> <span class="submit-date" data-iso="{{ u.kyc_submitted_at }}">{{ u.kyc_submitted_at }}</span>
+          </div>
+          <div class="badge-status status-pending" data-wait="{{ u.kyc_submitted_at }}">⏳ En attente</div>
+          <div class="doc-thumbs" id="thumbs-{{ u.id }}">
+            <div class="doc-missing">Chargement…</div>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="doc-buttons">
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="front">📄 Recto</button>
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="back">📄 Verso</button>
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="selfie">🤳 Selfie</button>
+          </div>
+          <button class="btn btn-approve" data-approve-id="{{ u.id }}">✅ Approuver</button>
+          <button class="btn btn-reject" data-reject-id="{{ u.id }}">❌ Rejeter</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ══ SECTION 2 : HISTORIQUE (validés + rejetés) ══ -->
+  <div class="section-head history">
+    <h2>📜 Historique</h2>
+    <span class="count" id="history-count">{{ (verified|length) + (rejected|length) }}</span>
+    <div class="rule"></div>
+  </div>
+
+  <div id="list-history">
+    {% if not verified and not rejected %}
+    <div class="empty">
+      <div class="empty-icon">📭</div>
+      Aucun historique de vérification pour le moment.
+    </div>
+    {% endif %}
+
+    {% for u in verified %}
+    <div class="card" data-user-id="{{ u.id }}" data-status="verified" style="animation-delay:{{ loop.index0 * 0.04 }}s">
+      <div class="row">
+        <div>
+          <div class="name">{{ u.kyc_full_name or (u.firstname ~ ' ' ~ u.lastname) }}</div>
+          <div class="email">{{ u.email }}</div>
+          <div class="meta">
+            <b>Pièce :</b> {{ u.kyc_id_type }} — {{ u.kyc_id_number }}<br>
+            <b>Pays :</b> {{ u.country }}<br>
+            <b>Traité le :</b> <span class="submit-date" data-iso="{{ u.kyc_reviewed_at or u.kyc_submitted_at }}">{{ u.kyc_reviewed_at or u.kyc_submitted_at }}</span>
+          </div>
+          <div class="badge-status status-verified">✅ Validé</div>
+          <div class="doc-thumbs" id="thumbs-{{ u.id }}">
+            <div class="doc-missing">Chargement…</div>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="doc-buttons">
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="front">📄 Recto</button>
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="back">📄 Verso</button>
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="selfie">🤳 Selfie</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% for u in rejected %}
+    <div class="card" data-user-id="{{ u.id }}" data-status="rejected" style="animation-delay:{{ loop.index0 * 0.04 }}s">
+      <div class="row">
+        <div>
+          <div class="name">{{ u.kyc_full_name or (u.firstname ~ ' ' ~ u.lastname) }}</div>
+          <div class="email">{{ u.email }}</div>
+          <div class="meta">
+            <b>Pièce :</b> {{ u.kyc_id_type }} — {{ u.kyc_id_number }}<br>
+            <b>Pays :</b> {{ u.country }}<br>
+            <b>Traité le :</b> <span class="submit-date" data-iso="{{ u.kyc_reviewed_at or u.kyc_submitted_at }}">{{ u.kyc_reviewed_at or u.kyc_submitted_at }}</span>
+          </div>
+          <div class="badge-status status-rejected">❌ Rejeté</div>
+          {% if u.kyc_rejection_reason %}
+          <div class="rejection-reason">Motif : {{ u.kyc_rejection_reason }}</div>
+          {% endif %}
+          <div class="doc-thumbs" id="thumbs-{{ u.id }}">
+            <div class="doc-missing">Chargement…</div>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="doc-buttons">
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="front">📄 Recto</button>
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="back">📄 Verso</button>
+            <button class="btn btn-doc" data-view-uid="{{ u.id }}" data-view-doc="selfie">🤳 Selfie</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
 </div>
 
 <!-- MODAL APPROBATION -->
 <div class="modal-bg" id="approve-modal">
-<div class="modal" role="dialog" aria-modal="true">
-<h3>✅ Approuver cette vérification ?</h3>
-<p>Le marchand pourra générer des clés API et demander des retraits immédiatement après validation.</p>
-<div class="modal-actions">
-<button class="btn btn-outline" onclick="closeApproveModal()">Annuler</button>
-<button class="btn btn-approve" id="btn-confirm-approve" onclick="doApprove()">Confirmer</button>
-</div>
-</div>
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3>✅ Approuver cette vérification ?</h3>
+    <p>Le marchand pourra générer des clés API et demander des retraits immédiatement après validation.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="btn-cancel-approve">Annuler</button>
+      <button class="btn btn-approve" id="btn-confirm-approve">Confirmer</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL REJET -->
 <div class="modal-bg" id="reject-modal">
-<div class="modal" role="dialog" aria-modal="true">
-<h3>❌ Rejeter cette vérification</h3>
-<p>Le motif est envoyé au marchand pour qu'il puisse corriger et resoumettre.</p>
-<textarea id="reject-reason" placeholder="Ex : Document illisible, photo recto/verso ne correspond pas, selfie non concluant...">Document illisible ou invalide</textarea>
-<div class="modal-actions">
-<button class="btn btn-outline" onclick="closeRejectModal()">Annuler</button>
-<button class="btn btn-reject" id="btn-confirm-reject" onclick="doReject()">Rejeter</button>
-</div>
-</div>
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3>❌ Rejeter cette vérification</h3>
+    <p>Le motif est envoyé au marchand pour qu'il puisse corriger et resoumettre.</p>
+    <textarea id="reject-reason" placeholder="Ex : Document illisible, photo recto/verso ne correspond pas, selfie non concluant...">Document illisible ou invalide</textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="btn-cancel-reject">Annuler</button>
+      <button class="btn btn-reject" id="btn-confirm-reject">Rejeter</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 
-// ── CSRF : sans ça, /approve et /reject renvoient systématiquement une
-// erreur "Jeton de sécurité invalide" depuis que ces routes sont protégées
-// côté serveur (@csrf_protect). ──────────────────────────────────────
 function getCsrfToken(){
-const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
-return m ? decodeURIComponent(m[1]) : '';
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if(meta && meta.getAttribute('content')) return meta.getAttribute('content');
+  const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
 }
-async function apiFetch(url, options={}){
-const headers = Object.assign({}, options.headers || {});
-if(options.method && options.method !== 'GET'){
-headers['X-CSRF-Token'] = getCsrfToken();
+async function apiFetch(url, options = {}){
+  const opts = { ...options };
+  opts.headers = { ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){
+    const t = getCsrfToken();
+    if(t) opts.headers['X-CSRF-Token'] = t;
+  }
+  if(opts.body && typeof opts.body === 'string'){
+    opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+  }
+  return fetch(url, opts);
 }
-return fetch(url, Object.assign({}, options, {headers}));
+function escapeHtml(str){
+  if(str === null || str === undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 function toast(msg, ok=true){
-const t=document.getElementById('toast');
-t.textContent=(ok?'✅ ':'❌ ')+msg;
-t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
-t.classList.add('show');
-clearTimeout(t._h);
-t._h=setTimeout(()=>t.classList.remove('show'),3000);
+  const t = document.getElementById('toast');
+  t.textContent = (ok?'✅ ':'❌ ') + msg;
+  t.style.borderLeftColor = ok ? 'var(--green)' : 'var(--danger)';
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// Affiche "il y a X heures" à côté de chaque demande, et une date lisible.
-document.querySelectorAll('.submit-date').forEach(el=>{
-const iso=el.dataset.iso;
-if(!iso) return;
-try{ el.textContent = new Date(iso).toLocaleString('fr-FR'); }catch(e){}
+// Dates lisibles + "il y a X heures" pour les demandes en attente
+document.querySelectorAll('.submit-date').forEach(el => {
+  const iso = el.dataset.iso;
+  if(!iso) return;
+  try { el.textContent = new Date(iso).toLocaleString('fr-FR'); } catch(e){}
 });
-document.querySelectorAll('[data-wait]').forEach(el=>{
-const iso=el.dataset.wait;
-if(!iso) return;
-try{
-const hours = Math.max(0, Math.round((Date.now() - new Date(iso).getTime())/3600000));
-el.textContent = hours < 1 ? '⏳ à l\'instant' : hours < 24 ? `⏳ en attente depuis ${hours} h` : `⏳ en attente depuis ${Math.round(hours/24)} j`;
-}catch(e){}
+document.querySelectorAll('[data-wait]').forEach(el => {
+  const iso = el.dataset.wait;
+  if(!iso) return;
+  try{
+    const hours = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 3600000));
+    el.textContent = hours < 1
+      ? '⏳ À l\'instant'
+      : hours < 24
+        ? `⏳ En attente depuis ${hours} h`
+        : `⏳ En attente depuis ${Math.round(hours/24)} j`;
+  }catch(e){}
 });
 
-const docUrlsCache={};
-const DOC_LABELS={front:'Recto',back:'Verso',selfie:'Selfie'};
+// ── Documents ───────────────────────────────────
+const docUrlsCache = {};
+const DOC_LABELS = {front:'Recto', back:'Verso', selfie:'Selfie'};
 
 async function fetchDocUrls(userId){
-if(docUrlsCache[userId]) return docUrlsCache[userId];
-const r=await fetch('/api/admin/kyc/'+userId+'/document');
-const data=await r.json();
-if(!data.ok) throw new Error(data.error||'Erreur');
-docUrlsCache[userId]=data.urls||{};
-return docUrlsCache[userId];
+  if(docUrlsCache[userId]) return docUrlsCache[userId];
+  const r = await fetch('/api/admin/kyc/'+userId+'/document');
+  const data = await r.json();
+  if(!data.ok) throw new Error(data.error || 'Erreur');
+  docUrlsCache[userId] = data.urls || {};
+  return docUrlsCache[userId];
 }
 
 async function loadThumbs(userId){
-const box=document.getElementById('thumbs-'+userId);
-try{
-const urls=await fetchDocUrls(userId);
-box.innerHTML=['front','back','selfie'].map(key=>{
-if(urls[key]){
-return `<div class="doc-thumb"><img src="${urls[key]}" alt="${DOC_LABELS[key]}" onclick="window.open('${urls[key]}','_blank')"><span>${DOC_LABELS[key]}</span></div>`;
-}
-return `<div class="doc-thumb"><div class="doc-missing">${DOC_LABELS[key]} manquant</div></div>`;
-}).join('');
-}catch(e){
-box.innerHTML='<div class="doc-missing">Erreur de chargement</div>';
-}
+  const box = document.getElementById('thumbs-'+userId);
+  if(!box) return;
+  try{
+    const urls = await fetchDocUrls(userId);
+    box.innerHTML = ['front','back','selfie'].map(key => {
+      if(urls[key]){
+        return `<div class="doc-thumb"><img src="${escapeHtml(urls[key])}" alt="${escapeHtml(DOC_LABELS[key])}" data-doc-url="${escapeHtml(urls[key])}"><span>${escapeHtml(DOC_LABELS[key])}</span></div>`;
+      }
+      return `<div class="doc-thumb"><div class="doc-missing">${escapeHtml(DOC_LABELS[key])} manquant</div></div>`;
+    }).join('');
+    box.querySelectorAll('img[data-doc-url]').forEach(img => {
+      img.addEventListener('click', () => window.open(img.dataset.docUrl, '_blank'));
+    });
+  }catch(e){
+    box.innerHTML = '<div class="doc-missing">Erreur de chargement</div>';
+  }
 }
 
 async function viewDoc(userId, key){
-try{
-const urls=await fetchDocUrls(userId);
-if(urls[key]){ window.open(urls[key],'_blank'); }
-else{ toast(DOC_LABELS[key]+' introuvable pour cet utilisateur', false); }
-}catch(e){ toast('Erreur de connexion', false); }
+  try{
+    const urls = await fetchDocUrls(userId);
+    if(urls[key]) window.open(urls[key], '_blank');
+    else toast(DOC_LABELS[key]+' introuvable pour cet utilisateur', false);
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
-let pendingUserId=null;
-
-function confirmApprove(btn){ pendingUserId=btn.dataset.id; document.getElementById('approve-modal').classList.add('show'); }
-function closeApproveModal(){ document.getElementById('approve-modal').classList.remove('show'); pendingUserId=null; }
-async function doApprove(){
-if(!pendingUserId) return;
-const btn=document.getElementById('btn-confirm-approve');
-btn.disabled=true; btn.textContent='Validation...';
-try{
-const r=await apiFetch('/api/admin/kyc/'+pendingUserId+'/approve',{method:'POST'});
-const data=await r.json();
-if(data.ok){
-document.querySelector(`[data-user-id="${pendingUserId}"]`).remove();
-toast('Vérification approuvée');
-}else{
-toast(data.error||'Erreur lors de la validation', false);
-}
-}catch(e){ toast('Erreur de connexion', false); }
-btn.disabled=false; btn.textContent='Confirmer';
-closeApproveModal();
-}
-
-function openRejectModal(btn){
-pendingUserId=btn.dataset.id;
-document.getElementById('reject-reason').value='Document illisible ou invalide';
-document.getElementById('reject-modal').classList.add('show');
-}
-function closeRejectModal(){ document.getElementById('reject-modal').classList.remove('show'); pendingUserId=null; }
-async function doReject(){
-if(!pendingUserId) return;
-const reason=document.getElementById('reject-reason').value.trim();
-if(!reason){ toast('Un motif est requis', false); return; }
-const btn=document.getElementById('btn-confirm-reject');
-btn.disabled=true; btn.textContent='Envoi...';
-try{
-const r=await apiFetch('/api/admin/kyc/'+pendingUserId+'/reject',{
-method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reason})
+// ── Boutons (délégation) ────────────────────────
+document.querySelectorAll('[data-view-uid]').forEach(b => {
+  b.addEventListener('click', () => viewDoc(b.dataset.viewUid, b.dataset.viewDoc));
 });
-const data=await r.json();
-if(data.ok){
-document.querySelector(`[data-user-id="${pendingUserId}"]`).remove();
-toast('Vérification rejetée');
-}else{
-toast(data.error||'Erreur lors du rejet', false);
+
+// ── Approbation ─────────────────────────────────
+let pendingApproveId = null;
+
+function openApproveModal(id){
+  pendingApproveId = id;
+  document.getElementById('approve-modal').classList.add('show');
 }
-}catch(e){ toast('Erreur de connexion', false); }
-btn.disabled=false; btn.textContent='Rejeter';
-closeRejectModal();
+function closeApproveModal(){
+  document.getElementById('approve-modal').classList.remove('show');
+  pendingApproveId = null;
+}
+async function doApprove(){
+  if(!pendingApproveId) return;
+  const btn = document.getElementById('btn-confirm-approve');
+  btn.disabled = true; btn.textContent = 'Validation...';
+  try{
+    const r = await apiFetch('/api/admin/kyc/'+pendingApproveId+'/approve', {method:'POST'});
+    const data = await r.json();
+    if(data.ok){
+      removeCardFromPending(pendingApproveId, 'verified');
+      toast('Vérification approuvée');
+    } else {
+      toast(data.error || 'Erreur lors de la validation', false);
+    }
+  }catch(e){ toast('Erreur de connexion', false); }
+  btn.disabled = false; btn.textContent = 'Confirmer';
+  closeApproveModal();
 }
 
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeApproveModal(); closeRejectModal(); }});
-document.getElementById('approve-modal').addEventListener('click', e=>{ if(e.target.id==='approve-modal') closeApproveModal(); });
-document.getElementById('reject-modal').addEventListener('click', e=>{ if(e.target.id==='reject-modal') closeRejectModal(); });
+// ── Rejet ────────────────────────────────────────
+let pendingRejectId = null;
 
-document.querySelectorAll('.card[data-user-id]').forEach(card=>{
-loadThumbs(card.dataset.userId);
+function openRejectModal(id){
+  pendingRejectId = id;
+  document.getElementById('reject-reason').value = 'Document illisible ou invalide';
+  document.getElementById('reject-modal').classList.add('show');
+}
+function closeRejectModal(){
+  document.getElementById('reject-modal').classList.remove('show');
+  pendingRejectId = null;
+}
+async function doReject(){
+  if(!pendingRejectId) return;
+  const reason = document.getElementById('reject-reason').value.trim();
+  if(!reason){ toast('Un motif est requis', false); return; }
+  const btn = document.getElementById('btn-confirm-reject');
+  btn.disabled = true; btn.textContent = 'Envoi...';
+  try{
+    const r = await apiFetch('/api/admin/kyc/'+pendingRejectId+'/reject', {
+      method:'POST', body: JSON.stringify({reason})
+    });
+    const data = await r.json();
+    if(data.ok){
+      removeCardFromPending(pendingRejectId, 'rejected', reason);
+      toast('Vérification rejetée');
+    } else {
+      toast(data.error || 'Erreur lors du rejet', false);
+    }
+  }catch(e){ toast('Erreur de connexion', false); }
+  btn.disabled = false; btn.textContent = 'Rejeter';
+  closeRejectModal();
+}
+
+// Déplace visuellement la carte de "En attente" vers "Historique"
+function removeCardFromPending(userId, newStatus, reason){
+  const card = document.querySelector(`#list-pending [data-user-id="${userId}"]`);
+  if(!card) return;
+
+  // Retire la carte
+  card.remove();
+
+  // Met à jour les compteurs
+  const pendingCountEl = document.getElementById('pending-count');
+  const historyCountEl = document.getElementById('history-count');
+  pendingCountEl.textContent = Math.max(0, parseInt(pendingCountEl.textContent || '0', 10) - 1);
+  historyCountEl.textContent = parseInt(historyCountEl.textContent || '0', 10) + 1;
+
+  // Si plus aucune carte en attente → message "vide"
+  const pendingList = document.getElementById('list-pending');
+  if(!pendingList.querySelector('.card[data-user-id]')){
+    pendingList.innerHTML = '<div class="empty"><div class="empty-icon">🎉</div>Aucune demande en attente.</div>';
+  }
+
+  // Ajoute dans l'historique (avec le bon style)
+  const historyList = document.getElementById('list-history');
+  // Retire le message "vide" si présent
+  const emptyHistory = historyList.querySelector('.empty');
+  if(emptyHistory) emptyHistory.remove();
+
+  const statusLabel = newStatus === 'verified'
+    ? '<div class="badge-status status-verified">✅ Validé</div>'
+    : '<div class="badge-status status-rejected">❌ Rejeté</div>'
+      + (reason ? `<div class="rejection-reason">Motif : ${escapeHtml(reason)}</div>` : '');
+
+  // Clone le contenu utile de la carte (nom, email, meta, docs)
+  const name = card.querySelector('.name')?.textContent || '—';
+  const email = card.querySelector('.email')?.textContent || '';
+  const metaHtml = card.querySelector('.meta')?.innerHTML || '';
+  const thumbsHtml = card.querySelector('.doc-thumbs')?.innerHTML || '';
+  const userId2 = userId;
+
+  const newCard = document.createElement('div');
+  newCard.className = 'card';
+  newCard.dataset.userId = userId2;
+  newCard.dataset.status = newStatus;
+  newCard.innerHTML = `
+    <div class="row">
+      <div>
+        <div class="name">${escapeHtml(name)}</div>
+        <div class="email">${escapeHtml(email)}</div>
+        <div class="meta">${metaHtml}</div>
+        ${statusLabel}
+        <div class="doc-thumbs" id="thumbs-${escapeHtml(userId2)}">${thumbsHtml}</div>
+      </div>
+      <div class="actions">
+        <div class="doc-buttons">
+          <button class="btn btn-doc" data-view-uid="${escapeHtml(userId2)}" data-view-doc="front">📄 Recto</button>
+          <button class="btn btn-doc" data-view-uid="${escapeHtml(userId2)}" data-view-doc="back">📄 Verso</button>
+          <button class="btn btn-doc" data-view-uid="${escapeHtml(userId2)}" data-view-doc="selfie">🤳 Selfie</button>
+        </div>
+      </div>
+    </div>
+  `;
+  historyList.appendChild(newCard);
+
+  // Rebind les boutons "Voir doc" dans la nouvelle carte
+  newCard.querySelectorAll('[data-view-uid]').forEach(b => {
+    b.addEventListener('click', () => viewDoc(b.dataset.viewUid, b.dataset.viewDoc));
+  });
+  // Rebind les miniatures
+  newCard.querySelectorAll('img[data-doc-url]').forEach(img => {
+    img.addEventListener('click', () => window.open(img.dataset.docUrl, '_blank'));
+  });
+}
+
+// ── Bindings ────────────────────────────────────
+document.querySelectorAll('[data-approve-id]').forEach(b => {
+  b.addEventListener('click', () => openApproveModal(b.dataset.approveId));
+});
+document.querySelectorAll('[data-reject-id]').forEach(b => {
+  b.addEventListener('click', () => openRejectModal(b.dataset.rejectId));
+});
+document.getElementById('btn-cancel-approve').addEventListener('click', closeApproveModal);
+document.getElementById('btn-confirm-approve').addEventListener('click', doApprove);
+document.getElementById('btn-cancel-reject').addEventListener('click', closeRejectModal);
+document.getElementById('btn-confirm-reject').addEventListener('click', doReject);
+
+document.getElementById('approve-modal').addEventListener('click', e => {
+  if(e.target.id === 'approve-modal') closeApproveModal();
+});
+document.getElementById('reject-modal').addEventListener('click', e => {
+  if(e.target.id === 'reject-modal') closeRejectModal();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ closeApproveModal(); closeRejectModal(); }
+});
+
+// Charge les miniatures pour toutes les cartes visibles
+document.querySelectorAll('.card[data-user-id]').forEach(card => {
+  loadThumbs(card.dataset.userId);
 });
 </script>
 </body>
