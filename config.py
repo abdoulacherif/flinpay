@@ -100,7 +100,7 @@ class Config:
     if not IS_PRODUCTION:
         ALLOWED_ORIGINS += ['http://localhost:5000', 'http://127.0.0.1:5000']
 
-    ALLOWED_HOSTS = {'www.flinpay.cfd', 'flinpay.cfd'}
+    ALLOWED_HOSTS = {'www.flinpay.cfd', 'flinpay.cfd', 'flinpay.vercel.app'}
     if not IS_PRODUCTION:
         ALLOWED_HOSTS |= {'localhost', '127.0.0.1'}
 
