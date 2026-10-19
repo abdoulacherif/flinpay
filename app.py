@@ -1,58 +1,72 @@
-"""
-Point d'entrée de Flinpay.
-
-Ce fichier ne contient plus aucune route ni logique métier : c'est uniquement
-l'assemblage de l'application (config + extensions + blueprints). Les routes
-seront enregistrées ici au fur et à mesure qu'on découpe le reste de app.py
-d'origine en modules (routes/, services/, db/) — la structure est prête à les
-recevoir.
-"""
-from flask import Flask
+from flask import Flask, jsonify, redirect, render_template, request
+from flask_wtf.csrf import CSRFError, validate_csrf
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import config
 from extensions import init_extensions, logger
 
 
+_CSRF_EXEMPT_ENDPOINTS = frozenset({
+    'webhook_callback.webhook_payment_events',
+    'payments.api_pay',
+    'payments.api_pay_link',
+    'payments.api_pay_status',
+    'payments.pay_page',
+    'payments.pay_thank_you',
+    'invoices.api_invoice_pay',
+    'invoices.invoice_view',
+    'public.index',
+    'public.register',
+    'public.login_page',
+    'public.docs',
+    'public.favicon',
+    'public.flinpay_widget_js',
+    'auth.api_login',
+    'auth.api_login_2fa',
+    'auth.api_logout',
+    'auth.verify_email',
+    'auth.api_resend_verification',
+    'auth.api_register',
+})
+
+
 def create_app():
     app = Flask(__name__)
 
-    # ── Configuration ───────────────────────────────
-    app.config['SECRET_KEY'] = config.SECRET_KEY
-    app.config['SESSION_COOKIE_SECURE'] = config.SESSION_COOKIE_SECURE
-    app.config['SESSION_COOKIE_HTTPONLY'] = config.SESSION_COOKIE_HTTPONLY
-    app.config['SESSION_COOKIE_SAMESITE'] = config.SESSION_COOKIE_SAMESITE
-    # Empêche Flask de renvoyer une trace complète (et donc potentiellement des
-    # détails internes) sur une erreur 500 en production.
-    app.config['PROPAGATE_EXCEPTIONS'] = config.DEBUG
+    app.config.update(
+        SECRET_KEY=config.SECRET_KEY,
+        SESSION_COOKIE_SECURE=config.SESSION_COOKIE_SECURE,
+        SESSION_COOKIE_HTTPONLY=config.SESSION_COOKIE_HTTPONLY,
+        SESSION_COOKIE_SAMESITE=config.SESSION_COOKIE_SAMESITE,
+        SESSION_COOKIE_NAME=config.SESSION_COOKIE_NAME,
+        PERMANENT_SESSION_LIFETIME=config.PERMANENT_SESSION_LIFETIME_SECONDS,
+        SESSION_REFRESH_EACH_REQUEST=False,
+        MAX_CONTENT_LENGTH=config.MAX_CONTENT_LENGTH,
+        PROPAGATE_EXCEPTIONS=config.DEBUG and not config.IS_PRODUCTION,
+        PREFERRED_URL_SCHEME='https',
+    )
 
-    # ── Proxy de confiance ──────────────────────────
-    # Si l'app tourne derrière un reverse proxy (Render, Nginx, load balancer),
-    # ProxyFix lui fait confiance UNIQUEMENT pour réécrire request.remote_addr
-    # à partir de X-Forwarded-For — sans ça, get_client_ip() dans extensions.py
-    # ferait confiance à un en-tête qu'un client malveillant peut falsifier
-    # lui-même, ce qui casserait tout rate-limiting et verrouillage de compte
-    # basé sur l'IP. x_for=1 signifie : "je ne fais confiance qu'au premier
-    # proxy immédiatement devant moi" — à ajuster selon l'infra réelle.
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    # x_host NON activé : un client atteignant l'app sans passer par le proxy
+    # pourrait forger request.host et empoisonner cookies ou redirections.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
-    # ── Domaine canonique ────────────────────────────
-    # Les cookies de session et CSRF sont posés pour un hôte précis — s'ils
-    # sont posés sur flinpay.cfd mais que la navigation continue sur
-    # www.flinpay.cfd (ou l'inverse), le navigateur ne les envoie pas et tout
-    # paraît cassé ("jeton de sécurité invalide", déconnexions mystérieuses)
-    # sans qu'il y ait de vrai bug applicatif. On force une seule adresse
-    # canonique pour que ce problème ne puisse plus se poser nulle part.
     @app.before_request
-    def _redirect_to_canonical_host():
-        from flask import request, redirect
-        host = request.host.split(':')[0].lower()
-        if host == 'flinpay.cfd':
-            return redirect(f'https://www.flinpay.cfd{request.full_path.rstrip("?")}', code=301)
+    def _enforce_host():
+        host = (request.host or '').split(':')[0].lower()
+        if host not in config.ALLOWED_HOSTS:
+            logger.warning("Host rejected", extra={'host': host, 'path': request.path})
+            return 'Bad Request', 400
+
+    @app.before_request
+    def _canonical_redirect():
+        host = (request.host or '').split(':')[0].lower()
+        # /webhook/ exclu : un 301 sur un POST fait perdre l'événement à la passerelle.
+        if host == 'flinpay.cfd' and not request.path.startswith('/webhook/'):
+            qs = f'?{request.query_string.decode()}' if request.query_string else ''
+            return redirect(f'https://www.flinpay.cfd{request.path}{qs}', code=301)
 
     init_extensions(app)
 
-    # ── Blueprints ──────────────────────────────────
     from routes.public import public_bp
     from routes.auth import auth_bp
     from routes.dashboard import dashboard_bp
@@ -69,23 +83,41 @@ def create_app():
                *admin_blueprints):
         app.register_blueprint(bp)
 
+    @app.before_request
+    def _csrf_guard():
+        if request.method in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
+            return
+        if request.endpoint in _CSRF_EXEMPT_ENDPOINTS:
+            return
+        token = (
+            request.headers.get('X-CSRF-Token')
+            or (request.form.get('_csrf_token') if request.form else None)
+            or (request.get_json(silent=True) or {}).get('_csrf_token')
+        )
+        try:
+            validate_csrf(token)
+        except CSRFError:
+            return jsonify({'ok': False, 'error': 'Jeton de sécurité invalide ou expiré'}), 400
+
     @app.errorhandler(404)
-    def not_found(e):
-        from flask import render_template
+    def _404(e):
         return render_template('404.html'), 404
 
+    @app.errorhandler(413)
+    def _413(e):
+        return jsonify({'ok': False, 'error': 'Fichier trop volumineux'}), 413
+
+    @app.errorhandler(429)
+    def _429(e):
+        return jsonify({'ok': False, 'error': 'Trop de requêtes, réessayez plus tard'}), 429
+
     @app.errorhandler(500)
-    def server_error(e):
-        from flask import jsonify
+    def _500(e):
         orig = getattr(e, 'original_exception', e)
-        # On journalise l'erreur complète côté serveur (avec la stack trace),
-        # mais on ne renvoie JAMAIS le détail de l'exception au client : ça
-        # peut révéler des chemins internes, des noms de tables, des bouts de
-        # requête SQL... autant d'informations utiles à un attaquant.
-        logger.exception(f"Erreur 500 sur {getattr(e, 'original_exception', e)}")
-        if config.DEBUG:
+        logger.error(f"Erreur 500: {orig!r}", exc_info=orig)
+        if config.DEBUG and not config.IS_PRODUCTION:
             return jsonify({'error': str(orig), 'type': type(orig).__name__}), 500
-        return jsonify({'error': 'Une erreur interne est survenue. Réessayez plus tard.'}), 500
+        return jsonify({'ok': False, 'error': 'Une erreur interne est survenue.'}), 500
 
     return app
 
@@ -95,13 +127,5 @@ app = create_app()
 
 if __name__ == '__main__':
     if config.IS_PRODUCTION:
-        # En production, ne jamais utiliser le serveur de développement Flask
-        # (app.run) : il n'est pas conçu pour tenir une charge réelle et son
-        # debugger, s'il reste actif, permet l'exécution de code arbitraire.
-        # Utiliser un vrai serveur WSGI, par exemple :
-        #   gunicorn -w 4 -b 0.0.0.0:5000 app:app
-        logger.warning(
-            "app.run() est utilisé en environnement de production. "
-            "Préférez `gunicorn -w 4 -b 0.0.0.0:5000 app:app` pour un vrai déploiement."
-        )
-    app.run(debug=config.DEBUG, host='0.0.0.0', port=5000)
+        raise RuntimeError("Do not use app.run() in production — use gunicorn.")
+    app.run(debug=True, host='127.0.0.1', port=5000)
