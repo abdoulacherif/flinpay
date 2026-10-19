@@ -1,39 +1,41 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Parrainage</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
   --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
-  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
   --green:#00C48C;--green-tint:#E3FBF3;
   --danger:#FF4D4D;--danger-tint:#FFEAEA;
   --text:#12131C;--muted:#767A94;
   --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
-  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+  --gradient-soft:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 100%);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
 .sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
-.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
 .close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
 .corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
 .corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
-.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-label b{color:#8ECFFF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
 .sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
 .nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
@@ -41,45 +43,47 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
-.nav-link.active .icon{color:#8EA6FF}
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
 .sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
 .user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
 .overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
-.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
-.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
 
-.page{flex:1;padding:30px;animation:fadeUp .25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
-.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft)}
-.card-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--gradient);padding:20px 30px;color:white;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;overflow:hidden}
+.topbar::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.burger-btn{display:none;background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center;position:relative;z-index:1}
+.burger-btn:hover{background:rgba(255,255,255,0.28)}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.topbar-title .icon{width:22px;height:22px;color:white}
+
+.page{flex:1;padding:26px 30px 60px;max-width:920px;width:100%;margin:0 auto}
+.card{background:white;border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px;border:1px solid var(--border-soft)}
+.card-head{padding:18px 22px;border-bottom:1px solid var(--border-soft)}
+.card-title{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:22px}
 
-.referral-hero{background:linear-gradient(135deg,var(--blue) 0%,#0A1FCC 60%,#5B2CFF 100%);border-radius:var(--r-lg);padding:28px;color:white;position:relative;overflow:hidden;margin-bottom:18px;text-align:center}
-.referral-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.07)}
-.referral-hero::after{content:'';position:absolute;bottom:-40px;left:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,180,0,0.09)}
+.referral-hero{background:var(--gradient);border-radius:18px;padding:28px;color:white;position:relative;overflow:hidden;margin-bottom:18px;text-align:center}
+.referral-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.1)}
+.referral-hero::after{content:'';position:absolute;bottom:-40px;left:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,0.05)}
 .ref-icon{font-size:2.2rem;margin-bottom:10px;position:relative;z-index:1}
 .ref-title{font-size:1.15rem;font-weight:800;position:relative;z-index:1}
-.ref-sub{color:rgba(255,255,255,.65);font-size:.85rem;margin-top:4px;position:relative;z-index:1;max-width:420px;margin-left:auto;margin-right:auto}
+.ref-sub{color:rgba(255,255,255,.85);font-size:.85rem;margin-top:4px;position:relative;z-index:1;max-width:420px;margin-left:auto;margin-right:auto}
 
-.code-box{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:14px 18px;margin:18px auto 0;max-width:420px;display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.code-box{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:14px 18px;margin:18px auto 0;max-width:420px;display:flex;align-items:center;gap:10px;position:relative;z-index:1;backdrop-filter:blur(8px)}
 .code-val{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:white;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
-.copy-btn{background:rgba(255,255,255,0.15);border:none;color:white;border-radius:8px;padding:7px 12px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;white-space:nowrap}
-.copy-btn:hover{background:rgba(255,255,255,0.25)}
+.copy-btn{background:rgba(255,255,255,0.2);border:none;color:white;border-radius:8px;padding:7px 12px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;white-space:nowrap}
+.copy-btn:hover{background:rgba(255,255,255,0.3)}
 
 .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
-.stat-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:20px;box-shadow:var(--shadow-sm);text-align:center}
+.stat-card{background:white;border-radius:18px;border:1px solid var(--border-soft);padding:20px;box-shadow:var(--shadow-sm);text-align:center}
 .stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.7rem;color:var(--blue)}
 .stat-lbl{font-size:.78rem;color:var(--muted);margin-top:4px}
 
@@ -91,9 +95,10 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .b-pro{background:var(--gold-tint);color:#8A5B00}
 .b-starter{background:var(--border-soft);color:var(--muted)}
 
-.perk-note{background:var(--gold-tint);color:#8A5B00;border-radius:var(--r-md);padding:12px 16px;font-size:.83rem;margin-top:14px}
-.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:.85rem}
-#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+.perk-note{background:var(--gold-tint);color:#8A5B00;border-radius:12px;padding:12px 16px;font-size:.83rem;margin-top:14px}
+.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:.85rem;line-height:1.6}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateY(0);opacity:1}
 
 @media(max-width:900px){
@@ -102,7 +107,8 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   .main{margin-left:0}
   .burger-btn{display:flex}
   .close-sidebar{display:block}
-  .page{padding:16px}
+  .page{padding:16px;max-width:100%}
+  .topbar{padding:16px 20px}
 }
 @media(max-width:520px){
   .stats-row{grid-template-columns:1fr}
@@ -126,11 +132,10 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
     <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
     <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
-    <symbol id="ic-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
   </defs>
 </svg>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="overlay" id="overlay"></div>
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
@@ -138,16 +143,12 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
       <div class="plan-badge-pill">🚀 Starter</div>
     </div>
-    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+    <button class="close-sidebar" id="close-sidebar">✕</button>
   </div>
-
   <div class="corridor">
     <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-    <div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">
-      🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦
-    </div>
+    <div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
   </div>
-
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
     <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
@@ -164,7 +165,6 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
     <a class="nav-link active" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
-
   <div class="sidebar-user">
     <div class="user-row">
       <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
@@ -179,7 +179,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 <div class="main">
   <div class="topbar">
-    <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+    <button class="burger-btn" id="burger-btn"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
     <div class="topbar-title"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</div>
   </div>
 
@@ -190,7 +190,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <div class="ref-sub">Partagez votre lien. Quand un filleul passe au plan Pro (8 500 FCFA/mois), vous touchez 850 FCFA à chaque renouvellement.</div>
       <div class="code-box">
         <div class="code-val" id="ref-link">Chargement...</div>
-        <button class="copy-btn" onclick="copyLink()">📋 Copier</button>
+        <button class="copy-btn" id="btn-copy">📋 Copier</button>
       </div>
     </div>
 
@@ -219,60 +219,107 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     </div>
   </div>
 </div>
-<div id="toast"></div>
-<script>
-function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 
-let referralLink='';
+<div id="toast"></div>
+
+<script nonce="{{ csp_nonce }}">
+"use strict";
+
+function getCsrfToken(){const meta=document.querySelector('meta[name="csrf-token"]');return meta?meta.getAttribute('content'):''}
+async function apiFetch(url,options={}){
+  const opts={...options};opts.headers={...(opts.headers||{})};
+  const method=(opts.method||'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){const token=getCsrfToken();if(token)opts.headers['X-CSRF-Token']=token}
+  if(opts.body&&typeof opts.body==='string'){opts.headers['Content-Type']=opts.headers['Content-Type']||'application/json'}
+  return fetch(url,opts);
+}
+
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');clearTimeout(t._hideTimer);t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000)}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+
+let referralLink = '';
 
 async function loadReferral(){
   try{
-    const r=await fetch('/api/referral');
+    const r = await apiFetch('/api/referral');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-    const data=await r.json();
+    const data = await r.json();
     if(!data.ok) return;
 
-    referralLink=data.referral_link;
-    document.getElementById('ref-link').textContent=data.referral_link;
-    document.getElementById('stat-count').textContent=data.referred_count;
-    document.getElementById('stat-balance').textContent=Number(data.balance||0).toLocaleString();
+    referralLink = data.referral_link;
+    document.getElementById('ref-link').textContent = data.referral_link;
+    document.getElementById('stat-count').textContent = data.referred_count;
+    document.getElementById('stat-balance').textContent = Number(data.balance||0).toLocaleString('fr-FR');
 
-    const refList=document.getElementById('referred-list');
+    // Profil sidebar
+    const me = await apiFetch('/api/me');
+    const meData = await me.json();
+    if(meData.ok){
+      const u = meData.user;
+      document.getElementById('user-av').textContent = (u.firstname||'U')[0].toUpperCase();
+      document.getElementById('user-name').textContent = (u.firstname||'')+' '+(u.lastname||'');
+      document.getElementById('user-email').textContent = u.email||'';
+    }
+
+    const refList = document.getElementById('referred-list');
     if(!data.referred_users.length){
-      refList.innerHTML='<div class="empty">Aucun filleul pour le moment.<br>Partagez votre lien pour commencer à gagner des commissions.</div>';
+      refList.innerHTML = '<div class="empty">Aucun filleul pour le moment.<br>Partagez votre lien pour commencer à gagner des commissions.</div>';
     }else{
-      refList.innerHTML=`<table class="tbl"><thead><tr><th>Nom</th><th>Plan</th><th>Inscrit le</th></tr></thead><tbody>
-        ${data.referred_users.map(u=>`<tr>
-          <td>${u.firstname||''} ${u.lastname||''}</td>
+      refList.innerHTML = `<table class="tbl"><thead><tr><th>Nom</th><th>Plan</th><th>Inscrit le</th></tr></thead><tbody>
+        ${data.referred_users.map(u => `<tr>
+          <td>${escapeHtml(u.firstname||'')} ${escapeHtml(u.lastname||'')}</td>
           <td><span class="badge ${u.plan==='pro'?'b-pro':'b-starter'}">${u.plan==='pro'?'⭐ Pro':'Starter'}</span></td>
-          <td style="font-size:.76rem;color:var(--muted)">${u.created_at?new Date(u.created_at).toLocaleDateString('fr-FR'):''}</td>
+          <td style="font-size:.76rem;color:var(--muted)">${u.created_at ? new Date(u.created_at).toLocaleDateString('fr-FR') : ''}</td>
         </tr>`).join('')}
       </tbody></table>`;
     }
 
-    const earnList=document.getElementById('earnings-list');
+    const earnList = document.getElementById('earnings-list');
     if(!data.earnings_history.length){
-      earnList.innerHTML='<div class="empty">Aucun gain pour le moment.</div>';
+      earnList.innerHTML = '<div class="empty">Aucun gain pour le moment.</div>';
     }else{
-      earnList.innerHTML=`<table class="tbl"><thead><tr><th>Montant</th><th>Source</th><th>Date</th></tr></thead><tbody>
-        ${data.earnings_history.map(e=>`<tr>
-          <td style="font-weight:700">+${Number(e.amount).toLocaleString()} FCFA</td>
-          <td>${e.source==='subscription'?'Abonnement filleul':e.source||''}</td>
-          <td style="font-size:.76rem;color:var(--muted)">${e.created_at?new Date(e.created_at).toLocaleDateString('fr-FR'):''}</td>
+      earnList.innerHTML = `<table class="tbl"><thead><tr><th>Montant</th><th>Source</th><th>Date</th></tr></thead><tbody>
+        ${data.earnings_history.map(e => `<tr>
+          <td style="font-weight:700">+${Number(e.amount).toLocaleString('fr-FR')} FCFA</td>
+          <td>${e.source==='subscription' ? 'Abonnement filleul' : escapeHtml(e.source||'')}</td>
+          <td style="font-size:.76rem;color:var(--muted)">${e.created_at ? new Date(e.created_at).toLocaleDateString('fr-FR') : ''}</td>
         </tr>`).join('')}
       </tbody></table>`;
     }
   }catch(e){}
 }
 
-function copyLink(){
+async function copyLink(){
   if(!referralLink) return;
-  navigator.clipboard.writeText(referralLink).then(()=>toast('Lien copié !'));
+  try{
+    await navigator.clipboard.writeText(referralLink);
+    toast('Lien copié !');
+  }catch(e){
+    // Fallback pour anciens navigateurs
+    const ta = document.createElement('textarea');
+    ta.value = referralLink;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('Lien copié !');
+  }
 }
 
-loadReferral();
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('burger-btn').addEventListener('click', openSidebar);
+  document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
+  document.getElementById('overlay').addEventListener('click', closeSidebar);
+  document.getElementById('btn-copy').addEventListener('click', copyLink);
+  loadReferral();
+});
 </script>
 </body>
 </html>
