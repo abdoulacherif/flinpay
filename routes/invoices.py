@@ -1,7 +1,3 @@
-"""
-routes/invoices.py — factures : gestion côté marchand (cookie de session) et
-paiement côté client final (public, sans session).
-"""
 import logging
 import uuid as uuid_lib
 from datetime import datetime
@@ -10,7 +6,7 @@ from flask import Blueprint, request, jsonify, render_template
 
 from config import config
 from extensions import limiter
-from db.supabase import sb_get_eq, sb_get_one, sb_post, sb_patch_multi, sb_delete_multi
+from db.supabase import sb_get_eq, sb_get_one, sb_post, sb_patch_multi, sb_delete_multi, sb_patch_if_field_equals
 from services.auth import user_required, get_current_user, csrf_protect
 from services.restrictions import is_login_blocked, is_country_blocked, is_operator_blocked
 from services.activity_log import log_user_activity
@@ -24,19 +20,23 @@ logger = logging.getLogger('flinpay.routes.invoices')
 
 invoices_bp = Blueprint('invoices', __name__)
 
+def _validate_email(email: str) -> bool:
+    import re
+    if not email: return True
+    # Regex simple pour bloquer les injections de headers SMTP
+    pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    return bool(re.match(pattern, email))
 
 @invoices_bp.route('/invoices')
 @user_required
 def invoices_page():
     return render_template('invoices.html', user=get_current_user())
 
-
 @invoices_bp.route('/api/invoices', methods=['GET'])
 @user_required
 def api_get_invoices():
     invoices = sb_get_eq('invoices', 'user_id', request.user_id, extra_query='order=created_at.desc')
     return jsonify({'ok': True, 'invoices': invoices})
-
 
 @invoices_bp.route('/api/invoices', methods=['POST'])
 @user_required
@@ -46,6 +46,10 @@ def api_create_invoice():
     client_name = (data.get('client_name') or '').strip()[:200]
     if not client_name:
         return jsonify({'ok': False, 'error': 'Le nom du client est requis'}), 400
+
+    client_email = (data.get('client_email') or '').strip()[:200]
+    if not _validate_email(client_email):
+        return jsonify({'ok': False, 'error': 'Adresse email du client invalide'}), 400
 
     cleaned_items, err = clean_invoice_items(data.get('items') or [])
     if err:
@@ -60,7 +64,7 @@ def api_create_invoice():
         'token': token, 'user_id': request.user_id,
         'invoice_number': generate_invoice_number(request.user_id),
         'client_name': client_name,
-        'client_email': (data.get('client_email') or '').strip()[:200] or None,
+        'client_email': client_email or None,
         'client_phone': (data.get('client_phone') or '').strip()[:30] or None,
         'items': cleaned_items, 'currency': 'XOF', 'amount': amount, 'status': 'draft',
         'due_date': data.get('due_date') or None,
@@ -71,7 +75,6 @@ def api_create_invoice():
         return jsonify({'ok': False, 'error': 'Erreur lors de la création de la facture'}), 500
     return jsonify({'ok': True, 'invoice': row[0] if isinstance(row, list) else row})
 
-
 @invoices_bp.route('/api/invoices/<token>', methods=['PUT'])
 @user_required
 @csrf_protect
@@ -79,31 +82,41 @@ def api_update_invoice(token):
     invoice = sb_get_one('invoices', 'token', token)
     if not invoice or invoice.get('user_id') != request.user_id:
         return jsonify({'ok': False, 'error': 'Introuvable'}), 404
-    if invoice.get('status') == 'paid':
-        return jsonify({'ok': False, 'error': 'Une facture payée ne peut plus être modifiée'}), 400
+    
+    if invoice.get('status') in ('paid', 'cancelled'):
+        return jsonify({'ok': False, 'error': 'Cette facture ne peut plus être modifiée'}), 400
 
     data = request.get_json() or {}
     allowed = {}
+    
     if 'status' in data and data['status'] in ('draft', 'sent', 'cancelled'):
         allowed['status'] = data['status']
         if data['status'] == 'sent' and not invoice.get('sent_at'):
             allowed['sent_at'] = datetime.utcnow().isoformat()
-    if 'client_name' in data and (data.get('client_name') or '').strip():
-        allowed['client_name'] = data['client_name'].strip()[:200]
-    if 'client_email' in data:
-        allowed['client_email'] = (data.get('client_email') or '').strip()[:200] or None
-    if 'client_phone' in data:
-        allowed['client_phone'] = (data.get('client_phone') or '').strip()[:30] or None
-    if 'due_date' in data:
-        allowed['due_date'] = data.get('due_date') or None
-    if 'notes' in data:
-        allowed['notes'] = (data.get('notes') or '').strip()[:1000] or None
-    if 'items' in data:
-        cleaned_items, err = clean_invoice_items(data.get('items') or [])
-        if err:
-            return jsonify({'ok': False, 'error': err}), 400
-        allowed['items'] = cleaned_items
-        allowed['amount'] = compute_invoice_amount(cleaned_items)
+            
+    # Sécurité : une facture "sent" ne peut plus être modifiée sur son contenu
+    if invoice.get('status') == 'draft':
+        if 'client_name' in data and (data.get('client_name') or '').strip():
+            allowed['client_name'] = data['client_name'].strip()[:200]
+        if 'client_email' in data:
+            email = (data.get('client_email') or '').strip()[:200]
+            if not _validate_email(email):
+                return jsonify({'ok': False, 'error': 'Email invalide'}), 400
+            allowed['client_email'] = email or None
+        if 'client_phone' in data:
+            allowed['client_phone'] = (data.get('client_phone') or '').strip()[:30] or None
+        if 'due_date' in data:
+            allowed['due_date'] = data.get('due_date') or None
+        if 'notes' in data:
+            allowed['notes'] = (data.get('notes') or '').strip()[:1000] or None
+        if 'items' in data:
+            cleaned_items, err = clean_invoice_items(data.get('items') or [])
+            if err:
+                return jsonify({'ok': False, 'error': err}), 400
+            allowed['items'] = cleaned_items
+            allowed['amount'] = compute_invoice_amount(cleaned_items)
+    elif len(allowed) == 0:
+        return jsonify({'ok': False, 'error': 'Seul le statut peut être modifié sur une facture envoyée'}), 400
 
     if not allowed:
         return jsonify({'ok': False, 'error': 'Aucun champ à mettre à jour'}), 400
@@ -113,16 +126,19 @@ def api_update_invoice(token):
         return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour'}), 500
     return jsonify({'ok': True})
 
-
 @invoices_bp.route('/api/invoices/<token>', methods=['DELETE'])
 @user_required
 @csrf_protect
 def api_delete_invoice(token):
+    # On supprime uniquement si ce n'est pas payé
+    invoice = sb_get_one('invoices', 'token', token)
+    if invoice and invoice.get('status') == 'paid':
+        return jsonify({'ok': False, 'error': 'Impossible de supprimer une facture payée'}), 400
+        
     ok = sb_delete_multi('invoices', {'token': token, 'user_id': request.user_id})
     if not ok:
         return jsonify({'ok': False, 'error': 'Erreur lors de la suppression'}), 500
     return jsonify({'ok': True})
-
 
 # ── Page publique : facture ─────────────────────────
 @invoices_bp.route('/invoice/<token>')
@@ -133,9 +149,8 @@ def invoice_view(token):
                             countries_operators=gateway.build_countries_operators([c['code'] for c in config.COUNTRIES]),
                             available_countries=config.COUNTRIES)
 
-
 @invoices_bp.route('/api/invoice-pay/<token>', methods=['POST'])
-@limiter.limit('30 per minute')
+@limiter.limit('15 per minute')
 def api_invoice_pay(token):
     invoice = sb_get_one('invoices', 'token', token)
     if not invoice:
@@ -144,6 +159,8 @@ def api_invoice_pay(token):
         return jsonify({'ok': False, 'error': 'Cette facture est déjà payée'}), 400
     if invoice.get('status') == 'cancelled':
         return jsonify({'ok': False, 'error': 'Cette facture a été annulée'}), 400
+    if invoice.get('status') == 'draft':
+        return jsonify({'ok': False, 'error': "Cette facture n'est pas encore disponible au paiement"}), 400
 
     allowed, quota_error = check_quota(invoice['user_id'])
     if not allowed:
@@ -152,11 +169,12 @@ def api_invoice_pay(token):
     data = request.get_json() or {}
     phone = (data.get('phone') or invoice.get('client_phone') or '').strip()
     operator = data.get('operator', '')
-    customer_country = data.get('country', '')
+    customer_country = str(data.get('country', '')).strip().upper()
+    
     if not phone:
         return jsonify({'ok': False, 'error': 'Numéro de téléphone requis'}), 400
-    if not customer_country:
-        return jsonify({'ok': False, 'error': 'Pays requis'}), 400
+    if customer_country not in {c['code'] for c in config.COUNTRIES}:
+        return jsonify({'ok': False, 'error': 'Pays invalide'}), 400
 
     amount = invoice['amount']
     merchant = get_user_by_id(invoice['user_id'])
@@ -172,7 +190,7 @@ def api_invoice_pay(token):
 
     base_price = amount if merchant_currency == service['currency'] else fx.convert(amount, merchant_currency, service['currency'])
     if base_price is None:
-        return jsonify({'ok': False, 'error': f"Ce moyen de paiement ({service['currency']}) n'est pas encore compatible avec cette facture ({merchant_currency})"}), 400
+        return jsonify({'ok': False, 'error': f"Ce moyen de paiement ({service['currency']}) n'est pas compatible avec cette facture"}), 400
     base_amount = amount_with_markup(base_price)
 
     result = gateway.collect_payment(
