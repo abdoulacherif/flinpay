@@ -59,7 +59,7 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 .forgot-row{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 16px}
 .forgot-row a{font-size:.78rem;color:rgba(255,255,255,0.4);text-decoration:none}
 .forgot-row a:hover{color:white}
-.link-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:.78rem;cursor:pointer;text-decoration:underline}
+.link-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:.78rem;cursor:pointer;text-decoration:underline;padding:0}
 .link-btn:hover{color:white}
 .btn-login{
   width:100%;padding:14px;
@@ -118,31 +118,31 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 
   <div id="step1">
     <div class="field">
-      <label>Email</label>
+      <label for="email">Email</label>
       <input type="email" id="email" placeholder="vous@entreprise.com" autocomplete="email">
     </div>
     <div class="field">
-      <label>Mot de passe</label>
+      <label for="password">Mot de passe</label>
       <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <div class="forgot-row">
-      <button type="button" class="link-btn" onclick="doMagicLink()">Recevoir un lien de connexion</button>
+      <button type="button" id="btn-magic" class="link-btn">Recevoir un lien de connexion</button>
       <a href="/forgot-password">Mot de passe oublié ?</a>
     </div>
-    <button class="btn-login" id="btn-login" onclick="doLogin()">Se connecter →</button>
+    <button class="btn-login" id="btn-login">Se connecter →</button>
     <div class="signup-link">
       Pas encore de compte ? <a href="/register">Créer un compte</a>
     </div>
   </div>
 
   <div id="step2">
-    <div class="step2-desc">Entrez le code à 6 chiffres généré par votre application d'authentification (Google Authenticator ou équivalent).</div>
+    <div class="step2-desc" id="step2-desc">Entrez le code à 6 chiffres généré par votre application d'authentification (Google Authenticator ou équivalent).</div>
     <div class="field">
-      <label>Code de vérification</label>
+      <label for="twofa-code">Code de vérification</label>
       <input type="text" id="twofa-code" class="code-input" maxlength="6" inputmode="numeric" placeholder="000000">
     </div>
-    <button class="btn-login" id="btn-verify" onclick="doVerify2fa()">Vérifier →</button>
-    <button class="btn-back-step" onclick="backToStep1()">← Retour</button>
+    <button class="btn-login" id="btn-verify">Vérifier →</button>
+    <button class="btn-back-step" id="btn-back">← Retour</button>
   </div>
 
   <div class="error" id="error-msg"></div>
@@ -151,39 +151,52 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 </div>
 
 <script nonce="{{ csp_nonce }}">
+"use strict";
+
 let pendingToken = null;
 let magicLinkToken = null;
 
-// --- Vérification au chargement si on vient d'un lien magique ---
-document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('link_token');
-    if (token) {
-        magicLinkToken = token;
-        // On bascule directement sur l'étape de vérification du code
-        document.getElementById('step1').style.display = 'none';
-        document.getElementById('step2').style.display = 'block';
-        document.getElementById('subtitle').textContent = 'Vérification par lien';
-        document.querySelector('.step2-desc').textContent = 'Entrez le code de secours reçu dans votre email.';
-        
-        // On pré-remplit si le code est passé en clair dans l'URL (ce qui est le cas)
-        const urlCode = urlParams.get('code'); 
-        if(urlCode) {
-            document.getElementById('twofa-code').value = urlCode;
-        }
-    }
-});
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = '⚠ ' + msg; el.style.display = 'block';
+  document.getElementById('success-msg').style.display = 'none';
+}
+function showSuccess(msg) {
+  const el = document.getElementById('success-msg');
+  el.textContent = '✅ ' + msg; el.style.display = 'block';
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+function goToStep2(title, desc){
+  document.getElementById('step1').style.display='none';
+  document.getElementById('step2').style.display='block';
+  document.getElementById('subtitle').textContent = title;
+  document.getElementById('step2-desc').textContent = desc;
+  document.getElementById('error-msg').style.display='none';
+  document.getElementById('twofa-code').value='';
+  document.getElementById('twofa-code').focus();
+}
+
+function backToStep1(){
+  pendingToken = null; magicLinkToken = null;
+  document.getElementById('step1').style.display='block';
+  document.getElementById('step2').style.display='none';
+  document.getElementById('subtitle').textContent='Connexion à votre compte';
+  document.getElementById('error-msg').style.display='none';
+  document.getElementById('success-msg').style.display='none';
+  document.getElementById('password').value='';
+}
 
 // --- Connexion classique ---
 async function doLogin() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const btn = document.getElementById('btn-login');
-  const err = document.getElementById('error-msg');
 
   if (!email || !password) { showError('Veuillez remplir tous les champs'); return; }
 
-  btn.textContent = 'Connexion...'; btn.classList.add('loading'); err.style.display = 'none';
+  btn.textContent = 'Connexion...'; btn.classList.add('loading'); 
+  document.getElementById('error-msg').style.display = 'none';
 
   try {
     const r = await fetch('/api/login', {
@@ -191,12 +204,18 @@ async function doLogin() {
       body: JSON.stringify({email, password})
     });
     const data = await r.json();
+    
     if (data.ok && data.requires_2fa) {
-      pendingToken = data.pending_token; goToStep2();
+      pendingToken = data.pending_token; 
+      goToStep2('Vérification en deux étapes', 'Entrez le code à 6 chiffres généré par votre application d\'authentification.');
     } else if (data.ok) {
       window.location.href = '/dashboard';
-    } else { showError(data.error || 'Identifiants incorrects'); }
-  } catch(e) { showError('Erreur de connexion.'); }
+    } else { 
+      showError(data.error || 'Identifiants incorrects'); 
+    }
+  } catch(e) { 
+    showError('Erreur de connexion.'); 
+  }
 
   btn.textContent = 'Se connecter →'; btn.classList.remove('loading');
 }
@@ -205,11 +224,12 @@ async function doLogin() {
 async function doMagicLink() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
+    
     if (!email || !password) {
         showError("Entrez votre email et mot de passe pour recevoir le lien.");
         return;
     }
-    const btn = document.getElementById('btn-login');
+    const btn = document.getElementById('btn-magic');
     btn.textContent = 'Envoi...'; btn.classList.add('loading');
     
     try {
@@ -222,13 +242,14 @@ async function doMagicLink() {
         else { showError(data.error); }
     } catch(e) { showError("Erreur réseau."); }
     
-    btn.textContent = 'Se connecter →'; btn.classList.remove('loading');
+    btn.textContent = 'Recevoir un lien de connexion'; btn.classList.remove('loading');
 }
 
 // --- Vérification (2FA ou Magic Link) ---
-async function doVerify2fa(){
+async function doVerify() {
   const code = document.getElementById('twofa-code').value.trim();
   const btn = document.getElementById('btn-verify');
+  
   if(!/^\d{6}$/.test(code)){ showError('Entrez un code à 6 chiffres'); return; }
   
   if(!pendingToken && !magicLinkToken){
@@ -239,7 +260,7 @@ async function doVerify2fa(){
   btn.textContent='Vérification...'; btn.classList.add('loading');
   document.getElementById('error-msg').style.display='none';
 
-  try{
+  try {
     let endpoint = '/api/login/2fa';
     let payload = {pending_token: pendingToken, code: code};
     
@@ -260,35 +281,38 @@ async function doVerify2fa(){
   btn.textContent='Vérifier →'; btn.classList.remove('loading');
 }
 
-// --- UI ---
-function goToStep2(){
-  document.getElementById('step1').style.display='none';
-  document.getElementById('step2').style.display='block';
-  document.getElementById('subtitle').textContent='Vérification en deux étapes';
-  document.getElementById('error-msg').style.display='none';
-  document.getElementById('twofa-code').value='';
-  document.getElementById('twofa-code').focus();
-}
+// --- Initialisation des événements ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Vérification du lien magique dans l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('link_token');
+    if (token) {
+        magicLinkToken = token;
+        goToStep2('Vérification par lien', 'Entrez le code de secours reçu dans votre email.');
+        
+        const urlCode = urlParams.get('code'); 
+        if(urlCode) {
+            document.getElementById('twofa-code').value = urlCode;
+        }
+    }
 
-function backToStep1(){
-  pendingToken = null; magicLinkToken = null;
-  document.getElementById('step1').style.display='block';
-  document.getElementById('step2').style.display='none';
-  document.getElementById('subtitle').textContent='Connexion à votre compte';
-  document.getElementById('error-msg').style.display='none';
-  document.getElementById('password').value='';
-}
+    // 2. Bouton "Se connecter"
+    document.getElementById('btn-login').addEventListener('click', doLogin);
+    
+    // 3. Bouton "Recevoir un lien"
+    document.getElementById('btn-magic').addEventListener('click', doMagicLink);
+    
+    // 4. Bouton "Vérifier"
+    document.getElementById('btn-verify').addEventListener('click', doVerify);
+    
+    // 5. Bouton "Retour"
+    document.getElementById('btn-back').addEventListener('click', backToStep1);
 
-function showError(msg) {
-  const el = document.getElementById('error-msg');
-  el.textContent = '⚠ ' + msg; el.style.display = 'block';
-  document.getElementById('success-msg').style.display = 'none';
-}
-function showSuccess(msg) {
-  const el = document.getElementById('success-msg');
-  el.textContent = '✅ ' + msg; el.style.display = 'block';
-  document.getElementById('error-msg').style.display = 'none';
-}
+    // 6. Soumission au clavier (touche Entrée)
+    document.getElementById('email').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+    document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+    document.getElementById('twofa-code').addEventListener('keydown', e => { if(e.key==='Enter') doVerify(); });
+});
 </script>
 </body>
 </html>
