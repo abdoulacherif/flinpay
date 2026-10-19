@@ -79,6 +79,11 @@ def init_csrf(app):
     app.config['WTF_CSRF_TIME_LIMIT'] = 3600
     app.config['WTF_CSRF_SSL_STRICT'] = config.IS_PRODUCTION
     app.config['WTF_CSRF_HEADERS'] = ['X-CSRF-Token', 'X-CSRFToken']
+    # On désactive la vérification automatique de Flask-WTF : il s'exécuterait
+    # AVANT nos before_request et bloquerait les routes publiques (login,
+    # register, webhooks). La vérification est faite manuellement dans app.py
+    # via csrf.protect() uniquement pour les routes non exemptées.
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = False
     csrf.init_app(app)
 
 
@@ -110,7 +115,7 @@ def init_limiter(app):
 
 CSP_BASE = (
     "default-src 'self'; "
-    "script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; "
+    "script-src 'self' 'nonce-{nonce}' 'strict-dynamic' https://cdnjs.cloudflare.com; "
     "style-src 'self' 'nonce-{nonce}' https://fonts.googleapis.com; "
     "img-src 'self' data: blob: https://*.supabase.co; "
     "font-src 'self' data: https://fonts.gstatic.com; "
@@ -182,7 +187,6 @@ def init_request_context(app):
     @app.before_request
     def _assign():
         incoming = request.headers.get('X-Request-ID', '')
-        # N'accepte un ID client que s'il est bien formé, sinon injection de logs.
         if incoming and re.fullmatch(r'[a-f0-9\-]{8,64}', incoming):
             g.request_id = incoming
         else:
