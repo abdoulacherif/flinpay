@@ -26,7 +26,7 @@ auth_bp = Blueprint('auth', __name__)
 DUMMY_HASH = bcrypt.hashpw(b'dummy_password_for_timing', bcrypt.gensalt()).decode()
 
 
-# ── Connexion classique ─────────────────────────────
+# ── Connexion ───────────────────────────────────────
 @auth_bp.route('/api/login', methods=['POST'])
 @limiter.limit('5 per minute')
 def api_login():
@@ -104,7 +104,6 @@ def api_login_2fa():
     return _login_success_response(user)
 
 
-# ── Connexion par lien email (Magic Link) ───────────
 @auth_bp.route('/api/login/email-link', methods=['POST'])
 @limiter.limit('3 per 15 minutes')
 def api_login_email_link():
@@ -187,7 +186,6 @@ def api_toggle_email_link():
     return jsonify({'ok': True, 'enabled': enabled})
 
 
-# ── Logout / compte ────────────────────────────────
 @auth_bp.route('/api/logout')
 def api_logout():
     resp = make_response(redirect(url_for('public.login_page')))
@@ -203,7 +201,8 @@ def api_me():
     if not user:
         return jsonify({'ok': False}), 404
     balances = get_balances(user)
-    total_balance = sum(balances.values()) if balances else user.get('available_balance', 0)
+    total_balance = sum(balances.values()) if balances else 0
+    logger.info(f"[api_me] user={user.get('email')} balances={balances}")
     return jsonify({'ok': True, 'user': {
         'firstname': user['firstname'], 'lastname': user['lastname'],
         'email': user['email'], 'company': user.get('company', ''),
@@ -212,7 +211,8 @@ def api_me():
         'kyc_status': user.get('kyc_status', 'unverified'), 'kyc_rejection_reason': user.get('kyc_rejection_reason'),
         'usage_this_month': get_monthly_transaction_count(request.user_id),
         'monthly_limit': config.FREE_PLAN_MONTHLY_LIMIT,
-        'available_balance': total_balance, 'balances': balances,
+        'available_balance': total_balance,
+        'balances': balances,
         'totp_enabled': user.get('totp_enabled', False),
         'email_link_enabled': user.get('email_link_enabled', False),
         'fp_balance': float(user.get('fp_balance') or 0),
@@ -220,7 +220,6 @@ def api_me():
     }})
 
 
-# ── Inscription / vérification email ────────────────
 @auth_bp.route('/api/register', methods=['POST'])
 @limiter.limit('3 per hour')
 def api_register():
@@ -312,7 +311,6 @@ def api_resend_verification():
     return jsonify({'ok': True})
 
 
-# ── 2FA ─────────────────────────────────────────────
 @auth_bp.route('/api/2fa/setup', methods=['POST'])
 @user_required
 def api_2fa_setup():
