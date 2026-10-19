@@ -1,12 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Transactions</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
@@ -20,7 +20,7 @@
   --shadow-sm:0 1px 2px rgba(15,17,32,.04);
   --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -54,42 +54,95 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .logout-link:hover{color:#ff7d7d}
 .overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
+
 .main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+  padding:20px 30px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  color:white;
+}
 .topbar-left{display:flex;align-items:center;gap:14px}
-.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.burger-btn{display:none;background:rgba(255,255,255,.15);border:none;cursor:pointer;padding:8px;border-radius:8px;flex-direction:column;gap:5px}
+.burger-btn:hover{background:rgba(255,255,255,.25)}
+.burger-line{width:20px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.topbar-title .icon{width:24px;height:24px;color:white}
 
 /* ── PAGE ── */
-.page{flex:1;padding:30px;animation:fadeUp .25s ease}
+.page{flex:1;padding:26px 30px 60px;animation:fadeUp .25s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
-.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
-.card-title{font-size:.9rem;font-weight:700;letter-spacing:-.01em}
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
-.btn-primary{background:var(--blue);color:white}
-.btn-primary:hover{background:var(--blue-deep)}
-.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
-.btn-outline:hover{background:var(--blue-tint)}
-.btn-sm{padding:6px 12px;font-size:.76rem}
 
-.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+/* ── BANNIÈRE SOLDE ── */
+.balance-hero{
+  background:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+  margin:-26px -30px 26px;padding:0 30px 26px;
+  color:white;
+}
+.balance-card{
+  background:white;border-radius:20px;padding:22px 26px;
+  display:flex;justify-content:space-between;align-items:center;
+  box-shadow:0 12px 32px rgba(0,0,0,.15);
+  margin-bottom:14px;
+}
+.balance-label{font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.balance-value{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.9rem;color:var(--ink);letter-spacing:-.02em}
+.balance-value small{font-size:1rem;color:var(--muted);font-weight:600}
+.btn-green{
+  background:#00C48C;color:white;border:none;border-radius:10px;
+  padding:11px 22px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.88rem;
+  cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+  transition:background .15s;text-decoration:none;
+}
+.btn-green:hover{background:#00A876}
+
+.reward-card{
+  background:white;border-radius:20px;padding:22px 26px;
+  display:flex;justify-content:space-between;align-items:center;
+  box-shadow:0 12px 32px rgba(0,0,0,.15);
+}
+.btn-red{
+  background:#FF5C5C;color:white;border:none;border-radius:10px;
+  padding:11px 22px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.88rem;
+  cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+  transition:background .15s;text-decoration:none;
+}
+.btn-red:hover{background:#E84545}
+
+/* ── FILTRES ── */
+.filter-bar{
+  background:white;border-radius:16px;padding:14px 16px;margin-bottom:16px;
+  box-shadow:0 4px 16px rgba(15,17,32,.04);
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+}
 .filter-input{
-  padding:9px 14px 9px 38px;border:1.5px solid var(--border);border-radius:var(--r-sm);
-  font-size:.85rem;background:var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="%23A6AABF" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat 13px center;
-  min-width:180px;outline:none;transition:border-color .15s
+  padding:10px 14px 10px 38px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:.85rem;background:white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="%23A6AABF" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat 13px center;
+  min-width:200px;outline:none;transition:border-color .15s;
 }
 .filter-input:focus{border-color:var(--blue)}
-.filter-select{padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.85rem;background:var(--surface);cursor:pointer;outline:none}
+.filter-select{padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.85rem;background:white;cursor:pointer;outline:none}
+
+/* ── CARTE / TABLE ── */
+.card{background:white;border-radius:18px;box-shadow:0 4px 16px rgba(15,17,32,.04);overflow:hidden;margin-bottom:18px}
+.card-head{padding:18px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.card-title{font-size:.95rem;font-weight:700;letter-spacing:-.01em}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:10px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;text-decoration:none}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:var(--blue-deep)}
+.btn-outline{background:white;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline:hover{background:var(--blue-tint)}
+.btn-sm{padding:7px 14px;font-size:.78rem}
 
 .tbl{width:100%;border-collapse:collapse;font-size:.83rem}
-.tbl th{padding:10px 14px;text-align:left;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;background:#FAFBFF;border-bottom:1px solid var(--border-soft)}
-.tbl td{padding:13px 14px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+.tbl th{padding:12px 16px;text-align:left;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;background:#FAFBFF;border-bottom:1px solid var(--border-soft)}
+.tbl td{padding:14px 16px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:#FAFBFF}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:.7rem;font-weight:700}
 .b-success{background:var(--green-tint);color:#0A7A50}
 .b-pending{background:var(--gold-tint);color:#8A5B00}
 .b-failed{background:var(--danger-tint);color:#B3271A}
@@ -99,17 +152,18 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
 .empty-text{font-size:.85rem;line-height:1.65}
 
+/* ── MODAL ── */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
 .modal-bg.show{display:flex}
-.modal{background:var(--surface);border-radius:20px;padding:26px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal{background:white;border-radius:20px;padding:26px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
 .modal h3{font-size:1.05rem;font-weight:800;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
 .modal-close{background:none;border:none;font-size:1.1rem;color:var(--muted);cursor:pointer;padding:4px}
 .detail-row{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-soft);font-size:.83rem}
 .detail-row:last-child{border-bottom:none}
 .detail-label{color:var(--muted);font-weight:600}
 .detail-val{word-break:break-word}
-@media(max-width:520px){.detail-row{grid-template-columns:1fr;gap:2px}}
 
+/* ── RESPONSIVE ── */
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
@@ -117,9 +171,15 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   .burger-btn{display:flex}
   .close-sidebar{display:block}
   .page{padding:16px}
+  .topbar{padding:16px 20px}
+  .balance-hero{margin:-16px -16px 20px;padding:0 16px 20px}
+  .balance-card{padding:16px 20px}
+  .balance-value{font-size:1.5rem}
 }
 @media(max-width:520px){
   .tbl th:nth-child(5),.tbl td:nth-child(5){display:none}
+  .detail-row{grid-template-columns:1fr;gap:2px}
+  .balance-card,.reward-card{flex-direction:column;align-items:flex-start;gap:12px}
 }
 </style>
 </head>
@@ -143,7 +203,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   </defs>
 </svg>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="overlay" id="overlay"></div>
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
@@ -151,7 +211,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
       <div class="plan-badge-pill">🚀 Starter</div>
     </div>
-    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+    <button class="close-sidebar" id="close-sidebar">✕</button>
   </div>
 
   <div class="corridor">
@@ -194,7 +254,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="burger-btn" id="burger" onclick="openSidebar()">
+      <button class="burger-btn" id="burger">
         <span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span>
       </button>
       <div class="topbar-title"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</div>
@@ -202,15 +262,34 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   </div>
 
   <div class="page">
+    <!-- BANNIÈRE SOLDE -->
+    <div class="balance-hero">
+      <div class="balance-card">
+        <div>
+          <div class="balance-label">Solde</div>
+          <div class="balance-value" id="hero-balance">0 <small>XOF</small></div>
+        </div>
+        <a href="/payouts" class="btn-green">Recharger</a>
+      </div>
+      <div class="reward-card">
+        <div>
+          <div class="balance-label">Récompense</div>
+          <div class="balance-value" id="hero-reward">0 <small>pts</small></div>
+        </div>
+        <a href="/referral" class="btn-red">Retrait</a>
+      </div>
+    </div>
+
+    <!-- FILTRES -->
     <div class="filter-bar">
-      <input class="filter-input" type="text" id="tx-search" placeholder="Rechercher..." oninput="filterTx()">
-      <select class="filter-select" id="tx-status" onchange="filterTx()">
+      <input class="filter-input" type="text" id="tx-search" placeholder="Rechercher...">
+      <select class="filter-select" id="tx-status">
         <option value="">Tous les statuts</option>
         <option value="paid">✅ Payé</option>
         <option value="pending">⏳ En attente</option>
         <option value="failed">❌ Échoué</option>
       </select>
-      <select class="filter-select" id="tx-country" onchange="filterTx()">
+      <select class="filter-select" id="tx-country">
         <option value="">Tous les pays</option>
         <option value="CM">🇨🇲 Cameroun</option>
         <option value="CI">🇨🇮 Côte d'Ivoire</option>
@@ -220,12 +299,13 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
         <option value="CD">🇨🇩 RDC</option>
         <option value="GA">🇬🇦 Gabon</option>
       </select>
-      <button class="btn btn-outline btn-sm" onclick="exportTx()"><span class="icon"><svg><use href="#ic-download"/></svg></span> Exporter CSV</button>
+      <button class="btn btn-outline btn-sm" id="btn-export"><span class="icon"><svg><use href="#ic-download"/></svg></span> Exporter CSV</button>
     </div>
+
     <div class="card">
       <div class="card-head">
         <div class="card-title">Transactions <span id="tx-total" style="color:var(--muted);font-weight:400"></span></div>
-        <button class="btn btn-primary btn-sm" onclick="loadTransactions()"><span class="icon"><svg><use href="#ic-refresh"/></svg></span> Actualiser</button>
+        <button class="btn btn-primary btn-sm" id="btn-refresh"><span class="icon"><svg><use href="#ic-refresh"/></svg></span> Actualiser</button>
       </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="tx-table">
@@ -241,19 +321,38 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 <div class="modal-bg" id="details-modal">
   <div class="modal">
-    <h3>Détails de la transaction <button class="modal-close" onclick="closeDetails()">✕</button></h3>
+    <h3>Détails de la transaction <button class="modal-close" id="btn-close-details">✕</button></h3>
     <div id="details-body"></div>
   </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
+"use strict";
+
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.getAttribute('content') : '';
+}
+async function apiFetch(url, options = {}) {
+  const opts = { ...options };
+  opts.headers = { ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+    const token = getCsrfToken();
+    if (token) opts.headers['X-CSRF-Token'] = token;
+  }
+  if (opts.body && typeof opts.body === 'string') {
+    opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+  }
+  return fetch(url, opts);
+}
+
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
 
-// ── PROFIL (sidebar) — via /api/me ────────────────
 async function loadProfile(){
   try{
-    const r=await fetch('/api/me');
+    const r=await apiFetch('/api/me');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     const data=await r.json();
     if(!data.ok) return;
@@ -261,20 +360,22 @@ async function loadProfile(){
     document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
     document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
     document.getElementById('user-email').textContent=user.email||'';
+    const bals = user.balances || {};
+    let topCur = 'XOF', topVal = 0;
+    for (const [c,v] of Object.entries(bals)) {
+      if ((Number(v)||0) > topVal) { topCur = c; topVal = Number(v)||0; }
+    }
+    document.getElementById('hero-balance').innerHTML = topVal.toLocaleString('fr-FR') + ' <small>' + topCur + '</small>';
+    document.getElementById('hero-reward').innerHTML = (user.referral_balance||0).toLocaleString('fr-FR') + ' <small>pts</small>';
   }catch(e){}
 }
 
-// ── TRANSACTIONS — via /api/transactions ──────────
-// NOTE: le gateway utilisé pour la collecte mobile money est SoleasPay, pas LeekPay.
-// Le backend stocke la référence de collecte dans `gateway_reference` (voir sb_post('transactions', ...)
-// dans app.py). Le bouton "Vérifier" doit donc se baser sur ce champ, pas sur un
-// `leekpay_checkout_id` qui n'existe pas dans la réponse de l'API.
 let allTx=[];
 async function loadTransactions(){
   const tbody=document.getElementById('tx-tbody');
   tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-text">Chargement...</div></div></td></tr>';
   try{
-    const r=await fetch('/api/transactions');
+    const r=await apiFetch('/api/transactions');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     const data=await r.json();
     if(!data.ok){ allTx=[]; renderTx(allTx); return; }
@@ -313,18 +414,21 @@ function renderTx(txs){
     <tr>
       <td><span class="tx-id">${tx.id.substr(0,12)}${tx.id.length>12?'...':''}</span></td>
       <td>${tx.client}</td>
-      <td><span class="tx-amt">${tx.amount.toLocaleString()} XOF</span></td>
+      <td><span class="tx-amt">${tx.amount.toLocaleString('fr-FR')} XOF</span></td>
       <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">
         ${tx.status==='paid'?'✅ Payé':tx.status==='pending'?'⏳ Attente':'❌ Échoué'}
       </span></td>
       <td>${tx.phone}</td>
       <td style="font-size:.76rem;color:var(--muted)">${tx.date}</td>
       <td style="white-space:nowrap;display:flex;gap:6px">
-        ${tx.status==='pending'&&tx.hasGatewayRef?`<button class="btn btn-outline btn-sm" onclick="syncTx('${tx.id}',this)">🔄 Vérifier</button>`:''}
-        <button class="btn btn-outline btn-sm" onclick="viewDetails('${tx.id}')">🔍 Détails</button>
+        ${tx.status==='pending'&&tx.hasGatewayRef?`<button class="btn btn-outline btn-sm" data-sync="${tx.id}">🔄 Vérifier</button>`:''}
+        <button class="btn btn-outline btn-sm" data-details="${tx.id}">🔍 Détails</button>
       </td>
     </tr>
   `).join('');
+
+  tbody.querySelectorAll('[data-sync]').forEach(b=>b.addEventListener('click', e => syncTx(e.currentTarget.dataset.sync, e.currentTarget)));
+  tbody.querySelectorAll('[data-details]').forEach(b=>b.addEventListener('click', e => viewDetails(e.currentTarget.dataset.details)));
 }
 
 function viewDetails(id){
@@ -356,18 +460,18 @@ function viewDetails(id){
     ['ID commande', tx.orderId||'—'],
     ['Client', tx.client],
     ['Téléphone', tx.phone],
-    ['Montant', tx.amount.toLocaleString()+' XOF'],
+    ['Montant', tx.amount.toLocaleString('fr-FR')+' XOF'],
     ['Statut', tx.status],
     ['Pays', tx.country||'—'],
     ['Opérateur', tx.operator||'—'],
     ['Environnement', tx.environment||'—'],
-    ['Réf. passerelle (SoleasPay)', tx.gatewayRef||'—'],
+    ['Réf. passerelle', tx.gatewayRef||'—'],
     ['Créée le', tx.date||'—'],
     ['Payée le', tx.paidAt||'—'],
     ['Origine du paiement', source],
-    ['Navigateur détecté', ua ? `${browser} — ${os}` : 'Non disponible (paiement API sans info transmise)'],
+    ['Navigateur détecté', ua ? `${browser} — ${os}` : 'Non disponible'],
     ['Adresse IP', tx.ipAddress||'Non disponible'],
-    ['Page d\'origine (referer)', tx.refererUrl ? `<a href="${tx.refererUrl}" target="_blank" style="color:var(--blue)">${tx.refererUrl}</a>` : 'Non disponible'],
+    ['Page d\'origine', tx.refererUrl ? `<a href="${tx.refererUrl}" target="_blank" style="color:var(--blue)">${tx.refererUrl}</a>` : 'Non disponible'],
   ];
 
   document.getElementById('details-body').innerHTML=rows.map(([label,val])=>`
@@ -384,22 +488,22 @@ function closeDetails(){
 async function syncTx(token, btn){
   btn.disabled=true; btn.textContent='...';
   try{
-    const r=await fetch('/api/transactions/'+token+'/sync',{method:'POST'});
+    const r=await apiFetch('/api/transactions/'+token+'/sync',{method:'POST'});
     if(r.status===404){
-      alert("Route introuvable (404) — le backend n'a probablement pas été redéployé avec la dernière version.");
+      alert("Route introuvable — le backend n'a probablement pas été redéployé.");
       btn.disabled=false; btn.textContent='🔄 Vérifier';
       return;
     }
     const data=await r.json();
     if(data.ok){
-      alert('Statut actuel (SoleasPay) : '+data.status);
+      alert('Statut actuel : '+data.status);
       loadTransactions();
     }else{
       alert('Erreur : '+(data.error||'inconnue'));
       btn.disabled=false; btn.textContent='🔄 Vérifier';
     }
   }catch(e){
-    alert('Erreur de connexion ou réponse invalide : '+e.message);
+    alert('Erreur de connexion : '+e.message);
     btn.disabled=false; btn.textContent='🔄 Vérifier';
   }
 }
@@ -423,9 +527,21 @@ function exportTx(){
   a.click();
 }
 
-loadProfile();
-loadTransactions();
-document.getElementById('details-modal').addEventListener('click',e=>{if(e.target===document.getElementById('details-modal'))closeDetails()});
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('burger').addEventListener('click', openSidebar);
+  document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
+  document.getElementById('overlay').addEventListener('click', closeSidebar);
+  document.getElementById('btn-export').addEventListener('click', exportTx);
+  document.getElementById('btn-refresh').addEventListener('click', loadTransactions);
+  document.getElementById('tx-search').addEventListener('input', filterTx);
+  document.getElementById('tx-status').addEventListener('change', filterTx);
+  document.getElementById('tx-country').addEventListener('change', filterTx);
+  document.getElementById('btn-close-details').addEventListener('click', closeDetails);
+  document.getElementById('details-modal').addEventListener('click', e=>{if(e.target===document.getElementById('details-modal'))closeDetails()});
+
+  loadProfile();
+  loadTransactions();
+});
 </script>
 </body>
 </html>
