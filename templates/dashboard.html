@@ -13,14 +13,13 @@
   --bg:#F5F6FB;--surface:#FFFFFF;
   --border:#E7E9F3;--border-soft:#F0F1F8;
   --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
-  --cyan:#00C4FF;
-  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
   --green:#00C48C;--green-tint:#E3FBF3;
   --danger:#FF4D4D;--danger-tint:#FFEAEA;
   --text:#12131C;--muted:#767A94;--muted-soft:#A6AABF;
   --r-lg:18px;--r-md:14px;--r-sm:9px;
-  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
-  --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --shadow-md:0 10px 28px -14px rgba(10,50,150,.18);
   --sidebar-w:270px;
   --bottom-nav-h:64px;
   --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
@@ -34,34 +33,28 @@ a{color:inherit}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
 .shell{display:flex;min-height:100vh}
-
 .overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,9,16,0.55);z-index:250;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
-
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto}
 .sidebar.open{transform:translateX(0)}
-
 .sidebar-top{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;flex-shrink:0}
-.sidebar-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
 .close-sidebar{background:none;border:none;color:rgba(255,255,255,0.45);font-size:1.2rem;cursor:pointer;padding:4px}
-
 .corridor{margin:14px 20px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px;flex-shrink:0}
 .corridor-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
-.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-label b{color:#8ECFFF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.9rem;line-height:1}
-
 .sidebar-nav{flex:1;padding:8px 0}
 .nav-group{font-size:.6rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:14px 20px 6px}
 .nav-link{display:flex;align-items:center;gap:12px;padding:9px 20px;color:rgba(255,255,255,0.5);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
-.nav-link.active .icon{color:#8EA6FF}
-
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
 .sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;flex-shrink:0}
 .user-row{display:flex;align-items:center;gap:10px}
 .user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
@@ -71,71 +64,34 @@ a{color:inherit}
 .logout-link:hover{color:#ff7d7d}
 
 .main{flex:1;min-width:0;width:100%}
-
-/* ── TOPBAR (dégradé) ── */
-.topbar{
-  background:var(--gradient);
-  padding:20px 20px 30px;
-  color:white;
-  position:relative;
-  overflow:hidden;
-}
-.topbar::before{
-  content:'';position:absolute;top:-60px;right:-60px;
-  width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.08);
-}
-.topbar::after{
-  content:'';position:absolute;bottom:-80px;left:-40px;
-  width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.05);
-}
+.topbar{background:var(--gradient);padding:20px;color:white;position:relative;overflow:hidden}
+.topbar::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.08)}
+.topbar::after{content:'';position:absolute;bottom:-80px;left:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.05)}
 .topbar-inner{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:14px}
 .topbar-left{display:flex;align-items:center;gap:12px}
 .burger-btn{background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;display:flex;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center}
 .burger-btn:hover{background:rgba(255,255,255,0.28)}
 .burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
 .topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
-.topbar-sub{font-size:.76rem;color:rgba(255,255,255,.75);margin-top:2px}
-
+.topbar-sub{font-size:.76rem;color:rgba(255,255,255,.85);margin-top:2px}
 .kyc-quick-btn{width:46px;height:46px;border-radius:14px;background:var(--gold);display:flex;align-items:center;justify-content:center;color:var(--ink);text-decoration:none;box-shadow:0 8px 20px rgba(255,180,0,.35);flex-shrink:0;transition:transform .15s}
 .kyc-quick-btn:hover{transform:translateY(-2px)}
 .kyc-quick-btn .icon{width:22px;height:22px}
 .kyc-quick-btn.verified{background:var(--green);color:white}
 
-/* ── CARTES SOLDE (chevauchement) ── */
 .page{padding:0 20px calc(var(--bottom-nav-h) + 40px);margin-top:-22px;position:relative;z-index:2}
-
 .balance-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px}
-.balance-card{
-  background:white;border-radius:20px;padding:20px 22px;
-  display:flex;justify-content:space-between;align-items:center;
-  box-shadow:0 12px 32px rgba(10,50,150,.15);
-  border:1px solid rgba(255,255,255,.5);
-}
+.balance-card{background:white;border-radius:20px;padding:20px 22px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 12px 32px rgba(10,50,150,.15);border:1px solid rgba(255,255,255,.5)}
 .balance-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .balance-value{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.7rem;color:var(--ink);letter-spacing:-.02em}
 .balance-value small{font-size:.95rem;color:var(--muted);font-weight:600}
-.btn-green{
-  background:var(--green);color:white;border:none;border-radius:10px;
-  padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;
-  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
-  transition:background .15s;text-decoration:none;
-}
+.btn-green{background:var(--green);color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;text-decoration:none}
 .btn-green:hover{background:#00A876}
-.btn-red{
-  background:#FF5C5C;color:white;border:none;border-radius:10px;
-  padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;
-  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
-  transition:background .15s;text-decoration:none;
-}
+.btn-red{background:#FF5C5C;color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;text-decoration:none}
 .btn-red:hover{background:#E84545}
 
-/* ── STATS ── */
 .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
-.stat-card{
-  background:white;border-radius:16px;padding:16px;
-  box-shadow:0 4px 16px rgba(10,50,150,.06);
-  border:1px solid var(--border-soft);
-}
+.stat-card{background:white;border-radius:16px;padding:16px;box-shadow:var(--shadow-sm);border:1px solid var(--border-soft)}
 .stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
 .stat-icon.blue{background:var(--blue-tint);color:var(--blue)}
 .stat-icon.green{background:var(--green-tint);color:#0A7A50}
@@ -144,18 +100,12 @@ a{color:inherit}
 .stat-value{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:var(--ink);letter-spacing:-.02em}
 .stat-label{font-size:.72rem;color:var(--muted);margin-top:2px}
 
-/* ── SECTIONS ── */
 .section-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .section-head h2{font-size:.72rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--muted-soft);white-space:nowrap}
 .section-head .rule{flex:1;height:1px;background:var(--border)}
 
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
-.quick-card{
-  background:white;border-radius:16px;padding:16px;
-  display:flex;align-items:center;gap:12px;
-  text-decoration:none;box-shadow:0 4px 16px rgba(10,50,150,.05);
-  transition:all .15s;border:1px solid var(--border-soft);
-}
+.quick-card{background:white;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;text-decoration:none;box-shadow:var(--shadow-sm);transition:all .15s;border:1px solid var(--border-soft)}
 .quick-card:hover{border-color:var(--blue);transform:translateY(-1px);box-shadow:0 8px 24px rgba(10,50,150,.1)}
 .quick-ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .quick-ic .icon{width:22px;height:22px}
@@ -167,8 +117,7 @@ a{color:inherit}
 .quick-sub{font-size:.72rem;color:var(--muted);margin-top:2px}
 
 .content-grid{display:block}
-
-.card{background:white;border-radius:18px;box-shadow:0 4px 16px rgba(10,50,150,.05);overflow:hidden;margin-bottom:20px;border:1px solid var(--border-soft)}
+.card{background:white;border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:20px;border:1px solid var(--border-soft)}
 .card-head{padding:16px 18px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
 .card-title{font-size:.9rem;font-weight:700;letter-spacing:-.01em}
 .card-action{font-size:.76rem;color:var(--blue);font-weight:600;cursor:pointer;background:none;border:none;text-decoration:none}
@@ -193,7 +142,7 @@ a{color:inherit}
 .plan-badge-inline{display:inline-block;background:rgba(255,255,255,0.2);font-size:.64rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 10px;border-radius:5px;margin-bottom:10px;position:relative;z-index:1}
 .plan-hero-title{font-size:1.1rem;font-weight:800;position:relative;z-index:1}
 .plan-hero-value{font-size:1.35rem;font-weight:800;margin-top:4px;font-family:'Space Grotesk',sans-serif;position:relative;z-index:1}
-.plan-hero-expiry{font-size:.76rem;color:rgba(255,255,255,.75);margin-top:6px;position:relative;z-index:1}
+.plan-hero-expiry{font-size:.76rem;color:rgba(255,255,255,.85);margin-top:6px;position:relative;z-index:1}
 .plan-progress{height:6px;background:rgba(255,255,255,0.22);border-radius:3px;margin:10px 0 6px;position:relative;z-index:1}
 .plan-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .5s}
 
@@ -212,7 +161,6 @@ a{color:inherit}
 .note-danger span{font-size:.74rem;color:#B3271A;opacity:.9}
 .note .btn{margin-left:auto;flex-shrink:0}
 
-/* ── BOTTOM NAV ── */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--border);display:flex;z-index:200;box-shadow:0 -4px 16px rgba(15,17,32,.06);height:var(--bottom-nav-h);padding-bottom:env(safe-area-inset-bottom)}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 4px;text-decoration:none;color:var(--muted-soft);transition:color .15s}
 .bnav-item .icon{width:20px;height:20px}
@@ -222,7 +170,6 @@ a{color:inherit}
 #toast{position:fixed;bottom:calc(var(--bottom-nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.83rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
-/* ── DESKTOP ── */
 @media(min-width:960px){
   .overlay{display:none !important}
   .sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar-w);max-width:var(--sidebar-w);transform:none;flex-shrink:0}
@@ -230,18 +177,14 @@ a{color:inherit}
   .burger-btn{display:none}
   .bottom-nav{display:none}
   .main{width:auto;flex:1;min-width:0}
-
   .topbar{padding:30px 40px 50px}
   .topbar::before{width:340px;height:340px;top:-100px;right:-100px}
   .topbar::after{width:280px;height:280px;bottom:-120px;left:-80px}
   .topbar-title{font-size:1.5rem}
-
   .page{max-width:1180px;margin:-32px auto 0;padding:0 40px 60px}
-
   .balance-grid{grid-template-columns:1fr 1fr}
   .balance-card{padding:24px 26px}
   .balance-value{font-size:1.9rem}
-
   .stats-grid{grid-template-columns:repeat(4,1fr)}
   .quick-grid{grid-template-columns:repeat(4,1fr)}
   .content-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start}
@@ -249,14 +192,8 @@ a{color:inherit}
   .plan-hero{margin-bottom:0}
   #toast{bottom:24px}
 }
-
-@media(min-width:1280px){
-  :root{--sidebar-w:280px}
-}
-
-@media(prefers-reduced-motion:reduce){
-  *{transition-duration:.001ms !important;animation-duration:.001ms !important}
-}
+@media(min-width:1280px){:root{--sidebar-w:280px}}
+@media(prefers-reduced-motion:reduce){*{transition-duration:.001ms !important;animation-duration:.001ms !important}}
 </style>
 </head>
 <body>
@@ -281,6 +218,7 @@ a{color:inherit}
 <symbol id="ic-invoice" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
 <symbol id="ic-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
 <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+<symbol id="ic-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
 </defs>
 </svg>
 
@@ -308,6 +246,7 @@ a{color:inherit}
 <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
 <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
 <a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
+<a class="nav-link" href="/rewards"><span class="icon"><svg><use href="#ic-star"/></svg></span> Récompenses</a>
 
 <div class="nav-group">Développeur</div>
 <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
@@ -334,8 +273,6 @@ a{color:inherit}
 </aside>
 
 <div class="main">
-
-<!-- TOPBAR DÉGRADÉ -->
 <div class="topbar">
 <div class="topbar-inner">
 <div class="topbar-left">
@@ -354,8 +291,6 @@ a{color:inherit}
 </div>
 
 <div class="page">
-
-<!-- CARTES SOLDE -->
 <div class="balance-grid">
 <div class="balance-card">
 <div>
@@ -366,14 +301,13 @@ a{color:inherit}
 </div>
 <div class="balance-card">
 <div>
-<div class="balance-label">Récompenses</div>
-<div class="balance-value" id="hero-reward">0 <small>pts</small></div>
+<div class="balance-label">Récompenses FP</div>
+<div class="balance-value" id="hero-reward">0 <small>FP</small></div>
 </div>
-<a href="/referral" class="btn-red">Retrait</a>
+<a href="/rewards" class="btn-red">Voir</a>
 </div>
 </div>
 
-<!-- NOTES -->
 <div class="note note-danger" id="error-note">
 <span class="icon" style="color:#B3271A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
 <div><strong>Connexion impossible</strong><span>Vérifiez votre connexion et réessayez.</span></div>
@@ -381,7 +315,6 @@ a{color:inherit}
 </div>
 <div class="note note-warn" id="kyc-note"></div>
 
-<!-- STATS -->
 <div class="section-head"><h2>Statistiques</h2><div class="rule"></div></div>
 <div class="stats-grid">
 <div class="stat-card">
@@ -406,7 +339,6 @@ a{color:inherit}
 </div>
 </div>
 
-<!-- ACTIONS RAPIDES -->
 <div class="section-head"><h2>Actions rapides</h2><div class="rule"></div></div>
 <div class="quick-grid">
 <a class="quick-card" href="/api-keys">
@@ -417,9 +349,9 @@ a{color:inherit}
 <div class="quick-ic gold"><span class="icon"><svg><use href="#ic-link"/></svg></span></div>
 <div><div class="quick-title">Liens</div><div class="quick-sub">de paiement</div></div>
 </a>
-<a class="quick-card" href="/payouts">
-<div class="quick-ic green"><span class="icon"><svg><use href="#ic-send"/></svg></span></div>
-<div><div class="quick-title">Payouts</div><div class="quick-sub">Retirer</div></div>
+<a class="quick-card" href="/rewards">
+<div class="quick-ic green"><span class="icon"><svg><use href="#ic-star"/></svg></span></div>
+<div><div class="quick-title">Récompenses</div><div class="quick-sub">Gains FP</div></div>
 </a>
 <a class="quick-card" href="/webhooks">
 <div class="quick-ic ink"><span class="icon"><svg><use href="#ic-zap"/></svg></span></div>
@@ -427,7 +359,6 @@ a{color:inherit}
 </a>
 </div>
 
-<!-- DERNIÈRES TRANSACTIONS + PLAN -->
 <div class="content-grid">
 <div class="card">
 <div class="card-head">
@@ -451,7 +382,6 @@ a{color:inherit}
 <a href="/billing" class="btn btn-gold btn-sm" id="plan-cta" style="margin-top:12px">⬆ Passer au Pro</a>
 </div>
 </div>
-
 </div>
 </div>
 </div>
@@ -459,7 +389,7 @@ a{color:inherit}
 <nav class="bottom-nav">
 <a class="bnav-item active" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span><span>Accueil</span></a>
 <a class="bnav-item" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span><span>Transactions</span></a>
-<a class="bnav-item" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span><span>Payouts</span></a>
+<a class="bnav-item" href="/rewards"><span class="icon"><svg><use href="#ic-star"/></svg></span><span>Récompenses</span></a>
 <a class="bnav-item" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span><span>Profil</span></a>
 </nav>
 
@@ -468,63 +398,25 @@ a{color:inherit}
 <script nonce="{{ csp_nonce }}">
 "use strict";
 
-function getCsrfToken() {
-  const meta = document.querySelector('meta[name="csrf-token"]');
-  return meta ? meta.getAttribute('content') : '';
-}
-async function apiFetch(url, options = {}) {
-  const opts = { ...options };
-  opts.headers = { ...(opts.headers || {}) };
-  const method = (opts.method || 'GET').toUpperCase();
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-    const token = getCsrfToken();
-    if (token) opts.headers['X-CSRF-Token'] = token;
+function getCsrfToken(){const m=document.querySelector('meta[name="csrf-token"]');return m?m.getAttribute('content'):''}
+async function apiFetch(url, options={}){
+  const opts={...options}; opts.headers={...(opts.headers||{})};
+  const method=(opts.method||'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){
+    const t=getCsrfToken(); if(t) opts.headers['X-CSRF-Token']=t;
   }
-  if (opts.body && typeof opts.body === 'string') {
-    opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+  if(opts.body && typeof opts.body === 'string'){
+    opts.headers['Content-Type']=opts.headers['Content-Type']||'application/json';
   }
   return fetch(url, opts);
 }
 
-function openSidebar(){
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-  document.body.style.overflow='hidden';
-}
-function closeSidebar(){
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-  document.body.style.overflow='';
-}
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
 
-function toast(msg, ok=true){
-  const t=document.getElementById('toast');
-  t.textContent=(ok?'✅ ':'❌ ')+msg;
-  t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
-  t.classList.add('show');
-  clearTimeout(t._hideTimer);
-  t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000);
-}
-
-function escapeHtml(str){
-  const div=document.createElement('div');
-  div.textContent=str==null?'':String(str);
-  return div.innerHTML;
-}
-
-function fmtNumber(n){
-  return (Number(n)||0).toLocaleString('fr-FR');
-}
-
-function fmtDate(iso){
-  if(!iso) return '';
-  try{
-    const d=new Date(iso);
-    return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
-  }catch(e){ return ''; }
-}
-
-let lastLoadFailed=false;
+function escapeHtml(str){const d=document.createElement('div');d.textContent=str==null?'':String(str);return d.innerHTML}
+function fmtNumber(n){return (Number(n)||0).toLocaleString('fr-FR',{maximumFractionDigits:2})}
+function fmtDate(iso){if(!iso) return '';try{return new Date(iso).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'})}catch(e){return ''}}
 
 async function loadProfile(){
   try{
@@ -536,7 +428,6 @@ async function loadProfile(){
     const user=data.user;
 
     document.getElementById('error-note').classList.remove('show');
-    lastLoadFailed=false;
 
     document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
     document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
@@ -545,8 +436,8 @@ async function loadProfile(){
     document.getElementById('topbar-sub').textContent='Voici l\'activité de votre compte';
 
     const isPro=user.plan==='pro';
-    document.getElementById('plan-badge-pill').textContent=isPro?'🚀 Pro':'🚀 Starter';
-    document.getElementById('plan-badge-inline').textContent=isPro?'🚀 Plan Pro':'🚀 Plan Starter';
+    document.getElementById('plan-badge-pill').textContent=isPro?'⭐ Pro':'🚀 Starter';
+    document.getElementById('plan-badge-inline').textContent=isPro?'⭐ Plan Pro':'🚀 Plan Starter';
 
     const limit=user.monthly_limit||300;
     const used=user.usage_this_month||0;
@@ -565,7 +456,7 @@ async function loadProfile(){
       planExpiry.textContent='';
     }
 
-    renderBalances(user.balances||{}, user.available_balance, user.referral_balance||0);
+    renderBalances(user.balances||{}, user.available_balance, user.fp_balance||0);
 
     const kyc=user.kyc_status||'unverified';
     const kycBtn=document.getElementById('kyc-quick-btn');
@@ -574,31 +465,27 @@ async function loadProfile(){
       kycBtn.classList.add('verified');
       note.classList.remove('show');
     }else if(kyc==='pending'){
-      note.innerHTML=`<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-      <div><strong>Vérification en cours</strong><span>Document en cours de revue (24-48h).</span></div>`;
+      note.innerHTML='<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><div><strong>Vérification en cours</strong><span>Document en cours de revue (24-48h).</span></div>';
       note.classList.add('show');
     }else{
       const reason=kyc==='rejected' ? (user.kyc_rejection_reason||"Document invalide ou illisible.") : "Requis pour générer des clés API.";
-      note.innerHTML=`<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-      <div><strong>${kyc==='rejected' ? "Vérification refusée" : "Vérifiez votre identité"}</strong><span>${escapeHtml(reason)}</span></div>
-      <a href="/kyc" class="btn btn-gold btn-sm">Vérifier</a>`;
+      note.innerHTML='<span class="icon" style="color:#8A5B00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><div><strong>'+(kyc==='rejected'?"Vérification refusée":"Vérifiez votre identité")+'</strong><span>'+escapeHtml(reason)+'</span></div><a href="/kyc" class="btn btn-gold btn-sm">Vérifier</a>';
       note.classList.add('show');
     }
   }catch(e){
-    lastLoadFailed=true;
     document.getElementById('error-note').classList.add('show');
   }
 }
 
-function renderBalances(balances, fallbackTotal, referralBalance){
-  const entries=Object.entries(balances).filter(([,v])=>v!==null && v!==undefined);
+function renderBalances(balances, fallbackTotal, fpBalance){
+  const entries=Object.entries(balances||{}).filter(([,v])=>v!==null && v!==undefined);
   let topCur='XOF', topVal=fallbackTotal||0;
   if(entries.length){
     const sorted=entries.slice().sort((a,b)=>(Number(b[1])||0)-(Number(a[1])||0));
     [topCur, topVal]=sorted[0];
   }
   document.getElementById('hero-balance').innerHTML=fmtNumber(topVal)+' <small>'+escapeHtml(topCur)+'</small>';
-  document.getElementById('hero-reward').innerHTML=fmtNumber(referralBalance)+' <small>pts</small>';
+  document.getElementById('hero-reward').innerHTML=fmtNumber(fpBalance)+' <small>FP</small>';
 }
 
 async function loadTransactions(){
@@ -619,12 +506,10 @@ function updateOverviewStats(rawTxs, failed){
     client:tx.client_name||'—',
     amount:Number(tx.amount)||0,
     currency:tx.currency||'XOF',
-    status:tx.status||'pending',
-    date:tx.created_at
+    status:tx.status||'pending'
   }));
 
   const paid=txs.filter(t=>t.status==='paid');
-  const pending=txs.filter(t=>t.status==='pending');
   const failedTx=txs.filter(t=>t.status!=='paid'&&t.status!=='pending');
 
   const volumeByCurrency={};
@@ -648,21 +533,16 @@ function updateOverviewStats(rawTxs, failed){
   const ovList=document.getElementById('ov-tx-list');
   if(failed){
     ovList.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Impossible de charger les transactions.<br><button class="btn btn-gold btn-sm" id="retry-tx-btn" style="margin-top:10px">Réessayer</button></div></div>';
-    document.getElementById('retry-tx-btn').addEventListener('click', retryLoad);
+    const b=document.getElementById('retry-tx-btn'); if(b) b.addEventListener('click', retryLoad);
     return;
   }
   if(!txs.length){
     ovList.innerHTML='<div class="empty"><div class="empty-icon">💳</div><div class="empty-text">Aucune transaction pour le moment.<br>Intégrez l\'API ou créez un lien de paiement pour commencer.</div></div>';
     return;
   }
-
-  ovList.innerHTML=`<table class="tbl"><thead><tr><th>Client</th><th>Montant</th><th>Statut</th></tr></thead><tbody>
-  ${txs.slice(0,5).map(tx=>`<tr>
-  <td>${escapeHtml(tx.client)}</td>
-  <td class="tx-amt">${fmtNumber(tx.amount)} ${escapeHtml(tx.currency)}</td>
-  <td><span class="badge ${tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed'}">${tx.status==='paid'?'✅':tx.status==='pending'?'⏳':'❌'} ${escapeHtml(tx.status)}</span></td>
-  </tr>`).join('')}
-  </tbody></table>`;
+  ovList.innerHTML='<table class="tbl"><thead><tr><th>Client</th><th>Montant</th><th>Statut</th></tr></thead><tbody>'+
+  txs.slice(0,5).map(tx=>'<tr><td>'+escapeHtml(tx.client)+'</td><td class="tx-amt">'+fmtNumber(tx.amount)+' '+escapeHtml(tx.currency)+'</td><td><span class="badge '+(tx.status==='paid'?'b-success':tx.status==='pending'?'b-pending':'b-failed')+'">'+(tx.status==='paid'?'✅':tx.status==='pending'?'⏳':'❌')+' '+escapeHtml(tx.status)+'</span></td></tr>').join('')+
+  '</tbody></table>';
 }
 
 function retryLoad(){
