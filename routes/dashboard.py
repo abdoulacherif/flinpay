@@ -244,3 +244,8 @@ def api_referral():
 @user_required
 def referral():
     return render_template('referral.html', user=get_current_user())
+
+@dashboard_bp.route('/profile')
+@user_required
+def profile_page():
+    return render_template('profile.html', user=get_current_user())
