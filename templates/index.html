@@ -6,7 +6,7 @@
 <title>{{ cfg.get('hero_title', 'Flinpay') }} — Paiements mobile money sans redirection</title>
 <meta name="description" content="{{ cfg.get('hero_subtitle', 'Agrégateur de paiement mobile money en Afrique') }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
 --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
@@ -578,7 +578,7 @@ section{padding:70px 6%}
 </footer>
 
 <button class="to-top" id="toTop" aria-label="Retour en haut"><span class="icon" style="width:18px;height:18px"><svg><use href="#ic-arrow-up"/></svg></span></button>
-<script>
+<script nonce="{{ csp_nonce }}">
 (function(){
 "use strict";
 var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
