@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Profil</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<style>
+<script nonce="{{ csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
@@ -25,7 +25,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
-/* ── SIDEBAR (identique aux autres pages) ── */
+/* ── SIDEBAR ── */
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
 .sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
 .sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
@@ -95,6 +95,12 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .twofa-badge{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;padding:5px 11px;border-radius:20px}
 .twofa-badge.on{background:var(--green-tint);color:#0A7A50}
 .twofa-badge.off{background:var(--border-soft);color:var(--muted)}
+.toggle-switch{position:relative;display:inline-block;width:44px;height:24px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;transition:.3s;border-radius:24px}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%}
+input:checked + .slider{background-color:var(--green)}
+input:checked + .slider:before{transform:translateX(20px)}
 
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-bg.show{display:flex}
@@ -139,6 +145,7 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
     <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
     <symbol id="ic-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
     <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="ic-mail" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
   </defs>
 </svg>
 
@@ -275,10 +282,25 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
         </div>
 
         <div class="card">
+          <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-mail"/></svg></span> Connexion par email</div></div>
+          <div class="card-body">
+            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px" id="email-link-desc">
+              Recevez un lien sécurisé par email pour vous connecter sans saisir votre mot de passe (recommandé).
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label class="toggle-switch">
+                <input type="checkbox" id="email-link-toggle" onchange="toggleEmailLink(this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
           <div class="card-head"><div class="card-title">⚠️ Zone dangereuse</div></div>
           <div class="card-body">
             <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px">La suppression de votre compte est définitive et irréversible.</div>
-            <button class="btn btn-danger btn-sm" onclick="deleteAccount()"><span class="icon"><svg><use href="#ic-trash"/></svg></span> Supprimer mon compte</button>
+            <button class="btn btn-danger btn-sm" onclick="openDeleteAccountModal()"><span class="icon"><svg><use href="#ic-trash"/></svg></span> Supprimer mon compte</button>
           </div>
         </div>
       </div>
@@ -324,16 +346,34 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
   </div>
 </div>
 
+<!-- MODAL SUPPRESSION DE COMPTE -->
+<div class="modal-bg" id="delete-account-modal">
+  <div class="modal">
+    <h3><span class="icon" style="color:var(--danger)"><svg><use href="#ic-trash"/></svg></span> Supprimer mon compte</h3>
+    <div style="font-size:.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+      Cette action est <strong>irréversible</strong>. Vos données financières seront conservées conformément à la loi, mais votre accès sera révoqué.
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <div class="form-label">Mot de passe</div>
+      <input class="form-input" id="delete-account-password" type="password" placeholder="Confirmez avec votre mot de passe">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeDeleteAccountModal()">Annuler</button>
+      <button class="btn btn-danger" onclick="deleteAccount()">Supprimer définitivement</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
-<script>
+<script nonce="{{ csp_nonce }}">
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
 function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 function checkStr(v){const f=document.getElementById('str-fill');let s=0;if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;const c=['#FF4444','#FF8C00','#FFB400','#00C48C'][s-1]||'';f.style.width=s*25+'%';f.style.background=c}
 
 let twofaEnabled=false;
+let emailLinkEnabled=false;
 
-// ── PROFIL — via /api/me ──────────────────────────
 async function loadProfile(){
   try{
     const r=await fetch('/api/me');
@@ -356,7 +396,9 @@ async function loadProfile(){
     document.getElementById('user-email').textContent=user.email||'';
 
     twofaEnabled=!!user.totp_enabled;
+    emailLinkEnabled=!!user.email_link_enabled;
     renderTwofaStatus();
+    document.getElementById('email-link-toggle').checked=emailLinkEnabled;
   }catch(e){
     toast('Impossible de charger le profil',false);
   }
@@ -380,6 +422,27 @@ function renderTwofaStatus(){
     btn.textContent='Activer le 2FA';
     btn.className='btn btn-primary btn-sm';
     btn.onclick=startTwofaSetup;
+  }
+}
+
+async function toggleEmailLink(enabled){
+  try{
+    const r=await fetch('/api/settings/toggle-email-link',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({enabled})
+    });
+    const data=await r.json();
+    if(data.ok){
+      toast(enabled?'Connexion par lien email activée':'Connexion par lien email désactivée');
+      emailLinkEnabled=enabled;
+    }else{
+      toast(data.error||'Erreur',false);
+      document.getElementById('email-link-toggle').checked=!enabled;
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
+    document.getElementById('email-link-toggle').checked=!enabled;
   }
 }
 
@@ -418,17 +481,31 @@ async function changePass(){
     }
   }catch(e){ toast('Erreur de connexion',false); }
 }
+
+// ── SUPPRESSION ──
+function openDeleteAccountModal(){
+  document.getElementById('delete-account-password').value='';
+  document.getElementById('delete-account-modal').classList.add('show');
+}
+function closeDeleteAccountModal(){
+  document.getElementById('delete-account-modal').classList.remove('show');
+}
 async function deleteAccount(){
-  if(!confirm('Supprimer votre compte ? Action irréversible.')) return;
+  const password=document.getElementById('delete-account-password').value;
+  if(!password){ toast('Entrez votre mot de passe',false); return; }
   try{
-    const r=await fetch('/api/account',{method:'DELETE'});
+    const r=await fetch('/api/account',{
+      method:'DELETE',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password})
+    });
     const data=await r.json();
     if(data.ok){ toast('Compte supprimé',false); setTimeout(()=>window.location.href='/',1500); }
     else{ toast(data.error||'Erreur lors de la suppression',false); }
   }catch(e){ toast('Erreur de connexion',false); }
 }
 
-// ── 2FA — ACTIVATION ───────────────────────────────
+// ── 2FA ──
 let twofaQrInstance=null;
 
 async function startTwofaSetup(){
@@ -438,7 +515,7 @@ async function startTwofaSetup(){
   try{
     const r=await fetch('/api/2fa/setup',{method:'POST'});
     const data=await r.json();
-    if(!data.ok){ toast(data.error||'Erreur lors de la génération du code',false); return; }
+    if(!data.ok){ toast(data.error||'Erreur',false); return; }
 
     document.getElementById('twofa-secret').textContent=data.secret;
     const qrBox=document.getElementById('twofa-qr');
@@ -446,86 +523,52 @@ async function startTwofaSetup(){
     twofaQrInstance=new QRCode(qrBox, { text: data.otpauth_url, width: 190, height: 190 });
 
     document.getElementById('twofa-setup-modal').classList.add('show');
-  }catch(e){
-    toast('Erreur de connexion',false);
-  }
+  }catch(e){ toast('Erreur de connexion',false); }
 }
-function closeTwofaSetupModal(){
-  document.getElementById('twofa-setup-modal').classList.remove('show');
-}
+function closeTwofaSetupModal(){ document.getElementById('twofa-setup-modal').classList.remove('show'); }
 async function confirmTwofaSetup(){
   const code=document.getElementById('twofa-setup-code').value.trim();
   const errEl=document.getElementById('twofa-setup-error');
   errEl.style.display='none';
-  if(!/^\d{6}$/.test(code)){
-    errEl.textContent='Entrez un code à 6 chiffres.';
-    errEl.style.display='block';
-    return;
-  }
+  if(!/^\d{6}$/.test(code)){ errEl.textContent='Entrez un code à 6 chiffres.'; errEl.style.display='block'; return; }
   const btn=document.getElementById('btn-confirm-twofa');
   btn.disabled=true; btn.textContent='Vérification...';
   try{
     const r=await fetch('/api/2fa/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
     const data=await r.json();
-    if(data.ok){
-      closeTwofaSetupModal();
-      toast('Authentification à deux facteurs activée');
-      twofaEnabled=true;
-      renderTwofaStatus();
-    }else{
-      errEl.textContent=data.error||'Code invalide';
-      errEl.style.display='block';
-    }
-  }catch(e){
-    errEl.textContent='Erreur de connexion';
-    errEl.style.display='block';
-  }
+    if(data.ok){ closeTwofaSetupModal(); toast('2FA activée'); twofaEnabled=true; renderTwofaStatus(); }
+    else{ errEl.textContent=data.error||'Code invalide'; errEl.style.display='block'; }
+  }catch(e){ errEl.textContent='Erreur de connexion'; errEl.style.display='block'; }
   btn.disabled=false; btn.textContent='Confirmer et activer';
 }
 
-// ── 2FA — DÉSACTIVATION ────────────────────────────
 function openTwofaDisableModal(){
   document.getElementById('twofa-disable-password').value='';
   document.getElementById('twofa-disable-code').value='';
   document.getElementById('twofa-disable-error').style.display='none';
   document.getElementById('twofa-disable-modal').classList.add('show');
 }
-function closeTwofaDisableModal(){
-  document.getElementById('twofa-disable-modal').classList.remove('show');
-}
+function closeTwofaDisableModal(){ document.getElementById('twofa-disable-modal').classList.remove('show'); }
 async function confirmTwofaDisable(){
   const password=document.getElementById('twofa-disable-password').value;
   const code=document.getElementById('twofa-disable-code').value.trim();
   const errEl=document.getElementById('twofa-disable-error');
   errEl.style.display='none';
-  if(!password || !/^\d{6}$/.test(code)){
-    errEl.textContent='Mot de passe et code à 6 chiffres requis.';
-    errEl.style.display='block';
-    return;
-  }
+  if(!password || !/^\d{6}$/.test(code)){ errEl.textContent='Mot de passe et code à 6 chiffres requis.'; errEl.style.display='block'; return; }
   const btn=document.getElementById('btn-confirm-disable');
   btn.disabled=true; btn.textContent='Vérification...';
   try{
     const r=await fetch('/api/2fa/disable',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password,code})});
     const data=await r.json();
-    if(data.ok){
-      closeTwofaDisableModal();
-      toast('Authentification à deux facteurs désactivée');
-      twofaEnabled=false;
-      renderTwofaStatus();
-    }else{
-      errEl.textContent=data.error||'Erreur lors de la désactivation';
-      errEl.style.display='block';
-    }
-  }catch(e){
-    errEl.textContent='Erreur de connexion';
-    errEl.style.display='block';
-  }
+    if(data.ok){ closeTwofaDisableModal(); toast('2FA désactivée'); twofaEnabled=false; renderTwofaStatus(); }
+    else{ errEl.textContent=data.error||'Erreur'; errEl.style.display='block'; }
+  }catch(e){ errEl.textContent='Erreur de connexion'; errEl.style.display='block'; }
   btn.disabled=false; btn.textContent='Désactiver';
 }
 
 document.getElementById('twofa-setup-modal').addEventListener('click',e=>{if(e.target===document.getElementById('twofa-setup-modal'))closeTwofaSetupModal()});
 document.getElementById('twofa-disable-modal').addEventListener('click',e=>{if(e.target===document.getElementById('twofa-disable-modal'))closeTwofaDisableModal()});
+document.getElementById('delete-account-modal').addEventListener('click',e=>{if(e.target===document.getElementById('delete-account-modal'))closeDeleteAccountModal()});
 
 loadProfile();
 </script>
