@@ -111,9 +111,9 @@ def init_limiter(app):
 CSP_BASE = (
     "default-src 'self'; "
     "script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; "
-    "style-src 'self' 'nonce-{nonce}'; "
+    "style-src 'self' 'nonce-{nonce}' https://fonts.googleapis.com; "
     "img-src 'self' data: blob: https://*.supabase.co; "
-    "font-src 'self' data:; "
+    "font-src 'self' data: https://fonts.gstatic.com; "
     "connect-src 'self' https://www.flinpay.cfd https://flinpay.cfd https://*.supabase.co; "
     "frame-src 'self'; "
     "frame-ancestors 'self'; "
@@ -123,8 +123,6 @@ CSP_BASE = (
     "upgrade-insecure-requests;"
 )
 
-# frame-ancestors * ouvrirait le clickjacking sur les pages de paiement ;
-# on restreint aux domaines de la plateforme uniquement.
 CSP_EMBEDDABLE = CSP_BASE.replace(
     "frame-ancestors 'self';",
     "frame-ancestors 'self' https://www.flinpay.cfd https://flinpay.cfd;"
