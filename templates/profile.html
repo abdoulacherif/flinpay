@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Profil</title>
+<meta name="csrf-token" content="{{ csrf_token_value() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script nonce="{{ csp_nonce }}" src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style nonce="{{ csp_nonce }}">
@@ -416,6 +417,26 @@ input:checked + .slider:before{transform:translateX(20px)}
 <script nonce="{{ csp_nonce }}">
 "use strict";
 
+// ── CSRF ─────────────────────────────────────────
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.getAttribute('content') : '';
+}
+
+async function apiFetch(url, options = {}) {
+  const opts = { ...options };
+  opts.headers = { ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+    opts.headers['X-CSRF-Token'] = getCsrfToken();
+  }
+  if (opts.body && typeof opts.body === 'string') {
+    opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+  }
+  return fetch(url, opts);
+}
+
+// ── UI ───────────────────────────────────────────
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.add('show');
@@ -448,11 +469,11 @@ function checkStr(v){
 
 let twofaEnabled=false;
 let emailLinkEnabled=false;
-let twofaQrInstance=null;
 
+// ── CHARGEMENT ───────────────────────────────────
 async function loadProfile(){
   try{
-    const r=await fetch('/api/me');
+    const r=await apiFetch('/api/me');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     const data=await r.json();
     if(!data.ok){ toast('Impossible de charger le profil',false); return; }
@@ -504,11 +525,11 @@ function renderTwofaStatus(){
   }
 }
 
+// ── ACTIONS ──────────────────────────────────────
 async function toggleEmailLink(enabled){
   try{
-    const r=await fetch('/api/settings/toggle-email-link',{
+    const r=await apiFetch('/api/settings/toggle-email-link',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({enabled})
     });
     const data=await r.json();
@@ -533,7 +554,7 @@ async function saveProfile(){
     phone:document.getElementById('p-phone').value.trim()
   };
   try{
-    const r=await fetch('/api/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await apiFetch('/api/profile',{method:'PUT',body:JSON.stringify(payload)});
     const data=await r.json();
     if(data.ok){ toast('Profil mis à jour avec succès !'); loadProfile(); }
     else{ toast(data.error||'Erreur lors de la mise à jour',false); }
@@ -548,7 +569,7 @@ async function changePass(){
   if(np.length<8){toast('Nouveau mot de passe trop court',false);return}
   if(np!==np2){toast('Les mots de passe ne correspondent pas',false);return}
   try{
-    const r=await fetch('/api/password',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:op,new_password:np})});
+    const r=await apiFetch('/api/password',{method:'PUT',body:JSON.stringify({old_password:op,new_password:np})});
     const data=await r.json();
     if(data.ok){
       toast('Mot de passe mis à jour !');
@@ -573,9 +594,8 @@ async function deleteAccount(){
   const password=document.getElementById('delete-account-password').value;
   if(!password){ toast('Entrez votre mot de passe',false); return; }
   try{
-    const r=await fetch('/api/account',{
+    const r=await apiFetch('/api/account',{
       method:'DELETE',
-      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({password})
     });
     const data=await r.json();
@@ -589,14 +609,14 @@ async function startTwofaSetup(){
   errEl.style.display='none';
   document.getElementById('twofa-setup-code').value='';
   try{
-    const r=await fetch('/api/2fa/setup',{method:'POST'});
+    const r=await apiFetch('/api/2fa/setup',{method:'POST'});
     const data=await r.json();
     if(!data.ok){ toast(data.error||'Erreur',false); return; }
     document.getElementById('twofa-secret').textContent=data.secret;
     const qrBox=document.getElementById('twofa-qr');
     qrBox.innerHTML='';
     if(typeof QRCode!=='undefined'){
-      twofaQrInstance=new QRCode(qrBox, { text: data.otpauth_url, width: 190, height: 190 });
+      new QRCode(qrBox, { text: data.otpauth_url, width: 190, height: 190 });
     }
     document.getElementById('twofa-setup-modal').classList.add('show');
   }catch(e){ toast('Erreur de connexion',false); }
@@ -610,7 +630,7 @@ async function confirmTwofaSetup(){
   const btn=document.getElementById('btn-confirm-twofa');
   btn.disabled=true; btn.textContent='Vérification...';
   try{
-    const r=await fetch('/api/2fa/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+    const r=await apiFetch('/api/2fa/verify',{method:'POST',body:JSON.stringify({code})});
     const data=await r.json();
     if(data.ok){ closeTwofaSetupModal(); toast('2FA activée'); twofaEnabled=true; renderTwofaStatus(); }
     else{ errEl.textContent=data.error||'Code invalide'; errEl.style.display='block'; }
@@ -634,7 +654,7 @@ async function confirmTwofaDisable(){
   const btn=document.getElementById('btn-confirm-disable');
   btn.disabled=true; btn.textContent='Vérification...';
   try{
-    const r=await fetch('/api/2fa/disable',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password,code})});
+    const r=await apiFetch('/api/2fa/disable',{method:'POST',body:JSON.stringify({password,code})});
     const data=await r.json();
     if(data.ok){ closeTwofaDisableModal(); toast('2FA désactivée'); twofaEnabled=false; renderTwofaStatus(); }
     else{ errEl.textContent=data.error||'Erreur'; errEl.style.display='block'; }
@@ -642,6 +662,7 @@ async function confirmTwofaDisable(){
   btn.disabled=false; btn.textContent='Désactiver';
 }
 
+// ── INIT ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('burger-btn').addEventListener('click', openSidebar);
   document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
