@@ -4,21 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Clés API</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
---ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
---border:#E7E9F3;--border-soft:#F0F1F8;
---blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
---gold:#FFB400;--gold-tint:#FFF6E0;
---green:#00C48C;--green-tint:#E3FBF3;
---danger:#FF4D4D;--danger-tint:#FFEAEA;
---text:#12131C;--muted:#767A94;
---sidebar-w:270px;--r-lg:16px;--r-md:12px;--r-sm:9px;
---shadow-sm:0 1px 2px rgba(15,17,32,.04);
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;
+  --sidebar-w:270px;--r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+  --gradient-soft:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 100%);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .icon{width:18px;height:18px;flex-shrink:0}
@@ -30,14 +33,14 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto}
 .sidebar.open{transform:translateX(0)}
 .sidebar-top{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;flex-shrink:0}
-.sidebar-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
 .close-sidebar{background:none;border:none;color:rgba(255,255,255,0.45);font-size:1.2rem;cursor:pointer;padding:4px}
 .corridor{margin:14px 20px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px;flex-shrink:0}
 .corridor-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
-.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-label b{color:#8ECFFF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.9rem;line-height:1}
 .sidebar-nav{flex:1;padding:8px 0}
 .nav-group{font-size:.6rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:14px 20px 6px}
@@ -45,41 +48,44 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
-.nav-link.active .icon{color:#8EA6FF}
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
 .sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;flex-shrink:0}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
 .user-email{font-size:.68rem;color:rgba(255,255,255,0.32);margin-top:1px;word-break:break-all}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.76rem;padding:11px 20px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
 
 .main{flex:1;min-width:0}
-.topbar{background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
-.burger-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.02rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.topbar{background:var(--gradient);padding:20px;color:white;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.topbar::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.burger-btn{background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;display:flex;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center;flex-shrink:0;position:relative;z-index:1}
+.burger-btn:hover{background:rgba(255,255,255,0.28)}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;position:relative;z-index:1}
+.topbar-title .icon{width:22px;height:22px;color:white}
+
 .page{padding:22px 20px 60px;animation:fadeUp .3s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px;border:1px solid var(--border-soft)}
 .card-head{padding:16px 20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 .card-title{font-size:.88rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:20px}
 
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:10px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
 .btn-primary{background:var(--blue);color:white}
 .btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
 .btn-danger:hover{background:#e03e3e}
-.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline{background:white;color:var(--blue);border:1.5px solid var(--blue)}
 .btn-outline:hover{background:var(--blue-tint)}
-.btn-sm{padding:6px 12px;font-size:.76rem}
+.btn-sm{padding:7px 14px;font-size:.78rem}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
-.locked-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:44px 30px;text-align:center;box-shadow:var(--shadow-sm)}
+.locked-card{background:white;border-radius:18px;border:1px solid var(--border-soft);padding:44px 30px;text-align:center;box-shadow:var(--shadow-sm)}
 .locked-icon{width:52px;height:52px;color:var(--gold);margin:0 auto 16px}
 .locked-title{font-size:1.15rem;font-weight:800;margin-bottom:8px}
 .locked-text{font-size:.87rem;color:var(--muted);max-width:420px;margin:0 auto 20px;line-height:1.6}
@@ -102,20 +108,20 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px}
 .modal-bg.show{display:flex}
-.modal{background:var(--surface);border-radius:20px;padding:26px;width:100%;max-width:460px;box-shadow:0 30px 60px rgba(10,12,25,0.25);opacity:0;transform:translateY(12px) scale(.98);transition:all .22s cubic-bezier(.16,.8,.3,1)}
+.modal{background:white;border-radius:20px;padding:26px;width:100%;max-width:460px;box-shadow:0 30px 60px rgba(10,12,25,0.25);opacity:0;transform:translateY(12px) scale(.98);transition:all .22s cubic-bezier(.16,.8,.3,1)}
 .modal-bg.show .modal{opacity:1;transform:translateY(0) scale(1)}
-.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:18px}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px}
 .modal p{font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:14px}
 .form-group{margin-bottom:14px}
 .form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
-.form-input,select.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;outline:none;font-family:'Inter',sans-serif;transition:border-color .15s}
+.form-input,select.form-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.87rem;outline:none;font-family:'Inter',sans-serif;transition:border-color .15s;background:white;color:var(--text)}
 .form-input:focus{border-color:var(--blue)}
 .modal-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end}
 .new-key-box{background:var(--ink);border-radius:12px;padding:16px 18px;margin-top:6px}
 .new-key-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:#4FE0FF;word-break:break-all;margin-bottom:10px}
 .new-key-warn{font-size:.78rem;background:rgba(255,180,0,.12);border-radius:8px;padding:9px 12px;color:#8A5B00;margin-top:12px}
 
-.code-block{background:var(--ink);border-radius:12px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#A8B4FF;overflow-x:auto;line-height:1.7}
+.code-block{background:var(--ink);border-radius:12px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#A8B4FF;overflow-x:auto;line-height:1.7;white-space:pre-wrap;word-break:break-word}
 .code-block .kw{color:#FF79C6}
 .code-block .str{color:#50FA7B}
 .code-block .num{color:#FFB86C}
@@ -125,15 +131,15 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
 @media(min-width:960px){
-.overlay{display:none !important}
-.sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar-w);max-width:var(--sidebar-w);transform:none;flex-shrink:0}
-.close-sidebar{display:none}
-.burger-btn{display:none}
-.page{max-width:900px;margin:0 auto;padding:26px 32px 60px}
-.topbar{padding:0 32px}
+  .overlay{display:none !important}
+  .sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar-w);max-width:var(--sidebar-w);transform:none;flex-shrink:0}
+  .close-sidebar{display:none}
+  .burger-btn{display:none}
+  .page{max-width:900px;margin:0 auto;padding:26px 32px 60px}
+  .topbar{padding:20px 32px}
 }
 @media(prefers-reduced-motion:reduce){
-*{animation-duration:.001ms !important;transition-duration:.001ms !important}
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
 }
 </style>
 </head>
@@ -161,329 +167,332 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 </svg>
 
 <div class="shell">
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="overlay" id="overlay"></div>
 
-<aside class="sidebar" id="sidebar" aria-label="Navigation principale">
-<div class="sidebar-top">
-<div>
-<a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
-<div class="plan-badge-pill" id="plan-badge-pill">🚀 Starter</div>
-</div>
-<button class="close-sidebar" onclick="closeSidebar()" aria-label="Fermer le menu">✕</button>
-</div>
-
-<div class="corridor">
-<div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-<div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
-</div>
-
-<nav class="sidebar-nav">
-<div class="nav-group">Principal</div>
-<a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
-<a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
-<a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
-<a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
-<a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
-
-<div class="nav-group">Développeur</div>
-<a class="nav-link active" href="/api-keys" aria-current="page"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
-<a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
-<a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
-
-<div class="nav-group">Compte</div>
-<a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
-<a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
-<a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
-<a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
-</nav>
-
-<div class="sidebar-user">
-<div class="user-row">
-<div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
-<div>
-<div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
-<div class="user-email" id="user-email">{{ user.email }}</div>
-</div>
-</div>
-</div>
-<a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <div>
+      <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill" id="plan-badge-pill">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" id="close-sidebar">✕</button>
+  </div>
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
+    <div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group">Principal</div>
+    <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
+    <a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
+    <div class="nav-group">Développeur</div>
+    <a class="nav-link active" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
+    <div class="nav-group">Compte</div>
+    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+    <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="user-row">
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+      <div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
+      </div>
+    </div>
+  </div>
+  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
 </aside>
 
 <div class="main">
-<div class="topbar">
-<button class="burger-btn" onclick="openSidebar()" aria-label="Ouvrir le menu"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
-<div class="topbar-title"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</div>
+  <div class="topbar">
+    <button class="burger-btn" id="burger-btn"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+    <div class="topbar-title"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</div>
+  </div>
+
+  <div class="page" id="page-content">
+    <div class="skeleton"></div><div class="skeleton"></div>
+  </div>
+</div>
 </div>
 
-<div class="page" id="page-content">
-<div class="skeleton"></div><div class="skeleton"></div>
-</div>
-</div>
-</div>
-
-<!-- MODAL NOUVELLE CLÉ -->
 <div class="modal-bg" id="new-key-modal">
-<div class="modal" role="dialog" aria-modal="true">
-<h3 id="modal-title">🔑 Générer une nouvelle clé</h3>
-<div id="modal-form">
-<div class="form-group">
-<label class="form-label" for="nk-env">Environnement</label>
-<select class="form-input" id="nk-env">
-<option value="live">Production (live)</option>
-<option value="sandbox">Sandbox (test)</option>
-</select>
-</div>
-<div class="form-group">
-<label class="form-label" for="nk-label">Étiquette (optionnel)</label>
-<input class="form-input" id="nk-label" type="text" maxlength="60" placeholder="Ex: Serveur principal">
-</div>
-<div class="modal-actions">
-<button class="btn btn-outline" onclick="closeModal()">Annuler</button>
-<button class="btn btn-primary" id="btn-generate" onclick="generateKey()">Générer</button>
-</div>
-</div>
-<div id="modal-result" style="display:none">
-<div class="new-key-box">
-<div class="new-key-val" id="new-key-val"></div>
-<button class="btn btn-outline btn-sm" onclick="copyNewKey()"><span class="icon"><svg><use href="#ic-copy"/></svg></span> Copier</button>
-</div>
-<div class="new-key-warn">⚠️ Cette clé ne sera plus jamais affichée. Copiez-la et gardez-la en lieu sûr.</div>
-<div class="modal-actions">
-<button class="btn btn-primary" onclick="closeModal()">J'ai copié la clé</button>
-</div>
-</div>
-</div>
+  <div class="modal">
+    <h3 id="modal-title"><span class="icon"><svg><use href="#ic-key"/></svg></span> Générer une nouvelle clé</h3>
+    <div id="modal-form">
+      <div class="form-group">
+        <label class="form-label" for="nk-env">Environnement</label>
+        <select class="form-input" id="nk-env">
+          <option value="live">Production (live)</option>
+          <option value="sandbox">Sandbox (test)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="nk-label">Étiquette (optionnel)</label>
+        <input class="form-input" id="nk-label" type="text" maxlength="60" placeholder="Ex: Serveur principal">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="btn-close-modal">Annuler</button>
+        <button class="btn btn-primary" id="btn-generate">Générer</button>
+      </div>
+    </div>
+    <div id="modal-result" style="display:none">
+      <div class="new-key-box">
+        <div class="new-key-val" id="new-key-val"></div>
+        <button class="btn btn-outline btn-sm" id="btn-copy-new"><span class="icon"><svg><use href="#ic-copy"/></svg></span> Copier</button>
+      </div>
+      <div class="new-key-warn">⚠️ Cette clé ne sera plus jamais affichée. Copiez-la et gardez-la en lieu sûr.</div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="btn-close-result">J'ai copié la clé</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- MODAL RÉVOCATION -->
 <div class="modal-bg" id="revoke-modal">
-<div class="modal" style="max-width:400px" role="dialog" aria-modal="true">
-<h3>🗑️ Révoquer cette clé ?</h3>
-<p>Toute intégration qui l'utilise cessera de fonctionner <strong>immédiatement</strong>. Cette action est irréversible.</p>
-<div class="modal-actions">
-<button class="btn btn-outline" onclick="closeRevokeModal()">Annuler</button>
-<button class="btn btn-danger" id="btn-confirm-revoke" onclick="confirmRevoke()">Révoquer</button>
-</div>
-</div>
+  <div class="modal" style="max-width:400px">
+    <h3>🗑️ Révoquer cette clé ?</h3>
+    <p>Toute intégration qui l'utilise cessera de fonctionner <strong>immédiatement</strong>. Cette action est irréversible.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="btn-cancel-revoke">Annuler</button>
+      <button class="btn btn-danger" id="btn-confirm-revoke">Révoquer</button>
+    </div>
+  </div>
 </div>
 
-<div id="toast" role="status" aria-live="polite"></div>
+<div id="toast"></div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 
-// ── CSRF : sans ça, générer ou révoquer une clé échouait systématiquement
-// depuis que ces routes sont protégées côté serveur (@csrf_protect). ─────
-function getCsrfToken(){
-const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
-return m ? decodeURIComponent(m[1]) : '';
-}
+function getCsrfToken(){const m=document.querySelector('meta[name="csrf-token"]');return m?m.getAttribute('content'):''}
 async function apiFetch(url, options={}){
-const headers = Object.assign({}, options.headers || {});
-if(options.method && options.method !== 'GET'){
-headers['X-CSRF-Token'] = getCsrfToken();
-}
-return fetch(url, Object.assign({}, options, {headers}));
+  const opts={...options}; opts.headers={...(opts.headers||{})};
+  const method=(opts.method||'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){
+    const t=getCsrfToken(); if(t) opts.headers['X-CSRF-Token']=t;
+  }
+  if(opts.body && typeof opts.body === 'string'){
+    opts.headers['Content-Type']=opts.headers['Content-Type']||'application/json';
+  }
+  return fetch(url, opts);
 }
 
-function esc(str){
-if(str===null||str===undefined) return '';
-return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML}
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
-
-function toast(msg,ok=true){
-const t=document.getElementById('toast');
-t.textContent=(ok?'✅ ':'❌ ')+msg;
-t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
-t.classList.add('show');
-clearTimeout(t._h);
-t._h=setTimeout(()=>t.classList.remove('show'),3000);
-}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');clearTimeout(t._hideTimer);t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000)}
 
 let currentKycStatus='unverified';
 let newKeyValue='';
+let pendingRevokeId=null;
 
 async function init(){
-try{
-const r=await fetch('/api/me');
-if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-const data=await r.json();
-if(!data.ok) return;
-const user=data.user;
-document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
-document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
-document.getElementById('user-email').textContent=user.email||'';
-document.getElementById('plan-badge-pill').textContent = user.plan==='pro' ? '🚀 Pro' : '🚀 Starter';
-currentKycStatus=user.kyc_status||'unverified';
-renderPage();
-}catch(e){
-document.getElementById('page-content').innerHTML='<div class="empty">Impossible de charger votre profil. <button class="btn btn-outline btn-sm" onclick="init()">Réessayer</button></div>';
-}
+  try{
+    const r=await apiFetch('/api/me');
+    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
+    const data=await r.json();
+    if(!data.ok) return;
+    const u=data.user;
+    document.getElementById('user-av').textContent=(u.firstname||'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent=(u.firstname||'')+' '+(u.lastname||'');
+    document.getElementById('user-email').textContent=u.email||'';
+    document.getElementById('plan-badge-pill').textContent = u.plan==='pro' ? '⭐ Pro' : '🚀 Starter';
+    currentKycStatus = u.kyc_status || 'unverified';
+    renderPage();
+  }catch(e){
+    document.getElementById('page-content').innerHTML='<div class="empty">Impossible de charger votre profil. <button class="btn btn-outline btn-sm" id="btn-retry-init">Réessayer</button></div>';
+    const b = document.getElementById('btn-retry-init'); if(b) b.addEventListener('click', init);
+  }
 }
 
 function renderPage(){
-const page=document.getElementById('page-content');
-if(currentKycStatus!=='verified'){
-let pill='', title='', text='';
-if(currentKycStatus==='pending'){
-pill='<div class="status-pill status-pending">⏳ Vérification en cours</div>';
-title='Vérification en cours de traitement';
-text="Votre document a été soumis et est en cours de revue. Vous pourrez générer des clés API dès qu'il sera approuvé (24-48h).";
-}else if(currentKycStatus==='rejected'){
-pill='<div class="status-pill status-rejected">❌ Document refusé</div>';
-title='Vérification refusée';
-text="Votre document a été refusé. Rendez-vous sur la page Vérification pour soumettre un nouveau document.";
-}else{
-title="Vérification d'identité requise";
-text="Pour des raisons de sécurité, vous devez vérifier votre identité avant de pouvoir générer des clés API et accepter des paiements réels.";
-}
-page.innerHTML=`
-<div class="locked-card">
-${pill}
-<div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-<div class="locked-title">${title}</div>
-<div class="locked-text">${text}</div>
-<a href="/kyc" class="btn btn-primary"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> ${currentKycStatus==='pending' ? 'Voir ma demande' : 'Vérifier mon identité'}</a>
-</div>`;
-return;
-}
+  const page=document.getElementById('page-content');
+  if(currentKycStatus !== 'verified'){
+    let pill='', title='', text='', ctaLabel='Vérifier mon identité';
+    if(currentKycStatus==='pending'){
+      pill='<div class="status-pill status-pending">⏳ Vérification en cours</div>';
+      title='Vérification en cours de traitement';
+      text="Votre document a été soumis et est en cours de revue. Vous pourrez générer des clés API dès qu'il sera approuvé (24-48h).";
+      ctaLabel='Voir ma demande';
+    }else if(currentKycStatus==='rejected'){
+      pill='<div class="status-pill status-rejected">❌ Document refusé</div>';
+      title='Vérification refusée';
+      text="Votre document a été refusé. Rendez-vous sur la page Vérification pour soumettre un nouveau document.";
+      ctaLabel='Soumettre à nouveau';
+    }else{
+      title="Vérification d'identité requise";
+      text="Pour des raisons de sécurité, vous devez vérifier votre identité avant de pouvoir générer des clés API et accepter des paiements réels.";
+    }
+    page.innerHTML=`
+      <div class="locked-card">
+        ${pill}
+        <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="locked-title">${title}</div>
+        <div class="locked-text">${text}</div>
+        <a href="/kyc" class="btn btn-primary"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> ${ctaLabel}</a>
+      </div>`;
+    return;
+  }
 
-page.innerHTML=`
-<div class="card">
-<div class="card-head">
-<div class="card-title"><span class="icon"><svg><use href="#ic-key"/></svg></span> Vos clés d'accès</div>
-<button class="btn btn-primary btn-sm" onclick="openModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Générer une clé</button>
-</div>
-<div class="card-body" id="keys-list"><div class="skeleton"></div></div>
-</div>
+  page.innerHTML=`
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><span class="icon"><svg><use href="#ic-key"/></svg></span> Vos clés d'accès</div>
+        <button class="btn btn-primary btn-sm" id="btn-open-new"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Générer une clé</button>
+      </div>
+      <div class="card-body" id="keys-list"><div class="skeleton"></div></div>
+    </div>
 
-<div class="card">
-<div class="card-head"><div class="card-title">📖 Exemple d'utilisation</div></div>
-<div class="card-body">
-<div class="code-block"><span class="cm"># Python — Initier un paiement Flinpay</span>
+    <div class="card">
+      <div class="card-head"><div class="card-title">📖 Exemple d'utilisation</div></div>
+      <div class="card-body">
+        <div class="code-block"><span class="cm"># Python — Initier un paiement Flinpay</span>
 <span class="kw">import</span> requests
 
 API_KEY = <span class="str">"fp_live_votre_cle_ici"</span>
 BASE_URL = <span class="str">"https://www.flinpay.cfd"</span>
 
 response = requests.post(
-f<span class="str">"{BASE_URL}/api/pay"</span>,
-headers={<span class="str">"Authorization"</span>: f<span class="str">"Bearer {API_KEY}"</span>},
-json={
-<span class="str">"amount"</span>: <span class="num">10000</span>,
-<span class="str">"phone"</span>: <span class="str">"0700000000"</span>,
-<span class="str">"client_name"</span>: <span class="str">"Kouamé Diallo"</span>,
-<span class="str">"order_id"</span>: <span class="str">"ORD-001"</span>,
-<span class="str">"country"</span>: <span class="str">"CI"</span>,
-<span class="cm"># "momo" (MTN) ou "om" (Orange Money)</span>
-<span class="str">"operator"</span>: <span class="str">"momo"</span>
-}
+    f<span class="str">"{BASE_URL}/api/pay"</span>,
+    headers={<span class="str">"Authorization"</span>: f<span class="str">"Bearer {API_KEY}"</span>},
+    json={
+        <span class="str">"amount"</span>: <span class="num">10000</span>,
+        <span class="str">"phone"</span>: <span class="str">"0700000000"</span>,
+        <span class="str">"client_name"</span>: <span class="str">"Kouamé Diallo"</span>,
+        <span class="str">"order_id"</span>: <span class="str">"ORD-001"</span>,
+        <span class="str">"country"</span>: <span class="str">"CI"</span>,
+        <span class="str">"operator"</span>: <span class="str">"wave"</span>
+    }
 )
 
-print(response.json())
+print(response.json())</div>
+      </div>
+    </div>`;
 
-<span class="cm"># Le client reçoit une confirmation directe sur son téléphone.
-# Pas de lien de paiement renvoyé — suivez le statut via le dashboard
-# ou votre webhook (payment.success / payment.failed).</span></div>
-</div>
-</div>`;
-loadKeys();
+  document.getElementById('btn-open-new').addEventListener('click', openModal);
+  loadKeys();
 }
 
 async function loadKeys(){
-const el=document.getElementById('keys-list');
-if(!el) return;
-try{
-const r=await fetch('/api/keys');
-const data=await r.json();
-if(!data.ok || !data.keys.length){
-el.innerHTML='<div class="empty">Aucune clé générée pour le moment.</div>';
-return;
-}
-el.innerHTML=data.keys.map((k,i)=>`
-<div class="key-row" style="animation-delay:${Math.min(i*.04,.3)}s">
-<div class="key-info">
-<div class="key-prefix">${esc(k.key_prefix)}</div>
-<div class="key-meta">
-<span class="env-pill ${k.environment==='live'?'pill-live':'pill-sandbox'}">${k.environment==='live'?'LIVE':'TEST'}</span>
-${k.label?`<span>${esc(k.label)}</span>`:''}
-<span>Créée le ${new Date(k.created_at).toLocaleDateString('fr-FR')}</span>
-${k.last_used_at?`<span>Dernière utilisation : ${new Date(k.last_used_at).toLocaleDateString('fr-FR')}</span>`:'<span>Jamais utilisée</span>'}
-</div>
-</div>
-<button class="btn btn-danger btn-sm" data-id="${esc(k.id)}" onclick="openRevokeModal(this)"><span class="icon"><svg><use href="#ic-trash"/></svg></span> Révoquer</button>
-</div>
-`).join('');
-}catch(e){
-el.innerHTML='<div class="empty">Erreur de chargement. <button class="btn btn-outline btn-sm" onclick="loadKeys()">Réessayer</button></div>';
-}
+  const el=document.getElementById('keys-list');
+  if(!el) return;
+  try{
+    const r=await apiFetch('/api/keys');
+    const data=await r.json();
+    if(!data.ok || !data.keys.length){
+      el.innerHTML='<div class="empty">Aucune clé générée pour le moment.</div>';
+      return;
+    }
+    el.innerHTML=data.keys.map((k,i)=>`
+      <div class="key-row" style="animation-delay:${Math.min(i*.04,.3)}s">
+        <div class="key-info">
+          <div class="key-prefix">${escapeHtml(k.key_prefix)}</div>
+          <div class="key-meta">
+            <span class="env-pill ${k.environment==='live'?'pill-live':'pill-sandbox'}">${k.environment==='live'?'LIVE':'TEST'}</span>
+            ${k.label?`<span>${escapeHtml(k.label)}</span>`:''}
+            <span>Créée le ${new Date(k.created_at).toLocaleDateString('fr-FR')}</span>
+            ${k.last_used_at?`<span>Dernière utilisation : ${new Date(k.last_used_at).toLocaleDateString('fr-FR')}</span>`:'<span>Jamais utilisée</span>'}
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" data-revoke-id="${escapeHtml(String(k.id))}"><span class="icon"><svg><use href="#ic-trash"/></svg></span> Révoquer</button>
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-revoke-id]').forEach(btn => {
+      btn.addEventListener('click', () => openRevokeModal(btn.dataset.revokeId));
+    });
+  }catch(e){
+    el.innerHTML='<div class="empty">Erreur de chargement. <button class="btn btn-outline btn-sm" id="btn-retry-keys">Réessayer</button></div>';
+    const b = document.getElementById('btn-retry-keys'); if(b) b.addEventListener('click', loadKeys);
+  }
 }
 
 function openModal(){
-document.getElementById('modal-title').textContent='🔑 Générer une nouvelle clé';
-document.getElementById('modal-form').style.display='block';
-document.getElementById('modal-result').style.display='none';
-document.getElementById('nk-label').value='';
-document.getElementById('new-key-modal').classList.add('show');
+  document.getElementById('modal-title').innerHTML='<span class="icon"><svg><use href="#ic-key"/></svg></span> Générer une nouvelle clé';
+  document.getElementById('modal-form').style.display='block';
+  document.getElementById('modal-result').style.display='none';
+  document.getElementById('nk-label').value='';
+  document.getElementById('new-key-modal').classList.add('show');
 }
 function closeModal(){
-document.getElementById('new-key-modal').classList.remove('show');
-loadKeys();
+  document.getElementById('new-key-modal').classList.remove('show');
+  loadKeys();
 }
-document.getElementById('new-key-modal').addEventListener('click',e=>{if(e.target.id==='new-key-modal')closeModal()});
 
 async function generateKey(){
-const environment=document.getElementById('nk-env').value;
-const label=document.getElementById('nk-label').value.trim();
-const btn=document.getElementById('btn-generate');
-btn.disabled=true; btn.textContent='Génération...';
-try{
-const r=await apiFetch('/api/keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({environment,label})});
-const data=await r.json();
-if(data.ok){
-newKeyValue=data.key;
-document.getElementById('new-key-val').textContent=data.key;
-document.getElementById('modal-form').style.display='none';
-document.getElementById('modal-result').style.display='block';
-document.getElementById('modal-title').textContent='✅ Clé générée';
-}else{
-toast(data.error||'Erreur lors de la génération',false);
-}
-}catch(e){
-toast('Erreur de connexion',false);
-}
-btn.disabled=false; btn.textContent='Générer';
+  const environment=document.getElementById('nk-env').value;
+  const label=document.getElementById('nk-label').value.trim();
+  const btn=document.getElementById('btn-generate');
+  btn.disabled=true; btn.textContent='Génération...';
+  try{
+    const r=await apiFetch('/api/keys',{method:'POST',body:JSON.stringify({environment,label})});
+    const data=await r.json();
+    if(data.ok){
+      newKeyValue=data.key;
+      document.getElementById('new-key-val').textContent=data.key;
+      document.getElementById('modal-form').style.display='none';
+      document.getElementById('modal-result').style.display='block';
+      document.getElementById('modal-title').textContent='✅ Clé générée';
+    }else{
+      toast(data.error||'Erreur lors de la génération',false);
+    }
+  }catch(e){
+    toast('Erreur de connexion',false);
+  }
+  btn.disabled=false; btn.textContent='Générer';
 }
 
 function copyNewKey(){
-navigator.clipboard.writeText(newKeyValue).then(()=>toast('Clé copiée !')).catch(()=>toast('Impossible de copier',false));
+  navigator.clipboard.writeText(newKeyValue)
+    .then(()=>toast('Clé copiée !'))
+    .catch(()=>toast('Impossible de copier',false));
 }
 
-let pendingRevokeId=null;
-function openRevokeModal(btn){ pendingRevokeId=btn.dataset.id; document.getElementById('revoke-modal').classList.add('show'); }
-function closeRevokeModal(){ document.getElementById('revoke-modal').classList.remove('show'); pendingRevokeId=null; }
-document.getElementById('revoke-modal').addEventListener('click',e=>{if(e.target.id==='revoke-modal')closeRevokeModal()});
+function openRevokeModal(id){
+  pendingRevokeId=id;
+  document.getElementById('revoke-modal').classList.add('show');
+}
+function closeRevokeModal(){
+  document.getElementById('revoke-modal').classList.remove('show');
+  pendingRevokeId=null;
+}
 
 async function confirmRevoke(){
-if(!pendingRevokeId) return;
-const btn=document.getElementById('btn-confirm-revoke');
-btn.disabled=true; btn.textContent='Révocation...';
-try{
-const r=await apiFetch('/api/keys/'+pendingRevokeId,{method:'DELETE'});
-const data=await r.json();
-if(data.ok){ toast('Clé révoquée'); loadKeys(); }
-else{ toast(data.error||'Erreur',false); }
-}catch(e){ toast('Erreur de connexion',false); }
-btn.disabled=false; btn.textContent='Révoquer';
-closeRevokeModal();
+  if(!pendingRevokeId) return;
+  const btn=document.getElementById('btn-confirm-revoke');
+  btn.disabled=true; btn.textContent='Révocation...';
+  try{
+    const r=await apiFetch('/api/keys/'+encodeURIComponent(pendingRevokeId),{method:'DELETE'});
+    const data=await r.json();
+    if(data.ok){ toast('Clé révoquée'); loadKeys(); }
+    else toast(data.error||'Erreur',false);
+  }catch(e){ toast('Erreur de connexion',false); }
+  btn.disabled=false; btn.textContent='Révoquer';
+  closeRevokeModal();
 }
 
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeRevokeModal(); }});
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('burger-btn').addEventListener('click', openSidebar);
+  document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
+  document.getElementById('overlay').addEventListener('click', closeSidebar);
+  document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+  document.getElementById('btn-close-result').addEventListener('click', closeModal);
+  document.getElementById('btn-generate').addEventListener('click', generateKey);
+  document.getElementById('btn-copy-new').addEventListener('click', copyNewKey);
+  document.getElementById('btn-cancel-revoke').addEventListener('click', closeRevokeModal);
+  document.getElementById('btn-confirm-revoke').addEventListener('click', confirmRevoke);
+  document.getElementById('new-key-modal').addEventListener('click', e=>{if(e.target.id==='new-key-modal')closeModal()});
+  document.getElementById('revoke-modal').addEventListener('click', e=>{if(e.target.id==='revoke-modal')closeRevokeModal()});
+  document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeModal(); closeRevokeModal(); } });
 
-init();
+  init();
+});
 </script>
 </body>
 </html>
