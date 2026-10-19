@@ -85,6 +85,7 @@ a{color:inherit}
 .balance-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .balance-value{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.7rem;color:var(--ink);letter-spacing:-.02em}
 .balance-value small{font-size:.95rem;color:var(--muted);font-weight:600}
+.currency-pill{background:var(--blue-tint);color:var(--blue);font-size:.75rem;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.05em}
 .btn-green{background:var(--green);color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;text-decoration:none}
 .btn-green:hover{background:#00A876}
 .btn-red{background:#FF5C5C;color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;text-decoration:none}
@@ -167,6 +168,22 @@ a{color:inherit}
 .bnav-item span{font-size:.64rem;font-weight:600}
 .bnav-item.active{color:var(--blue)}
 
+/* ── Modal devise ──────────────────────────────── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px}
+.modal-bg.show{display:flex}
+.modal{background:white;border-radius:18px;padding:24px;width:100%;max-width:380px;box-shadow:0 30px 60px rgba(10,12,25,0.25);opacity:0;transform:translateY(12px) scale(.98);transition:all .22s cubic-bezier(.16,.8,.3,1)}
+.modal-bg.show .modal{opacity:1;transform:translateY(0) scale(1)}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:6px}
+.modal p{font-size:.8rem;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.currency-opt{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1.5px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;margin-bottom:8px}
+.currency-opt:hover{border-color:var(--blue);background:var(--blue-tint)}
+.currency-opt.active{border-color:var(--blue);background:var(--blue-tint)}
+.currency-opt .cur-code{font-weight:800;font-size:.92rem;color:var(--ink)}
+.currency-opt .cur-name{font-size:.72rem;color:var(--muted);margin-top:2px}
+.currency-opt .cur-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1rem;color:var(--ink);text-align:right}
+.currency-opt .cur-active{font-size:.65rem;color:var(--blue);font-weight:700}
+.currency-opt .cur-flag{font-size:1.2rem}
+
 #toast{position:fixed;bottom:calc(var(--bottom-nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.83rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
@@ -219,6 +236,7 @@ a{color:inherit}
 <symbol id="ic-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
 <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
 <symbol id="ic-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+<symbol id="ic-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
 </defs>
 </svg>
 
@@ -226,50 +244,45 @@ a{color:inherit}
 <div class="overlay" id="overlay"></div>
 
 <aside class="sidebar" id="sidebar">
-<div class="sidebar-top">
-<div>
-<a href="/" class="logo-text">Flin<span>pay</span></a>
-<div class="plan-badge-pill" id="plan-badge-pill">🚀 Starter</div>
-</div>
-<button class="close-sidebar" id="close-sidebar" aria-label="Fermer">✕</button>
-</div>
-
-<div class="corridor">
-<div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-<div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
-</div>
-
-<nav class="sidebar-nav">
-<div class="nav-group">Principal</div>
-<a class="nav-link active" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
-<a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
-<a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
-<a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
-<a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
-<a class="nav-link" href="/rewards"><span class="icon"><svg><use href="#ic-star"/></svg></span> Récompenses</a>
-
-<div class="nav-group">Développeur</div>
-<a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
-<a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
-<a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
-
-<div class="nav-group">Compte</div>
-<a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
-<a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
-<a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
-<a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
-</nav>
-
-<div class="sidebar-user">
-<div class="user-row">
-<div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
-<div>
-<div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
-<div class="user-email" id="user-email">{{ user.email }}</div>
-</div>
-</div>
-</div>
-<a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
+  <div class="sidebar-top">
+    <div>
+      <a href="/" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill" id="plan-badge-pill">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" id="close-sidebar" aria-label="Fermer">✕</button>
+  </div>
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
+    <div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group">Principal</div>
+    <a class="nav-link active" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
+    <a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
+    <a class="nav-link" href="/rewards"><span class="icon"><svg><use href="#ic-star"/></svg></span> Récompenses</a>
+    <div class="nav-group">Développeur</div>
+    <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+    <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
+    <div class="nav-group">Compte</div>
+    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+    <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
+    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
+  </nav>
+  <div class="sidebar-user">
+    <div class="user-row">
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+      <div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
+      </div>
+    </div>
+  </div>
+  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
 </aside>
 
 <div class="main">
@@ -292,20 +305,24 @@ a{color:inherit}
 
 <div class="page">
 <div class="balance-grid">
-<div class="balance-card">
-<div>
-<div class="balance-label">Solde disponible</div>
-<div class="balance-value" id="hero-balance">0 <small>XOF</small></div>
-</div>
-<a href="/payouts" class="btn-green"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-plus"/></svg></span> Retirer</a>
-</div>
-<div class="balance-card">
-<div>
-<div class="balance-label">Récompenses FP</div>
-<div class="balance-value" id="hero-reward">0 <small>FP</small></div>
-</div>
-<a href="/rewards" class="btn-red">Voir</a>
-</div>
+  <div class="balance-card">
+    <div style="flex:1">
+      <div class="balance-label">Solde disponible</div>
+      <div class="balance-value" id="hero-balance" style="cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none" title="Changer de devise">
+        <span id="hero-balance-amount">0</span>
+        <span class="currency-pill" id="hero-balance-currency">XOF</span>
+        <span class="icon" style="width:16px;height:16px;color:var(--muted)"><svg><use href="#ic-chevron-down"/></svg></span>
+      </div>
+    </div>
+    <a href="/payouts" class="btn-green"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-plus"/></svg></span> Retirer</a>
+  </div>
+  <div class="balance-card">
+    <div style="flex:1">
+      <div class="balance-label">Récompenses FP</div>
+      <div class="balance-value" id="hero-reward">0 <small>FP</small></div>
+    </div>
+    <a href="/rewards" class="btn-red">Voir</a>
+  </div>
 </div>
 
 <div class="note note-danger" id="error-note">
@@ -393,6 +410,16 @@ a{color:inherit}
 <a class="bnav-item" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span><span>Profil</span></a>
 </nav>
 
+<!-- MODAL DEVISES -->
+<div class="modal-bg" id="currency-modal">
+  <div class="modal">
+    <h3>Choisir la devise</h3>
+    <p>Sélectionnez la devise de solde à afficher sur votre dashboard.</p>
+    <div id="currency-list"></div>
+    <button class="btn btn-gold btn-sm" id="btn-close-currency" style="width:100%;margin-top:8px">Fermer</button>
+  </div>
+</div>
+
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script nonce="{{ csp_nonce }}">
@@ -413,11 +440,91 @@ async function apiFetch(url, options={}){
 
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
-
 function escapeHtml(str){const d=document.createElement('div');d.textContent=str==null?'':String(str);return d.innerHTML}
 function fmtNumber(n){return (Number(n)||0).toLocaleString('fr-FR',{maximumFractionDigits:2})}
 function fmtDate(iso){if(!iso) return '';try{return new Date(iso).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'})}catch(e){return ''}}
 
+function toast(msg, ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=(ok?'✅ ':'❌ ')+msg;
+  t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
+  t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── Sélecteur de devise ─────────────────────────────
+let userBalances = {};
+let selectedCurrency = null;
+
+const CURRENCY_NAMES = {XOF:'Franc CFA (UEMOA)', XAF:'Franc CFA (CEMAC)', CDF:'Franc congolais'};
+const CURRENCY_FLAGS = {XOF:'🌍', XAF:'🌍', CDF:'🇨🇩'};
+
+function initCurrencySelector(balances){
+  userBalances = balances || {};
+  const currencies = Object.keys(userBalances);
+
+  const saved = localStorage.getItem('preferred_currency');
+  if(saved && userBalances[saved] !== undefined){
+    selectedCurrency = saved;
+  } else if(currencies.length){
+    const sorted = currencies.slice().sort((a,b) => (userBalances[b]||0) - (userBalances[a]||0));
+    selectedCurrency = sorted[0];
+  } else {
+    selectedCurrency = 'XOF';
+  }
+  renderSelectedBalance();
+}
+
+function renderSelectedBalance(){
+  const amount = userBalances[selectedCurrency] || 0;
+  document.getElementById('hero-balance-amount').textContent = fmtNumber(amount);
+  document.getElementById('hero-balance-currency').textContent = selectedCurrency;
+}
+
+function openCurrencyModal(){
+  const list = document.getElementById('currency-list');
+  const currencies = Object.keys(userBalances);
+
+  if(!currencies.length){
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.85rem">Aucun solde disponible.<br>Encaissez votre premier paiement.</div>';
+  } else {
+    list.innerHTML = currencies.map(cur => {
+      const isActive = cur === selectedCurrency;
+      return `
+        <button type="button" class="currency-opt ${isActive?'active':''}" data-currency="${escapeHtml(cur)}">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="cur-flag">${CURRENCY_FLAGS[cur] || '💱'}</span>
+            <div style="text-align:left">
+              <div class="cur-code">${escapeHtml(cur)}</div>
+              <div class="cur-name">${escapeHtml(CURRENCY_NAMES[cur] || cur)}</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="cur-amount">${fmtNumber(userBalances[cur])}</div>
+            ${isActive ? '<div class="cur-active">ACTUEL</div>' : ''}
+          </div>
+        </button>`;
+    }).join('');
+
+    list.querySelectorAll('[data-currency]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedCurrency = btn.dataset.currency;
+        localStorage.setItem('preferred_currency', selectedCurrency);
+        renderSelectedBalance();
+        document.getElementById('currency-modal').classList.remove('show');
+        toast(`Devise affichée : ${selectedCurrency}`);
+      });
+    });
+  }
+  document.getElementById('currency-modal').classList.add('show');
+}
+
+function closeCurrencyModal(){
+  document.getElementById('currency-modal').classList.remove('show');
+}
+
+// ── Profil ──────────────────────────────────────────
 async function loadProfile(){
   try{
     const r=await apiFetch('/api/me');
@@ -456,7 +563,8 @@ async function loadProfile(){
       planExpiry.textContent='';
     }
 
-    renderBalances(user.balances||{}, user.available_balance, user.fp_balance||0);
+    initCurrencySelector(user.balances || {});
+    document.getElementById('hero-reward').innerHTML = fmtNumber(user.fp_balance||0) + ' <small>FP</small>';
 
     const kyc=user.kyc_status||'unverified';
     const kycBtn=document.getElementById('kyc-quick-btn');
@@ -477,17 +585,7 @@ async function loadProfile(){
   }
 }
 
-function renderBalances(balances, fallbackTotal, fpBalance){
-  const entries=Object.entries(balances||{}).filter(([,v])=>v!==null && v!==undefined);
-  let topCur='XOF', topVal=fallbackTotal||0;
-  if(entries.length){
-    const sorted=entries.slice().sort((a,b)=>(Number(b[1])||0)-(Number(a[1])||0));
-    [topCur, topVal]=sorted[0];
-  }
-  document.getElementById('hero-balance').innerHTML=fmtNumber(topVal)+' <small>'+escapeHtml(topCur)+'</small>';
-  document.getElementById('hero-reward').innerHTML=fmtNumber(fpBalance)+' <small>FP</small>';
-}
-
+// ── Transactions ────────────────────────────────────
 async function loadTransactions(){
   try{
     const r=await apiFetch('/api/transactions');
@@ -556,6 +654,14 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
   document.getElementById('overlay').addEventListener('click', closeSidebar);
   document.getElementById('retry-btn').addEventListener('click', retryLoad);
+  document.getElementById('hero-balance').addEventListener('click', openCurrencyModal);
+  document.getElementById('btn-close-currency').addEventListener('click', closeCurrencyModal);
+  document.getElementById('currency-modal').addEventListener('click', (e)=>{
+    if(e.target.id==='currency-modal') closeCurrencyModal();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape') closeCurrencyModal();
+  });
 
   loadProfile();
   loadTransactions();
