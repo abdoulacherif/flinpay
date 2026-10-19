@@ -4,23 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Admin</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
---ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
---border:#E7E9F3;--border-soft:#F0F1F8;
---blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
---gold:#FFB400;--gold-tint:#FFF6E0;
---green:#00C48C;--green-tint:#E3FBF3;
---danger:#FF4D4D;--danger-tint:#FFEAEA;
---orange:#FF8A3D;--orange-tint:#FFF1E5;
---text:#12131C;--muted:#767A94;
---r-lg:16px;--r-md:12px;--r-sm:9px;
---shadow-sm:0 1px 2px rgba(15,17,32,.04);
---shadow-md:0 1px 2px rgba(15,17,32,.04),0 12px 30px -14px rgba(15,17,32,.2);
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --orange:#FF8A3D;--orange-tint:#FFF1E5;
+  --text:#12131C;--muted:#767A94;
+  --r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --shadow-md:0 12px 30px -14px rgba(10,50,150,.2);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .icon{width:16px;height:16px;flex-shrink:0}
@@ -28,7 +30,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 .topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:8px}
-.topbar-logo span{color:#5B7CFF}
+.topbar-logo span{color:var(--cyan)}
 .topbar-right{display:flex;align-items:center;gap:14px;font-size:.8rem;color:rgba(255,255,255,.6);flex-wrap:wrap}
 .topbar-right a{color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s}
 .topbar-right a:hover{color:white}
@@ -43,11 +45,11 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .tab-panel.active{display:block}
 
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-.stat-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:18px;box-shadow:var(--shadow-sm)}
+.stat-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border-soft);padding:18px;box-shadow:var(--shadow-sm)}
 .stat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.6rem}
 .stat-lbl{font-size:.78rem;color:var(--muted);margin-top:4px}
 
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:16px}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:16px}
 .card-head{padding:15px 20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .card-title{font-size:.88rem;font-weight:700}
 .card-body{padding:18px 20px}
@@ -56,7 +58,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .item-row:last-child{border-bottom:none}
 .field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
 .field-label{font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block}
-.field-input{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:.83rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.field-input{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:.83rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;background:white;color:var(--text)}
 .field-input:focus{border-color:var(--blue)}
 .field-input:disabled{background:var(--bg);color:var(--muted)}
 .row-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
@@ -95,8 +97,8 @@ textarea.field-input{min-height:90px;font-family:'JetBrains Mono',monospace;font
 .b-banned{background:var(--ink);color:white}
 
 .mono{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--muted)}
-.mini-select{padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:.76rem}
-.mini-input{padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:.76rem;width:90px}
+.mini-select{padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:.76rem;background:white}
+.mini-input{padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:.76rem;width:90px;background:white}
 .empty{text-align:center;padding:30px;color:var(--muted);font-size:.85rem}
 .skeleton-row{height:44px;background:linear-gradient(90deg,var(--border-soft) 25%,var(--bg) 50%,var(--border-soft) 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:8px;margin-bottom:8px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -132,661 +134,799 @@ textarea.field-input{min-height:90px;font-family:'JetBrains Mono',monospace;font
 .ps-item div:last-child{font-size:.85rem;font-weight:700}
 
 @media(max-width:700px){
-.stats-row{grid-template-columns:1fr 1fr}
-.page{padding:16px}
-.topbar{padding:0 14px}
-.topbar-right span{display:none}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .page{padding:16px}
+  .topbar{padding:0 14px}
+  .topbar-right span{display:none}
 }
 @media(prefers-reduced-motion:reduce){
-*{animation-duration:.001ms !important;transition-duration:.001ms !important}
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
 }
 </style>
 </head>
 <body>
 
 <div class="topbar">
-<div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.75rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
-<div class="topbar-right">
-<span>{{ user.firstname }} {{ user.lastname }}</span>
-<a href="/admin/kyc">🪪 Revue KYC</a>
-<a href="/admin/audit-log">📋 Journal d'audit</a>
-<a href="/dashboard">Retour au site</a>
-<a href="/api/logout">Déconnexion</a>
-</div>
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.75rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
+  <div class="topbar-right">
+    <span>{{ user.firstname }} {{ user.lastname }}</span>
+    <a href="/admin/kyc">🪪 Revue KYC</a>
+    <a href="/admin/audit-log">📋 Journal d'audit</a>
+    <a href="/dashboard">Retour au site</a>
+    <a href="/api/logout">Déconnexion</a>
+  </div>
 </div>
 
 <div class="tabs">
-<button class="tab-btn active" data-tab="overview" onclick="showTab('overview')">Vue d'ensemble</button>
-<button class="tab-btn" data-tab="users" onclick="showTab('users')">Utilisateurs</button>
-<button class="tab-btn" data-tab="alltx" onclick="showTab('alltx')">Transactions</button>
-<button class="tab-btn" data-tab="payouts" onclick="showTab('payouts')">Payouts</button>
-<button class="tab-btn" data-tab="config" onclick="showTab('config')">Configuration</button>
-<button class="tab-btn" data-tab="stats" onclick="showTab('stats')">Statistiques</button>
-<button class="tab-btn" data-tab="features" onclick="showTab('features')">Fonctionnalités</button>
-<button class="tab-btn" data-tab="pricing" onclick="showTab('pricing')">Tarifs</button>
-<button class="tab-btn" data-tab="testimonials" onclick="showTab('testimonials')">Témoignages</button>
+  <button class="tab-btn active" data-tab="overview">Vue d'ensemble</button>
+  <button class="tab-btn" data-tab="users">Utilisateurs</button>
+  <button class="tab-btn" data-tab="alltx">Transactions</button>
+  <button class="tab-btn" data-tab="payouts">Payouts</button>
+  <button class="tab-btn" data-tab="config">Configuration</button>
+  <button class="tab-btn" data-tab="stats">Statistiques</button>
+  <button class="tab-btn" data-tab="features">Fonctionnalités</button>
+  <button class="tab-btn" data-tab="pricing">Tarifs</button>
+  <button class="tab-btn" data-tab="testimonials">Témoignages</button>
 </div>
 
 <div class="page">
 
-<div class="tab-panel active" id="tab-overview">
-<div class="stats-row" id="overview-stats">
-<div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Utilisateurs</div></div>
-<div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Transactions</div></div>
-<div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">KYC en attente</div></div>
-<div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Liens de paiement</div></div>
-</div>
-<div class="card">
-<div class="card-head"><div class="card-title">Actions rapides</div></div>
-<div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
-<a class="btn btn-primary" href="/admin/kyc">🪪 Revoir les demandes KYC</a>
-<a class="btn btn-outline" href="/admin/payments">💰 Paiements & marges</a>
-<a class="btn btn-outline" href="/admin/audit-log">📋 Journal d'audit</a>
-<a class="btn btn-outline" href="/dashboard">📊 Voir le dashboard utilisateur</a>
-</div>
-</div>
+  <div class="tab-panel active" id="tab-overview">
+    <div class="stats-row" id="overview-stats">
+      <div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Utilisateurs</div></div>
+      <div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Transactions</div></div>
+      <div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">KYC en attente</div></div>
+      <div class="stat-card"><div class="stat-val">—</div><div class="stat-lbl">Liens de paiement</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Actions rapides</div></div>
+      <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+        <a class="btn btn-primary" href="/admin/kyc">🪪 Revoir les demandes KYC</a>
+        <a class="btn btn-outline" href="/admin/payments">💰 Paiements &amp; marges</a>
+        <a class="btn btn-outline" href="/admin/audit-log">📋 Journal d'audit</a>
+        <a class="btn btn-outline" href="/dashboard">📊 Voir le dashboard utilisateur</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-users">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Utilisateurs</div>
+        <input class="field-input" id="users-search" placeholder="🔍 Rechercher nom/email..." style="max-width:240px">
+      </div>
+      <div class="card-body tbl-wrap" id="users-list"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-alltx">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Toutes les transactions</div>
+        <input class="field-input" id="tx-search" placeholder="🔍 Client / ID..." style="max-width:240px">
+      </div>
+      <div class="card-body tbl-wrap" id="alltx-list"><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-payouts">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Payouts</div>
+        <button class="btn btn-primary btn-sm" id="btn-open-payout-form">➕ Nouveau payout</button>
+      </div>
+      <div class="card-body" id="payout-form-box" style="display:none">
+        <div class="new-item-box">
+          <div class="field-grid">
+            <div><label class="field-label">User ID (uuid)</label><input class="field-input" id="po-user-id" placeholder="uuid de l'utilisateur"></div>
+            <div><label class="field-label">Montant</label><input class="field-input" id="po-amount" type="number"></div>
+            <div><label class="field-label">Téléphone</label><input class="field-input" id="po-phone"></div>
+            <div><label class="field-label">Opérateur</label><input class="field-input" id="po-operator" placeholder="mtn, orange, moov..."></div>
+            <div><label class="field-label">Pays</label><input class="field-input" id="po-country" placeholder="CI"></div>
+            <div><label class="field-label">Statut</label>
+              <select class="field-input" id="po-status">
+                <option value="pending">En attente</option>
+                <option value="paid">Payé</option>
+                <option value="failed">Échoué</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-create-payout">Enregistrer le payout</button>
+        </div>
+      </div>
+      <div class="card-body tbl-wrap" id="payouts-list"><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-config"><div class="card"><div class="card-head"><div class="card-title">Configuration du site</div></div><div class="card-body" id="config-list"><div class="skeleton-row"></div></div></div></div>
+  <div class="tab-panel" id="tab-stats"><div class="card"><div class="card-head"><div class="card-title">Statistiques affichées sur la page d'accueil</div></div><div class="card-body" id="stats-list"><div class="skeleton-row"></div></div></div></div>
+  <div class="tab-panel" id="tab-features"><div class="card"><div class="card-head"><div class="card-title">Fonctionnalités mises en avant</div></div><div class="card-body" id="features-list"><div class="skeleton-row"></div></div></div></div>
+  <div class="tab-panel" id="tab-pricing"><div class="card"><div class="card-head"><div class="card-title">Plans tarifaires</div></div><div class="card-body" id="pricing-list"><div class="skeleton-row"></div></div></div></div>
+  <div class="tab-panel" id="tab-testimonials"><div class="card"><div class="card-head"><div class="card-title">Témoignages clients</div></div><div class="card-body" id="testimonials-list"><div class="skeleton-row"></div></div></div></div>
+
 </div>
 
-<div class="tab-panel" id="tab-users">
-<div class="card">
-<div class="card-head">
-<div class="card-title">Utilisateurs</div>
-<input class="field-input" id="users-search" placeholder="🔍 Rechercher nom/email..." style="max-width:240px" oninput="filterUsers()">
-</div>
-<div class="card-body tbl-wrap" id="users-list"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
-</div>
-</div>
-
-<div class="tab-panel" id="tab-alltx">
-<div class="card">
-<div class="card-head">
-<div class="card-title">Toutes les transactions</div>
-<input class="field-input" id="tx-search" placeholder="🔍 Client / ID..." style="max-width:240px" oninput="filterAllTx()">
-</div>
-<div class="card-body tbl-wrap" id="alltx-list"><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
-</div>
-</div>
-
-<div class="tab-panel" id="tab-payouts">
-<div class="card">
-<div class="card-head">
-<div class="card-title">Payouts</div>
-<button class="btn btn-primary btn-sm" onclick="openPayoutForm()">➕ Nouveau payout</button>
-</div>
-<div class="card-body" id="payout-form-box" style="display:none">
-<div class="new-item-box">
-<div class="field-grid">
-<div><label class="field-label">User ID (uuid)</label><input class="field-input" id="po-user-id" placeholder="uuid de l'utilisateur"></div>
-<div><label class="field-label">Montant</label><input class="field-input" id="po-amount" type="number"></div>
-<div><label class="field-label">Téléphone</label><input class="field-input" id="po-phone"></div>
-<div><label class="field-label">Opérateur</label><input class="field-input" id="po-operator" placeholder="mtn, orange, moov..."></div>
-<div><label class="field-label">Pays</label><input class="field-input" id="po-country" placeholder="CI"></div>
-<div><label class="field-label">Statut</label>
-<select class="field-input" id="po-status">
-<option value="pending">En attente</option>
-<option value="paid">Payé</option>
-<option value="failed">Échoué</option>
-</select>
-</div>
-</div>
-<button class="btn btn-primary btn-sm" onclick="createPayout()">Enregistrer le payout</button>
-</div>
-</div>
-<div class="card-body tbl-wrap" id="payouts-list"><div class="skeleton-row"></div><div class="skeleton-row"></div></div>
-</div>
-</div>
-
-<div class="tab-panel" id="tab-config"><div class="card"><div class="card-head"><div class="card-title">Configuration du site</div></div><div class="card-body" id="config-list"><div class="skeleton-row"></div></div></div></div>
-<div class="tab-panel" id="tab-stats"><div class="card"><div class="card-head"><div class="card-title">Statistiques affichées sur la page d'accueil</div></div><div class="card-body" id="stats-list"><div class="skeleton-row"></div></div></div></div>
-<div class="tab-panel" id="tab-features"><div class="card"><div class="card-head"><div class="card-title">Fonctionnalités mises en avant</div></div><div class="card-body" id="features-list"><div class="skeleton-row"></div></div></div></div>
-<div class="tab-panel" id="tab-pricing"><div class="card"><div class="card-head"><div class="card-title">Plans tarifaires</div></div><div class="card-body" id="pricing-list"><div class="skeleton-row"></div></div></div></div>
-<div class="tab-panel" id="tab-testimonials"><div class="card"><div class="card-head"><div class="card-title">Témoignages clients</div></div><div class="card-body" id="testimonials-list"><div class="skeleton-row"></div></div></div></div>
-
-</div>
-
-<!-- MODAL RESTRICTION -->
 <div class="modal-bg" id="restrict-modal">
-<div class="modal" role="dialog" aria-modal="true">
-<h3>🛡️ Restreindre <span id="restrict-user-name" style="color:var(--blue)"></span></h3>
+  <div class="modal">
+    <h3>🛡️ Restreindre <span id="restrict-user-name" style="color:var(--blue)"></span></h3>
 
-<div class="level-options" id="level-options">
-<label class="level-opt" data-level="none">
-<input type="radio" name="restrict-level" value="none">
-<div><div class="level-opt-title">Aucune restriction</div><div class="level-opt-desc">Compte normal, aucune limite.</div></div>
-</label>
-<label class="level-opt" data-level="no_withdrawal">
-<input type="radio" name="restrict-level" value="no_withdrawal">
-<div><div class="level-opt-title">Retraits bloqués</div><div class="level-opt-desc">Le compte reste utilisable (connexion, encaissements) mais ne peut plus rien retirer. Peut être temporaire.</div></div>
-</label>
-<label class="level-opt" data-level="no_login">
-<input type="radio" name="restrict-level" value="no_login">
-<div><div class="level-opt-title">Connexion bloquée</div><div class="level-opt-desc">Le compte ne peut plus se connecter du tout — coupé immédiatement, même si une session est déjà ouverte.</div></div>
-</label>
-<label class="level-opt" data-level="banned">
-<input type="radio" name="restrict-level" value="banned">
-<div><div class="level-opt-title">Compte banni</div><div class="level-opt-desc">Blocage définitif — décision terminale en cas de fraude avérée.</div></div>
-</label>
+    <div class="level-options" id="level-options">
+      <label class="level-opt" data-level="none">
+        <input type="radio" name="restrict-level" value="none">
+        <div><div class="level-opt-title">Aucune restriction</div><div class="level-opt-desc">Compte normal, aucune limite.</div></div>
+      </label>
+      <label class="level-opt" data-level="no_withdrawal">
+        <input type="radio" name="restrict-level" value="no_withdrawal">
+        <div><div class="level-opt-title">Retraits bloqués</div><div class="level-opt-desc">Le compte reste utilisable (connexion, encaissements) mais ne peut plus rien retirer. Peut être temporaire.</div></div>
+      </label>
+      <label class="level-opt" data-level="no_login">
+        <input type="radio" name="restrict-level" value="no_login">
+        <div><div class="level-opt-title">Connexion bloquée</div><div class="level-opt-desc">Le compte ne peut plus se connecter du tout — coupé immédiatement, même si une session est déjà ouverte.</div></div>
+      </label>
+      <label class="level-opt" data-level="banned">
+        <input type="radio" name="restrict-level" value="banned">
+        <div><div class="level-opt-title">Compte banni</div><div class="level-opt-desc">Blocage définitif — décision terminale en cas de fraude avérée.</div></div>
+      </label>
+    </div>
+
+    <div id="duration-field" style="display:none;margin-bottom:14px">
+      <label class="field-label" for="restrict-duration">Durée du blocage de retrait (heures, optionnel)</label>
+      <input class="field-input" id="restrict-duration" type="number" min="1" placeholder="Laisser vide = pas d'expiration automatique">
+    </div>
+
+    <div id="reason-field" style="display:none;margin-bottom:14px">
+      <label class="field-label" for="restrict-reason">Motif *</label>
+      <textarea class="field-input" id="restrict-reason" style="min-height:60px" placeholder="Décrivez la fraude ou le motif de cette restriction"></textarea>
+    </div>
+
+    <div class="section-sep">Pays bloqués (optionnel)</div>
+    <div class="chip-group" id="country-chips"></div>
+
+    <div class="section-sep">Opérateurs bloqués</div>
+    <div class="chip-group" id="operator-chips">
+      <input type="checkbox" class="chip-check" id="op-mtn" value="mtn"><label class="chip-label" for="op-mtn">MTN</label>
+      <input type="checkbox" class="chip-check" id="op-orange" value="orange"><label class="chip-label" for="op-orange">Orange</label>
+      <input type="checkbox" class="chip-check" id="op-om" value="om"><label class="chip-label" for="op-om">Orange Money (om)</label>
+      <input type="checkbox" class="chip-check" id="op-moov" value="moov"><label class="chip-label" for="op-moov">Moov</label>
+      <input type="checkbox" class="chip-check" id="op-wave" value="wave"><label class="chip-label" for="op-wave">Wave</label>
+      <input type="checkbox" class="chip-check" id="op-tmoney" value="tmoney"><label class="chip-label" for="op-tmoney">T-Money</label>
+      <input type="checkbox" class="chip-check" id="op-vodacom" value="vodacom"><label class="chip-label" for="op-vodacom">Vodacom</label>
+      <input type="checkbox" class="chip-check" id="op-airtel" value="airtel"><label class="chip-label" for="op-airtel">Airtel</label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="btn-cancel-restrict">Annuler</button>
+      <button class="btn btn-primary" id="btn-save-restriction">Enregistrer</button>
+    </div>
+  </div>
 </div>
 
-<div id="duration-field" style="display:none;margin-bottom:14px">
-<label class="field-label" for="restrict-duration">Durée du blocage de retrait (heures, optionnel)</label>
-<input class="field-input" id="restrict-duration" type="number" min="1" placeholder="Laisser vide = pas d'expiration automatique">
-</div>
-
-<div id="reason-field" style="display:none;margin-bottom:14px">
-<label class="field-label" for="restrict-reason">Motif *</label>
-<textarea class="field-input" id="restrict-reason" style="min-height:60px" placeholder="Décrivez la fraude ou le motif de cette restriction — conservé dans le journal d'audit"></textarea>
-</div>
-
-<div class="section-sep">Pays bloqués pour ce compte (optionnel, indépendant du niveau ci-dessus)</div>
-<div class="chip-group" id="country-chips"></div>
-
-<div class="section-sep">Opérateurs bloqués pour ce compte</div>
-<div class="chip-group" id="operator-chips">
-<input type="checkbox" class="chip-check" id="op-mtn" value="mtn"><label class="chip-label" for="op-mtn">MTN</label>
-<input type="checkbox" class="chip-check" id="op-orange" value="orange"><label class="chip-label" for="op-orange">Orange</label>
-<input type="checkbox" class="chip-check" id="op-om" value="om"><label class="chip-label" for="op-om">Orange Money (om)</label>
-<input type="checkbox" class="chip-check" id="op-moov" value="moov"><label class="chip-label" for="op-moov">Moov</label>
-<input type="checkbox" class="chip-check" id="op-wave" value="wave"><label class="chip-label" for="op-wave">Wave</label>
-<input type="checkbox" class="chip-check" id="op-tmoney" value="tmoney"><label class="chip-label" for="op-tmoney">T-Money</label>
-<input type="checkbox" class="chip-check" id="op-vodacom" value="vodacom"><label class="chip-label" for="op-vodacom">Vodacom</label>
-<input type="checkbox" class="chip-check" id="op-airtel" value="airtel"><label class="chip-label" for="op-airtel">Airtel</label>
-</div>
-
-<div class="modal-actions">
-<button class="btn btn-outline" onclick="closeRestrictModal()">Annuler</button>
-<button class="btn btn-primary" id="btn-save-restriction" onclick="saveRestriction()">Enregistrer</button>
-</div>
-</div>
-</div>
-
-<!-- MODAL HISTORIQUE COMPLET -->
 <div class="modal-bg" id="history-modal">
-<div class="modal modal-lg" role="dialog" aria-modal="true">
-<h3>📜 Historique complet — <span id="history-user-name" style="color:var(--blue)"></span></h3>
-<div class="profile-summary" id="history-profile"></div>
-<div class="activity-tabs">
-<button class="activity-tab active" data-htab="activity" onclick="showHistoryTab('activity')">Activité</button>
-<button class="activity-tab" data-htab="tx" onclick="showHistoryTab('tx')">Transactions</button>
-<button class="activity-tab" data-htab="payouts" onclick="showHistoryTab('payouts')">Retraits</button>
-</div>
-<div class="tbl-wrap" id="history-body"><div class="skeleton-row"></div></div>
-<div class="modal-actions">
-<button class="btn btn-outline" onclick="window.print()">🖨️ Imprimer / Exporter PDF</button>
-<button class="btn btn-primary" onclick="closeHistoryModal()">Fermer</button>
-</div>
-</div>
+  <div class="modal modal-lg">
+    <h3>📜 Historique complet — <span id="history-user-name" style="color:var(--blue)"></span></h3>
+    <div class="profile-summary" id="history-profile"></div>
+    <div class="activity-tabs">
+      <button class="activity-tab active" data-htab="activity">Activité</button>
+      <button class="activity-tab" data-htab="tx">Transactions</button>
+      <button class="activity-tab" data-htab="payouts">Retraits</button>
+    </div>
+    <div class="tbl-wrap" id="history-body"><div class="skeleton-row"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="btn-print">🖨️ Imprimer / Exporter PDF</button>
+      <button class="btn btn-primary" id="btn-close-history">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 
+// ── CSRF : lecture depuis <meta> (fallback cookie) ──
 function getCsrfToken(){
-const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
-return m ? decodeURIComponent(m[1]) : '';
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if(meta && meta.getAttribute('content')) return meta.getAttribute('content');
+  const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
 }
-async function apiFetch(url, options={}){
-const headers = Object.assign({}, options.headers || {});
-if(options.method && options.method !== 'GET'){
-headers['X-CSRF-Token'] = getCsrfToken();
-}
-return fetch(url, Object.assign({}, options, {headers}));
+async function apiFetch(url, options = {}){
+  const opts = { ...options };
+  opts.headers = { ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+    const t = getCsrfToken();
+    if (t) opts.headers['X-CSRF-Token'] = t;
+  }
+  if (opts.body && typeof opts.body === 'string') {
+    opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+  }
+  return fetch(url, opts);
 }
 
 function esc(str){
-if(str===null||str===undefined) return '';
-return String(str)
-.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  if(str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
 }
 function fmtAmount(n){ return (Number(n)||0).toLocaleString('fr-FR'); }
 function fmtDate(iso){
-if(!iso) return '—';
-try{ return new Date(iso).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
-catch(e){ return iso; }
+  if(!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+  } catch(e){ return iso; }
+}
+function toast(msg, ok=true){
+  const t = document.getElementById('toast');
+  t.textContent = (ok?'✅ ':'❌ ') + msg;
+  t.style.borderLeftColor = ok ? 'var(--green)' : 'var(--danger)';
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),3000)}
-
+// ── Tabs ────────────────────────────────────────────
 function showTab(name){
-document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-document.getElementById('tab-'+name).classList.add('active');
-document.querySelector(`.tab-btn[data-tab="${name}"]`).classList.add('active');
-const loaders={config:loadConfig,stats:()=>loadCrud('stats'),features:()=>loadCrud('features'),pricing:()=>loadCrud('pricing'),testimonials:()=>loadCrud('testimonials'),users:loadUsers,alltx:loadAllTx,payouts:loadPayouts};
-if(loaders[name]) loaders[name]();
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('tab-' + name);
+  const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+  if (panel) panel.classList.add('active');
+  if (btn) btn.classList.add('active');
+  const loaders = {
+    config: loadConfig,
+    stats: () => loadCrud('stats'),
+    features: () => loadCrud('features'),
+    pricing: () => loadCrud('pricing'),
+    testimonials: () => loadCrud('testimonials'),
+    users: loadUsers,
+    alltx: loadAllTx,
+    payouts: loadPayouts,
+  };
+  if (loaders[name]) loaders[name]();
 }
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => showTab(b.dataset.tab));
+});
 
+// ── Overview ────────────────────────────────────────
 async function loadOverview(){
-try{
-const r=await fetch('/api/admin/overview');
-if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-const data=await r.json();
-if(!data.ok) return;
-const cards=document.querySelectorAll('#overview-stats .stat-val');
-cards[0].textContent=data.users; cards[1].textContent=data.transactions;
-cards[2].textContent=data.pending_kyc; cards[3].textContent=data.payment_links;
-}catch(e){}
+  try{
+    const r = await fetch('/api/admin/overview');
+    if(r.status === 401 || r.redirected){ window.location.href = '/login'; return; }
+    const data = await r.json();
+    if(!data.ok) return;
+    const cards = document.querySelectorAll('#overview-stats .stat-val');
+    cards[0].textContent = data.users;
+    cards[1].textContent = data.transactions;
+    cards[2].textContent = data.pending_kyc;
+    cards[3].textContent = data.payment_links;
+  }catch(e){}
 }
 
+// ── Config ──────────────────────────────────────────
 async function loadConfig(){
-const el=document.getElementById('config-list');
-el.innerHTML='<div class="skeleton-row"></div>';
-try{
-const r=await fetch('/api/admin/config');
-const data=await r.json();
-const items=data.items||[];
-if(!items.length){ el.innerHTML='<div class="empty">Aucune configuration trouvée.</div>'; return; }
-el.innerHTML=items.map(it=>`
-<div class="item-row">
-<div class="field-grid">
-<div><label class="field-label">Clé</label><input class="field-input" value="${esc(it.key)}" disabled></div>
-<div><label class="field-label">Valeur</label><input class="field-input" id="cfg-${esc(it.key)}" value="${esc(it.value)}"></div>
-</div>
-<div class="row-actions"><button class="btn btn-primary btn-sm" data-key="${esc(it.key)}" onclick="saveConfigFromBtn(this)">💾 Enregistrer</button></div>
-</div>`).join('');
-}catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
+  const el = document.getElementById('config-list');
+  el.innerHTML = '<div class="skeleton-row"></div>';
+  try{
+    const r = await fetch('/api/admin/config');
+    const data = await r.json();
+    const items = data.items || [];
+    if(!items.length){ el.innerHTML = '<div class="empty">Aucune configuration trouvée.</div>'; return; }
+    el.innerHTML = items.map(it => `
+      <div class="item-row">
+        <div class="field-grid">
+          <div><label class="field-label">Clé</label><input class="field-input" value="${esc(it.key)}" disabled></div>
+          <div><label class="field-label">Valeur</label><input class="field-input" id="cfg-${esc(it.key)}" value="${esc(it.value)}"></div>
+        </div>
+        <div class="row-actions">
+          <button class="btn btn-primary btn-sm" data-cfg-key="${esc(it.key)}">💾 Enregistrer</button>
+        </div>
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-cfg-key]').forEach(b => {
+      b.addEventListener('click', () => saveConfig(b.dataset.cfgKey));
+    });
+  }catch(e){ el.innerHTML = '<div class="empty">Erreur de chargement.</div>'; }
 }
-function saveConfigFromBtn(btn){ saveConfig(btn.dataset.key); }
 async function saveConfig(key){
-const value=document.getElementById('cfg-'+key).value;
-try{
-const r=await apiFetch('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,value})});
-const data=await r.json();
-toast(data.ok?'Configuration mise à jour':(data.error||'Erreur'),data.ok);
-}catch(e){ toast('Erreur de connexion',false); }
+  const value = document.getElementById('cfg-' + key).value;
+  try{
+    const r = await apiFetch('/api/admin/config', {method:'PUT', body: JSON.stringify({key, value})});
+    const data = await r.json();
+    toast(data.ok ? 'Configuration mise à jour' : (data.error || 'Erreur'), data.ok);
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
-const CRUD_ENDPOINTS={stats:'/api/admin/stats',features:'/api/admin/features',pricing:'/api/admin/pricing',testimonials:'/api/admin/testimonials'};
-const READONLY_FIELDS=['id','created_at','updated_at'];
+// ── CRUD génériques (stats/features/pricing/testimonials) ──
+const CRUD_ENDPOINTS = {
+  stats: '/api/admin/stats',
+  features: '/api/admin/features',
+  pricing: '/api/admin/pricing',
+  testimonials: '/api/admin/testimonials',
+};
+const READONLY_FIELDS = ['id', 'created_at', 'updated_at'];
 
 async function loadCrud(name){
-const el=document.getElementById(name+'-list');
-el.innerHTML='<div class="skeleton-row"></div>';
-try{
-const r=await fetch(CRUD_ENDPOINTS[name]);
-const data=await r.json();
-const items=data.items||[];
-let html = items.length ? items.map(it=>renderCrudRow(name,it)).join('') : '<div class="empty">Aucun élément pour le moment.</div>';
-html+=renderNewItemBox(name, items[0]||null);
-el.innerHTML=html;
-}catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
+  const el = document.getElementById(name + '-list');
+  el.innerHTML = '<div class="skeleton-row"></div>';
+  try{
+    const r = await fetch(CRUD_ENDPOINTS[name]);
+    const data = await r.json();
+    const items = data.items || [];
+    let html = items.length ? items.map(it => renderCrudRow(name, it)).join('') : '<div class="empty">Aucun élément pour le moment.</div>';
+    html += renderNewItemBox(name, items[0] || null);
+    el.innerHTML = html;
+    el.querySelectorAll('[data-crud-delete]').forEach(b => {
+      b.addEventListener('click', () => deleteCrud(b.dataset.crud, b.dataset.id));
+    });
+    el.querySelectorAll('[data-crud-update]').forEach(b => {
+      b.addEventListener('click', () => updateCrud(b.dataset.crud, b.dataset.id, JSON.parse(b.dataset.keys)));
+    });
+    el.querySelectorAll('[data-crud-create]').forEach(b => {
+      b.addEventListener('click', () => createCrud(b.dataset.crud, JSON.parse(b.dataset.keys)));
+    });
+    const rawBtn = el.querySelector('[data-crud-create-raw]');
+    if(rawBtn) rawBtn.addEventListener('click', () => createCrudRaw(rawBtn.dataset.crud));
+  }catch(e){ el.innerHTML = '<div class="empty">Erreur de chargement.</div>'; }
 }
-function renderCrudRow(name,item){
-const keys=Object.keys(item).filter(k=>!READONLY_FIELDS.includes(k));
-const fields=keys.map(k=>`<div><label class="field-label">${esc(k)}</label><input class="field-input" id="${name}-${esc(item.id)}-${esc(k)}" value="${esc(item[k])}"></div>`).join('');
-const keysAttr=esc(JSON.stringify(keys));
-return `<div class="item-row"><div class="field-grid">${fields}</div>
-<div class="row-actions">
-<button class="btn btn-danger btn-sm" data-crud="${esc(name)}" data-id="${esc(item.id)}" onclick="deleteCrudFromBtn(this)">🗑 Supprimer</button>
-<button class="btn btn-primary btn-sm" data-crud="${esc(name)}" data-id="${esc(item.id)}" data-keys="${keysAttr}" onclick="updateCrudFromBtn(this)">💾 Enregistrer</button>
-</div></div>`;
+function renderCrudRow(name, item){
+  const keys = Object.keys(item).filter(k => !READONLY_FIELDS.includes(k));
+  const fields = keys.map(k => `<div><label class="field-label">${esc(k)}</label><input class="field-input" id="${name}-${esc(item.id)}-${esc(k)}" value="${esc(item[k])}"></div>`).join('');
+  return `<div class="item-row">
+    <div class="field-grid">${fields}</div>
+    <div class="row-actions">
+      <button class="btn btn-danger btn-sm" data-crud-delete data-crud="${esc(name)}" data-id="${esc(item.id)}">🗑 Supprimer</button>
+      <button class="btn btn-primary btn-sm" data-crud-update data-crud="${esc(name)}" data-id="${esc(item.id)}" data-keys="${esc(JSON.stringify(keys))}">💾 Enregistrer</button>
+    </div>
+  </div>`;
 }
 function renderNewItemBox(name, sample){
-if(sample){
-const keys=Object.keys(sample).filter(k=>!READONLY_FIELDS.includes(k));
-const fields=keys.map(k=>`<div><label class="field-label">${esc(k)}</label><input class="field-input" id="new-${name}-${esc(k)}" placeholder="${esc(k)}"></div>`).join('');
-const keysAttr=esc(JSON.stringify(keys));
-return `<div class="new-item-box"><div class="field-grid">${fields}</div><button class="btn btn-primary btn-sm" data-crud="${esc(name)}" data-keys="${keysAttr}" onclick="createCrudFromBtn(this)">➕ Ajouter</button></div>`;
+  if(sample){
+    const keys = Object.keys(sample).filter(k => !READONLY_FIELDS.includes(k));
+    const fields = keys.map(k => `<div><label class="field-label">${esc(k)}</label><input class="field-input" id="new-${name}-${esc(k)}" placeholder="${esc(k)}"></div>`).join('');
+    return `<div class="new-item-box">
+      <div class="field-grid">${fields}</div>
+      <button class="btn btn-primary btn-sm" data-crud-create data-crud="${esc(name)}" data-keys="${esc(JSON.stringify(keys))}">➕ Ajouter</button>
+    </div>`;
+  }
+  return `<div class="new-item-box">
+    <label class="field-label">Nouvel élément (JSON — table vide, structure libre)</label>
+    <textarea class="field-input" id="new-${name}-json" placeholder='{"label": "...", "value": "...", "order_index": 1}'></textarea>
+    <button class="btn btn-primary btn-sm" style="margin-top:8px" data-crud-create-raw data-crud="${esc(name)}">➕ Ajouter</button>
+  </div>`;
 }
-return `<div class="new-item-box"><label class="field-label">Nouvel élément (JSON — la table est vide, structure libre)</label>
-<textarea class="field-input" id="new-${name}-json" placeholder='{"label": "...", "value": "...", "order_index": 1}'></textarea>
-<button class="btn btn-primary btn-sm" style="margin-top:8px" data-crud="${esc(name)}" onclick="createCrudRawFromBtn(this)">➕ Ajouter</button></div>`;
+async function updateCrud(name, id, keys){
+  const payload = {};
+  keys.forEach(k => { payload[k] = document.getElementById(`${name}-${id}-${k}`).value; });
+  try{
+    const r = await apiFetch(`${CRUD_ENDPOINTS[name]}/${id}`, {method:'PUT', body: JSON.stringify(payload)});
+    const data = await r.json();
+    toast(data.ok ? 'Élément mis à jour' : (data.error || 'Erreur'), data.ok);
+  }catch(e){ toast('Erreur de connexion', false); }
 }
-function updateCrudFromBtn(btn){ updateCrud(btn.dataset.crud, btn.dataset.id, JSON.parse(btn.dataset.keys)); }
-function deleteCrudFromBtn(btn){ deleteCrud(btn.dataset.crud, btn.dataset.id); }
-function createCrudFromBtn(btn){ createCrud(btn.dataset.crud, JSON.parse(btn.dataset.keys)); }
-function createCrudRawFromBtn(btn){ createCrudRaw(btn.dataset.crud); }
-async function updateCrud(name,id,keys){
-const payload={}; keys.forEach(k=>{ payload[k]=document.getElementById(`${name}-${id}-${k}`).value; });
-try{
-const r=await apiFetch(`${CRUD_ENDPOINTS[name]}/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-const data=await r.json(); toast(data.ok?'Élément mis à jour':(data.error||'Erreur'),data.ok);
-}catch(e){ toast('Erreur de connexion',false); }
+async function deleteCrud(name, id){
+  if(!confirm('Supprimer cet élément ?')) return;
+  try{
+    const r = await apiFetch(`${CRUD_ENDPOINTS[name]}/${id}`, {method:'DELETE'});
+    const data = await r.json();
+    if(data.ok){ toast('Élément supprimé'); loadCrud(name); }
+    else{ toast(data.error || 'Erreur', false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
-async function deleteCrud(name,id){
-if(!confirm('Supprimer cet élément ?')) return;
-try{
-const r=await apiFetch(`${CRUD_ENDPOINTS[name]}/${id}`,{method:'DELETE'});
-const data=await r.json();
-if(data.ok){ toast('Élément supprimé'); loadCrud(name); } else { toast(data.error||'Erreur',false); }
-}catch(e){ toast('Erreur de connexion',false); }
-}
-async function createCrud(name,keys){
-const payload={}; keys.forEach(k=>{ payload[k]=document.getElementById(`new-${name}-${k}`).value; });
-try{
-const r=await apiFetch(CRUD_ENDPOINTS[name],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-const data=await r.json();
-if(data.ok){ toast('Élément ajouté'); loadCrud(name); } else { toast(data.error||'Erreur',false); }
-}catch(e){ toast('Erreur de connexion',false); }
+async function createCrud(name, keys){
+  const payload = {};
+  keys.forEach(k => { payload[k] = document.getElementById(`new-${name}-${k}`).value; });
+  try{
+    const r = await apiFetch(CRUD_ENDPOINTS[name], {method:'POST', body: JSON.stringify(payload)});
+    const data = await r.json();
+    if(data.ok){ toast('Élément ajouté'); loadCrud(name); }
+    else{ toast(data.error || 'Erreur', false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 async function createCrudRaw(name){
-let payload;
-try{ payload=JSON.parse(document.getElementById(`new-${name}-json`).value); }catch(e){ toast('JSON invalide',false); return; }
-try{
-const r=await apiFetch(CRUD_ENDPOINTS[name],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-const data=await r.json();
-if(data.ok){ toast('Élément ajouté'); loadCrud(name); } else { toast(data.error||'Erreur',false); }
-}catch(e){ toast('Erreur de connexion',false); }
+  let payload;
+  try{ payload = JSON.parse(document.getElementById(`new-${name}-json`).value); }
+  catch(e){ toast('JSON invalide', false); return; }
+  try{
+    const r = await apiFetch(CRUD_ENDPOINTS[name], {method:'POST', body: JSON.stringify(payload)});
+    const data = await r.json();
+    if(data.ok){ toast('Élément ajouté'); loadCrud(name); }
+    else{ toast(data.error || 'Erreur', false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
-loadOverview();
-
-let allUsers=[];
-const RESTRICTION_LABELS={none:'Normal', no_withdrawal:'Retraits bloqués', no_login:'Connexion bloquée', banned:'Banni'};
+// ── Utilisateurs ────────────────────────────────────
+let allUsers = [];
+const RESTRICTION_LABELS = {none:'Normal', no_withdrawal:'Retraits bloqués', no_login:'Connexion bloquée', banned:'Banni'};
 
 async function loadUsers(){
-const el=document.getElementById('users-list');
-el.innerHTML='<div class="skeleton-row"></div><div class="skeleton-row"></div>';
-try{
-const r=await fetch('/api/admin/users');
-const data=await r.json();
-allUsers=data.items||[];
-renderUsers(allUsers);
-}catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
+  const el = document.getElementById('users-list');
+  el.innerHTML = '<div class="skeleton-row"></div><div class="skeleton-row"></div>';
+  try{
+    const r = await fetch('/api/admin/users');
+    const data = await r.json();
+    allUsers = data.items || [];
+    renderUsers(allUsers);
+  }catch(e){ el.innerHTML = '<div class="empty">Erreur de chargement.</div>'; }
 }
 function renderUsers(list){
-const el=document.getElementById('users-list');
-if(!list.length){ el.innerHTML='<div class="empty">Aucun utilisateur.</div>'; return; }
-el.innerHTML=`<table class="tbl"><thead><tr>
-<th>Nom</th><th>Email</th><th>Pays</th><th>Plan</th><th>KYC</th><th>Restriction</th><th>En ligne</th><th>Actif</th><th>Admin</th><th></th>
-</tr></thead><tbody>
-${list.map(u=>{
-const level=u.restriction_level||'none';
-return `<tr>
-<td>${esc(u.firstname)} ${esc(u.lastname)}</td>
-<td class="mono">${esc(u.email)}</td>
-<td>${esc(u.country)}</td>
-<td><input class="mini-input" id="u-plan-${esc(u.id)}" value="${esc(u.plan)}"></td>
-<td><span class="badge ${u.kyc_status==='verified'?'b-success':u.kyc_status==='pending'?'b-pending':'b-failed'}">${esc(u.kyc_status)||'unverified'}</span></td>
-<td><span class="badge b-${esc(level)}">${esc(RESTRICTION_LABELS[level]||level)}</span></td>
-<td><span class="badge" style="${u.is_online?'background:var(--green-tint);color:#0A7A50':'background:var(--border-soft);color:var(--muted)'}">${u.is_online?'🟢 En ligne':'⚪ Hors ligne'}</span></td>
-<td><input type="checkbox" id="u-active-${esc(u.id)}" ${u.is_active!==false?'checked':''}></td>
-<td><input type="checkbox" id="u-admin-${esc(u.id)}" ${u.is_admin?'checked':''}></td>
-<td style="white-space:nowrap">
-<a class="btn btn-outline btn-sm" href="/admin/users/${encodeURIComponent(u.id)}" style="text-decoration:none">🔍</a>
-<button class="btn btn-warn btn-sm" data-id="${esc(u.id)}" data-name="${esc((u.firstname||'')+' '+(u.lastname||''))}" onclick="openRestrictModalFromBtn(this)">🛡️</button>
-<button class="btn btn-outline btn-sm" data-id="${esc(u.id)}" data-name="${esc((u.firstname||'')+' '+(u.lastname||''))}" onclick="openHistoryModalFromBtn(this)">📜</button>
-<button class="btn btn-primary btn-sm" data-id="${esc(u.id)}" onclick="saveUserFromBtn(this)">💾</button>
-<button class="btn btn-danger btn-sm" data-id="${esc(u.id)}" onclick="deleteUserFromBtn(this)">🗑</button>
-</td>
-</tr>`;
-}).join('')}
-</tbody></table>`;
+  const el = document.getElementById('users-list');
+  if(!list.length){ el.innerHTML = '<div class="empty">Aucun utilisateur.</div>'; return; }
+  el.innerHTML = `<table class="tbl"><thead><tr>
+    <th>Nom</th><th>Email</th><th>Pays</th><th>Plan</th><th>KYC</th><th>Restriction</th><th>En ligne</th><th>Actif</th><th>Admin</th><th></th>
+  </tr></thead><tbody>
+  ${list.map(u => {
+    const level = u.restriction_level || 'none';
+    return `<tr>
+      <td>${esc(u.firstname)} ${esc(u.lastname)}</td>
+      <td class="mono">${esc(u.email)}</td>
+      <td>${esc(u.country)}</td>
+      <td><input class="mini-input" id="u-plan-${esc(u.id)}" value="${esc(u.plan)}"></td>
+      <td><span class="badge ${u.kyc_status==='verified'?'b-success':u.kyc_status==='pending'?'b-pending':'b-failed'}">${esc(u.kyc_status) || 'unverified'}</span></td>
+      <td><span class="badge b-${esc(level)}">${esc(RESTRICTION_LABELS[level] || level)}</span></td>
+      <td><span class="badge" style="${u.is_online?'background:var(--green-tint);color:#0A7A50':'background:var(--border-soft);color:var(--muted)'}">${u.is_online?'🟢 En ligne':'⚪ Hors ligne'}</span></td>
+      <td><input type="checkbox" id="u-active-${esc(u.id)}" ${u.is_active!==false?'checked':''}></td>
+      <td><input type="checkbox" id="u-admin-${esc(u.id)}" ${u.is_admin?'checked':''}></td>
+      <td style="white-space:nowrap">
+        <a class="btn btn-outline btn-sm" href="/admin/users/${encodeURIComponent(u.id)}" style="text-decoration:none" title="Voir détail">🔍</a>
+        <button class="btn btn-warn btn-sm" data-uid="${esc(u.id)}" data-uname="${esc((u.firstname||'')+' '+(u.lastname||''))}" title="Restreindre">🛡️</button>
+        <button class="btn btn-outline btn-sm" data-uid="${esc(u.id)}" data-uname="${esc((u.firstname||'')+' '+(u.lastname||''))}" title="Historique">📜</button>
+        <button class="btn btn-primary btn-sm" data-save-uid="${esc(u.id)}" title="Enregistrer">💾</button>
+        <button class="btn btn-danger btn-sm" data-del-uid="${esc(u.id)}" title="Supprimer">🗑</button>
+      </td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
+
+  el.querySelectorAll('[data-save-uid]').forEach(b => b.addEventListener('click', () => saveUser(b.dataset.saveUid)));
+  el.querySelectorAll('[data-del-uid]').forEach(b => b.addEventListener('click', () => deleteUser(b.dataset.delUid)));
+  el.querySelectorAll('[data-uid][data-uname]').forEach(b => {
+    const uid = b.dataset.uid, uname = b.dataset.uname;
+    if (b.title === 'Restreindre') b.addEventListener('click', () => openRestrictModal(uid, uname));
+    if (b.title === 'Historique') b.addEventListener('click', () => openHistoryModal(uid, uname));
+  });
 }
 function filterUsers(){
-const q=document.getElementById('users-search').value.toLowerCase();
-renderUsers(allUsers.filter(u=>(u.firstname||'').toLowerCase().includes(q)||(u.lastname||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)));
+  const q = document.getElementById('users-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u =>
+    (u.firstname||'').toLowerCase().includes(q) ||
+    (u.lastname||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q)
+  ));
 }
-function saveUserFromBtn(btn){ saveUser(btn.dataset.id); }
-function deleteUserFromBtn(btn){ deleteUser(btn.dataset.id); }
+document.getElementById('users-search').addEventListener('input', filterUsers);
+
 async function saveUser(id){
-const payload={ plan: document.getElementById('u-plan-'+id).value, is_active: document.getElementById('u-active-'+id).checked, is_admin: document.getElementById('u-admin-'+id).checked };
-try{
-const r=await apiFetch('/api/admin/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-const data=await r.json(); toast(data.ok?'Utilisateur mis à jour':(data.error||'Erreur'),data.ok);
-}catch(e){ toast('Erreur de connexion',false); }
+  const payload = {
+    plan: document.getElementById('u-plan-'+id).value,
+    is_active: document.getElementById('u-active-'+id).checked,
+    is_admin: document.getElementById('u-admin-'+id).checked,
+  };
+  try{
+    const r = await apiFetch('/api/admin/users/'+id, {method:'PUT', body: JSON.stringify(payload)});
+    const data = await r.json();
+    toast(data.ok ? 'Utilisateur mis à jour' : (data.error || 'Erreur'), data.ok);
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 async function deleteUser(id){
-if(!confirm('Supprimer définitivement cet utilisateur ?')) return;
-try{
-const r=await apiFetch('/api/admin/users/'+id,{method:'DELETE'});
-const data=await r.json();
-if(data.ok){ toast('Utilisateur supprimé'); loadUsers(); } else { toast(data.error||'Erreur',false); }
-}catch(e){ toast('Erreur de connexion',false); }
+  if(!confirm('Supprimer définitivement cet utilisateur ?')) return;
+  try{
+    const r = await apiFetch('/api/admin/users/'+id, {method:'DELETE'});
+    const data = await r.json();
+    if(data.ok){ toast('Utilisateur supprimé'); loadUsers(); }
+    else{ toast(data.error || 'Erreur', false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
-const COUNTRIES_LIST=[{code:'CM',flag:'🇨🇲',name:'Cameroun'},{code:'CI',flag:'🇨🇮',name:"Côte d'Ivoire"},{code:'BF',flag:'🇧🇫',name:'Burkina Faso'},{code:'BJ',flag:'🇧🇯',name:'Bénin'},{code:'TG',flag:'🇹🇬',name:'Togo'},{code:'CD',flag:'🇨🇩',name:'RDC'},{code:'GA',flag:'🇬🇦',name:'Gabon'}];
-let restrictUserId=null;
+// ── Restriction modal ────────────────────────────────
+const COUNTRIES_LIST = [
+  {code:'CM',flag:'🇨🇲',name:'Cameroun'},
+  {code:'CI',flag:'🇨🇮',name:"Côte d'Ivoire"},
+  {code:'BF',flag:'🇧🇫',name:'Burkina Faso'},
+  {code:'BJ',flag:'🇧🇯',name:'Bénin'},
+  {code:'TG',flag:'🇹🇬',name:'Togo'},
+  {code:'CD',flag:'🇨🇩',name:'RDC'},
+  {code:'GA',flag:'🇬🇦',name:'Gabon'},
+];
+let restrictUserId = null;
 
-function buildCountryChips(){
-document.getElementById('country-chips').innerHTML=COUNTRIES_LIST.map(c=>
-`<input type="checkbox" class="chip-check" id="ctry-${c.code}" value="${c.code}"><label class="chip-label" for="ctry-${c.code}">${c.flag} ${c.name}</label>`
+document.getElementById('country-chips').innerHTML = COUNTRIES_LIST.map(c =>
+  `<input type="checkbox" class="chip-check" id="ctry-${c.code}" value="${c.code}"><label class="chip-label" for="ctry-${c.code}">${c.flag} ${c.name}</label>`
 ).join('');
-}
-buildCountryChips();
 
-document.querySelectorAll('.level-opt input').forEach(inp=>{
-inp.addEventListener('change', ()=>{
-document.querySelectorAll('.level-opt').forEach(o=>o.classList.remove('selected'));
-inp.closest('.level-opt').classList.add('selected');
-const level=inp.value;
-document.getElementById('duration-field').style.display = level==='no_withdrawal' ? 'block' : 'none';
-document.getElementById('reason-field').style.display = level==='none' ? 'none' : 'block';
-});
+document.querySelectorAll('.level-opt input').forEach(inp => {
+  inp.addEventListener('change', () => {
+    document.querySelectorAll('.level-opt').forEach(o => o.classList.remove('selected'));
+    inp.closest('.level-opt').classList.add('selected');
+    const level = inp.value;
+    document.getElementById('duration-field').style.display = level === 'no_withdrawal' ? 'block' : 'none';
+    document.getElementById('reason-field').style.display = level === 'none' ? 'none' : 'block';
+  });
 });
 
-function openRestrictModalFromBtn(btn){ openRestrictModal(btn.dataset.id, btn.dataset.name); }
 function openRestrictModal(userId, name){
-restrictUserId=userId;
-document.getElementById('restrict-user-name').textContent=name;
-const u=allUsers.find(x=>x.id===userId)||{};
-const level=u.restriction_level||'none';
-document.querySelectorAll('.level-opt input').forEach(inp=>{
-inp.checked = inp.value===level;
-inp.closest('.level-opt').classList.toggle('selected', inp.value===level);
-});
-document.getElementById('duration-field').style.display = level==='no_withdrawal' ? 'block' : 'none';
-document.getElementById('reason-field').style.display = level==='none' ? 'none' : 'block';
-document.getElementById('restrict-reason').value = u.restriction_reason || '';
-document.getElementById('restrict-duration').value='';
-const blockedCountries = new Set(u.restricted_countries||[]);
-document.querySelectorAll('#country-chips .chip-check').forEach(c=>{ c.checked = blockedCountries.has(c.value.toUpperCase()); });
-const blockedOps = new Set((u.restricted_operators||[]).map(o=>o.toLowerCase()));
-document.querySelectorAll('#operator-chips .chip-check').forEach(c=>{ c.checked = blockedOps.has(c.value); });
-document.getElementById('restrict-modal').classList.add('show');
+  restrictUserId = userId;
+  document.getElementById('restrict-user-name').textContent = name;
+  const u = allUsers.find(x => x.id === userId) || {};
+  const level = u.restriction_level || 'none';
+  document.querySelectorAll('.level-opt input').forEach(inp => {
+    inp.checked = inp.value === level;
+    inp.closest('.level-opt').classList.toggle('selected', inp.value === level);
+  });
+  document.getElementById('duration-field').style.display = level === 'no_withdrawal' ? 'block' : 'none';
+  document.getElementById('reason-field').style.display = level === 'none' ? 'none' : 'block';
+  document.getElementById('restrict-reason').value = u.restriction_reason || '';
+  document.getElementById('restrict-duration').value = '';
+  const blockedCountries = new Set((u.restricted_countries || []).map(c => String(c).toUpperCase()));
+  document.querySelectorAll('#country-chips .chip-check').forEach(c => { c.checked = blockedCountries.has(c.value.toUpperCase()); });
+  const blockedOps = new Set((u.restricted_operators || []).map(o => String(o).toLowerCase()));
+  document.querySelectorAll('#operator-chips .chip-check').forEach(c => { c.checked = blockedOps.has(c.value); });
+  document.getElementById('restrict-modal').classList.add('show');
 }
-function closeRestrictModal(){ document.getElementById('restrict-modal').classList.remove('show'); restrictUserId=null; }
+function closeRestrictModal(){
+  document.getElementById('restrict-modal').classList.remove('show');
+  restrictUserId = null;
+}
+document.getElementById('btn-cancel-restrict').addEventListener('click', closeRestrictModal);
+document.getElementById('restrict-modal').addEventListener('click', e => {
+  if(e.target.id === 'restrict-modal') closeRestrictModal();
+});
 
 async function saveRestriction(){
-if(!restrictUserId) return;
-const levelInput=document.querySelector('.level-opt input:checked');
-if(!levelInput){ toast('Sélectionnez un niveau',false); return; }
-const level=levelInput.value;
-const reason=document.getElementById('restrict-reason').value.trim();
-const duration=document.getElementById('restrict-duration').value;
-if(level!=='none' && !reason){ toast('Un motif est requis',false); return; }
+  if(!restrictUserId) return;
+  const levelInput = document.querySelector('.level-opt input:checked');
+  if(!levelInput){ toast('Sélectionnez un niveau', false); return; }
+  const level = levelInput.value;
+  const reason = document.getElementById('restrict-reason').value.trim();
+  const duration = document.getElementById('restrict-duration').value;
+  if(level !== 'none' && !reason){ toast('Un motif est requis', false); return; }
 
-const btn=document.getElementById('btn-save-restriction');
-btn.disabled=true; btn.textContent='Enregistrement...';
+  const btn = document.getElementById('btn-save-restriction');
+  btn.disabled = true; btn.textContent = 'Enregistrement...';
 
-try{
-const r1=await apiFetch('/api/admin/users/'+restrictUserId+'/restriction',{
-method:'PUT', headers:{'Content-Type':'application/json'},
-body:JSON.stringify({level, reason, duration_hours: duration || null})
-});
-const d1=await r1.json();
-if(!d1.ok){ toast(d1.error||'Erreur',false); btn.disabled=false; btn.textContent='Enregistrer'; return; }
+  try{
+    const r1 = await apiFetch('/api/admin/users/'+restrictUserId+'/restriction', {
+      method:'PUT',
+      body: JSON.stringify({level, reason, duration_hours: duration || null}),
+    });
+    const d1 = await r1.json();
+    if(!d1.ok){ toast(d1.error || 'Erreur', false); btn.disabled=false; btn.textContent='Enregistrer'; return; }
 
-const countries=[...document.querySelectorAll('#country-chips .chip-check:checked')].map(c=>c.value);
-const r2=await apiFetch('/api/admin/users/'+restrictUserId+'/country-restrictions',{
-method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({countries})
-});
-await r2.json();
+    const countries = [...document.querySelectorAll('#country-chips .chip-check:checked')].map(c => c.value);
+    await apiFetch('/api/admin/users/'+restrictUserId+'/country-restrictions', {
+      method:'PUT',
+      body: JSON.stringify({countries}),
+    });
 
-const operators=[...document.querySelectorAll('#operator-chips .chip-check')].map(c=>c.value);
-const checkedOps=[...document.querySelectorAll('#operator-chips .chip-check:checked')].map(c=>c.value);
-const uncheckedOps=operators.filter(o=>!checkedOps.includes(o));
-if(checkedOps.length) await apiFetch('/api/admin/users/operator-restrictions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:[restrictUserId], operators:checkedOps, blocked:true})});
-if(uncheckedOps.length) await apiFetch('/api/admin/users/operator-restrictions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:[restrictUserId], operators:uncheckedOps, blocked:false})});
+    const allOps = [...document.querySelectorAll('#operator-chips .chip-check')].map(c => c.value);
+    const checkedOps = [...document.querySelectorAll('#operator-chips .chip-check:checked')].map(c => c.value);
+    const uncheckedOps = allOps.filter(o => !checkedOps.includes(o));
+    if(checkedOps.length){
+      await apiFetch('/api/admin/users/operator-restrictions', {
+        method:'POST',
+        body: JSON.stringify({user_ids:[restrictUserId], operators: checkedOps, blocked: true}),
+      });
+    }
+    if(uncheckedOps.length){
+      await apiFetch('/api/admin/users/operator-restrictions', {
+        method:'POST',
+        body: JSON.stringify({user_ids:[restrictUserId], operators: uncheckedOps, blocked: false}),
+      });
+    }
 
-toast('Restrictions mises à jour');
-closeRestrictModal();
-loadUsers();
-}catch(e){ toast('Erreur de connexion',false); }
-btn.disabled=false; btn.textContent='Enregistrer';
+    toast('Restrictions mises à jour');
+    closeRestrictModal();
+    loadUsers();
+  }catch(e){ toast('Erreur de connexion', false); }
+  btn.disabled = false; btn.textContent = 'Enregistrer';
 }
+document.getElementById('btn-save-restriction').addEventListener('click', saveRestriction);
 
-let historyData=null;
-function openHistoryModalFromBtn(btn){ openHistoryModal(btn.dataset.id, btn.dataset.name); }
+// ── Historique modal ────────────────────────────────
+let historyData = null;
 async function openHistoryModal(userId, name){
-document.getElementById('history-user-name').textContent=name;
-document.getElementById('history-modal').classList.add('show');
-document.getElementById('history-body').innerHTML='<div class="skeleton-row"></div><div class="skeleton-row"></div>';
-document.getElementById('history-profile').innerHTML='';
-try{
-const r=await fetch('/api/admin/users/'+userId+'/activity');
-const data=await r.json();
-if(!data.ok){ toast(data.error||'Erreur',false); return; }
-historyData=data;
-const u=data.user;
-const balances=Object.entries(u.balances||{}).map(([c,v])=>`${fmtAmount(v)} ${esc(c)}`).join(', ')||'—';
-document.getElementById('history-profile').innerHTML=`
-<div class="ps-item"><div class="field-label">Email</div><div class="mono">${esc(u.email)}</div></div>
-<div class="ps-item"><div class="field-label">Pays</div><div>${esc(u.country)}</div></div>
-<div class="ps-item"><div class="field-label">Restriction</div><div><span class="badge b-${esc(u.restriction_level)}">${esc(RESTRICTION_LABELS[u.restriction_level]||u.restriction_level)}</span></div></div>
-<div class="ps-item"><div class="field-label">Solde</div><div>${balances}</div></div>
-<div class="ps-item"><div class="field-label">Compte créé</div><div>${fmtDate(u.created_at)}</div></div>`;
-showHistoryTab('activity');
-}catch(e){ toast('Erreur de connexion',false); }
+  document.getElementById('history-user-name').textContent = name;
+  document.getElementById('history-modal').classList.add('show');
+  document.getElementById('history-body').innerHTML = '<div class="skeleton-row"></div><div class="skeleton-row"></div>';
+  document.getElementById('history-profile').innerHTML = '';
+  try{
+    const r = await fetch('/api/admin/users/'+userId+'/activity');
+    const data = await r.json();
+    if(!data.ok){ toast(data.error || 'Erreur', false); return; }
+    historyData = data;
+    const u = data.user;
+    const balances = Object.entries(u.balances || {}).map(([c,v]) => `${fmtAmount(v)} ${esc(c)}`).join(', ') || '—';
+    document.getElementById('history-profile').innerHTML = `
+      <div class="ps-item"><div class="field-label">Email</div><div class="mono">${esc(u.email)}</div></div>
+      <div class="ps-item"><div class="field-label">Pays</div><div>${esc(u.country)}</div></div>
+      <div class="ps-item"><div class="field-label">Restriction</div><div><span class="badge b-${esc(u.restriction_level)}">${esc(RESTRICTION_LABELS[u.restriction_level] || u.restriction_level)}</span></div></div>
+      <div class="ps-item"><div class="field-label">Solde</div><div>${balances}</div></div>
+      <div class="ps-item"><div class="field-label">Compte créé</div><div>${fmtDate(u.created_at)}</div></div>`;
+    showHistoryTab('activity');
+  }catch(e){ toast('Erreur de connexion', false); }
 }
-function closeHistoryModal(){ document.getElementById('history-modal').classList.remove('show'); historyData=null; }
+function closeHistoryModal(){
+  document.getElementById('history-modal').classList.remove('show');
+  historyData = null;
+}
+document.getElementById('btn-close-history').addEventListener('click', closeHistoryModal);
+document.getElementById('history-modal').addEventListener('click', e => {
+  if(e.target.id === 'history-modal') closeHistoryModal();
+});
+document.getElementById('btn-print').addEventListener('click', () => window.print());
 
 function showHistoryTab(which){
-document.querySelectorAll('.activity-tab').forEach(t=>t.classList.toggle('active', t.dataset.htab===which));
-const el=document.getElementById('history-body');
-if(!historyData){ return; }
+  document.querySelectorAll('.activity-tab').forEach(t => t.classList.toggle('active', t.dataset.htab === which));
+  const el = document.getElementById('history-body');
+  if(!historyData) return;
 
-if(which==='activity'){
-const items=historyData.activity||[];
-el.innerHTML = items.length ? `<table class="tbl"><thead><tr><th>Événement</th><th>Détails</th><th>IP</th><th>Date</th></tr></thead><tbody>
-${items.map(a=>`<tr><td><strong>${esc(a.event_type)}</strong></td><td class="mono">${esc(JSON.stringify(a.details||{}))}</td><td class="mono">${esc(a.ip_address)}</td><td style="font-size:.72rem;color:var(--muted)">${fmtDate(a.created_at)}</td></tr>`).join('')}
-</tbody></table>` : '<div class="empty">Aucune activité enregistrée.</div>';
-}else if(which==='tx'){
-const items=historyData.transactions||[];
-el.innerHTML = items.length ? `<table class="tbl"><thead><tr><th>Token</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>
-${items.map(t=>`<tr><td class="mono">${esc((t.token||'').slice(0,12))}...</td><td>${esc(t.client_name)}</td><td>${fmtAmount(t.amount)} ${esc(t.currency)}</td><td><span class="badge ${t.status==='paid'?'b-success':t.status==='pending'?'b-pending':'b-failed'}">${esc(t.status)}</span></td><td style="font-size:.72rem;color:var(--muted)">${fmtDate(t.created_at)}</td></tr>`).join('')}
-</tbody></table>` : '<div class="empty">Aucune transaction.</div>';
-}else if(which==='payouts'){
-const items=historyData.payouts||[];
-el.innerHTML = items.length ? `<table class="tbl"><thead><tr><th>Montant</th><th>Téléphone</th><th>Statut</th><th>Date</th></tr></thead><tbody>
-${items.map(p=>`<tr><td>${fmtAmount(p.amount)} ${esc(p.currency)}</td><td>${esc(p.phone)}</td><td><span class="badge ${p.status==='paid'?'b-success':p.status==='pending'?'b-pending':'b-failed'}">${esc(p.status)}</span></td><td style="font-size:.72rem;color:var(--muted)">${fmtDate(p.created_at)}</td></tr>`).join('')}
-</tbody></table>` : '<div class="empty">Aucun retrait.</div>';
+  if(which === 'activity'){
+    const items = historyData.activity || [];
+    el.innerHTML = items.length ? `<table class="tbl"><thead><tr><th>Événement</th><th>Détails</th><th>IP</th><th>Date</th></tr></thead><tbody>
+      ${items.map(a => `<tr><td><strong>${esc(a.event_type)}</strong></td><td class="mono">${esc(JSON.stringify(a.details || {}))}</td><td class="mono">${esc(a.ip_address)}</td><td style="font-size:.72rem;color:var(--muted)">${fmtDate(a.created_at)}</td></tr>`).join('')}
+    </tbody></table>` : '<div class="empty">Aucune activité enregistrée.</div>';
+  } else if(which === 'tx'){
+    const items = historyData.transactions || [];
+    el.innerHTML = items.length ? `<table class="tbl"><thead><tr><th>Token</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>
+      ${items.map(t => `<tr><td class="mono">${esc((t.token||'').slice(0,12))}...</td><td>${esc(t.client_name)}</td><td>${fmtAmount(t.amount)} ${esc(t.currency)}</td><td><span class="badge ${t.status==='paid'?'b-success':t.status==='pending'?'b-pending':'b-failed'}">${esc(t.status)}</span></td><td style="font-size:.72rem;color:var(--muted)">${fmtDate(t.created_at)}</td></tr>`).join('')}
+    </tbody></table>` : '<div class="empty">Aucune transaction.</div>';
+  } else if(which === 'payouts'){
+    const items = historyData.payouts || [];
+    el.innerHTML = items.length ? `<table class="tbl"><thead><tr><th>Montant</th><th>Téléphone</th><th>Statut</th><th>Date</th></tr></thead><tbody>
+      ${items.map(p => `<tr><td>${fmtAmount(p.amount)} ${esc(p.currency)}</td><td>${esc(p.phone)}</td><td><span class="badge ${p.status==='paid'?'b-success':p.status==='pending'?'b-pending':'b-failed'}">${esc(p.status)}</span></td><td style="font-size:.72rem;color:var(--muted)">${fmtDate(p.created_at)}</td></tr>`).join('')}
+    </tbody></table>` : '<div class="empty">Aucun retrait.</div>';
+  }
 }
-}
+document.querySelectorAll('.activity-tab').forEach(t => {
+  t.addEventListener('click', () => showHistoryTab(t.dataset.htab));
+});
 
-let allTxAdmin=[];
+// ── Transactions admin ──────────────────────────────
+let allTxAdmin = [];
 async function loadAllTx(){
-const el=document.getElementById('alltx-list');
-el.innerHTML='<div class="skeleton-row"></div><div class="skeleton-row"></div>';
-try{
-const r=await fetch('/api/admin/transactions');
-const data=await r.json();
-allTxAdmin=data.items||[];
-renderAllTx(allTxAdmin);
-}catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
+  const el = document.getElementById('alltx-list');
+  el.innerHTML = '<div class="skeleton-row"></div><div class="skeleton-row"></div>';
+  try{
+    const r = await fetch('/api/admin/transactions');
+    const data = await r.json();
+    allTxAdmin = data.items || [];
+    renderAllTx(allTxAdmin);
+  }catch(e){ el.innerHTML = '<div class="empty">Erreur de chargement.</div>'; }
 }
 function renderAllTx(list){
-const el=document.getElementById('alltx-list');
-if(!list.length){ el.innerHTML='<div class="empty">Aucune transaction.</div>'; return; }
-el.innerHTML=`<table class="tbl"><thead><tr><th>ID</th><th>Client</th><th>Téléphone</th><th>Montant</th><th>Statut</th><th>Env.</th><th>Date</th><th></th></tr></thead><tbody>
-${list.map(tx=>`<tr>
-<td class="mono">${esc((tx.token||'').substring(0,10))}...</td>
-<td>${esc(tx.client_name)}</td>
-<td>${esc(tx.client_phone)}</td>
-<td>${fmtAmount(tx.amount)} ${esc(tx.currency||'')}</td>
-<td><select class="mini-select" id="tx-status-${esc(tx.token)}">
-<option value="pending" ${tx.status==='pending'?'selected':''}>En attente</option>
-<option value="paid" ${tx.status==='paid'?'selected':''}>Payé</option>
-<option value="failed" ${tx.status==='failed'?'selected':''}>Échoué</option>
-</select></td>
-<td>${esc(tx.environment)}</td>
-<td style="font-size:.72rem;color:var(--muted)">${fmtDate(tx.created_at)}</td>
-<td style="white-space:nowrap">
-<button class="btn btn-primary btn-sm" data-token="${esc(tx.token)}" onclick="saveTxStatusFromBtn(this)">💾</button>
-<button class="btn btn-danger btn-sm" data-token="${esc(tx.token)}" onclick="deleteTxFromBtn(this)">🗑</button>
-</td></tr>`).join('')}
-</tbody></table>`;
+  const el = document.getElementById('alltx-list');
+  if(!list.length){ el.innerHTML = '<div class="empty">Aucune transaction.</div>'; return; }
+  el.innerHTML = `<table class="tbl"><thead><tr><th>ID</th><th>Client</th><th>Téléphone</th><th>Montant</th><th>Statut</th><th>Env.</th><th>Date</th><th></th></tr></thead><tbody>
+    ${list.map(tx => `<tr>
+      <td class="mono">${esc((tx.token||'').substring(0,10))}...</td>
+      <td>${esc(tx.client_name)}</td>
+      <td>${esc(tx.client_phone)}</td>
+      <td>${fmtAmount(tx.amount)} ${esc(tx.currency||'')}</td>
+      <td><select class="mini-select" id="tx-status-${esc(tx.token)}">
+        <option value="pending" ${tx.status==='pending'?'selected':''}>En attente</option>
+        <option value="paid" ${tx.status==='paid'?'selected':''}>Payé</option>
+        <option value="failed" ${tx.status==='failed'?'selected':''}>Échoué</option>
+      </select></td>
+      <td>${esc(tx.environment)}</td>
+      <td style="font-size:.72rem;color:var(--muted)">${fmtDate(tx.created_at)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-primary btn-sm" data-save-token="${esc(tx.token)}">💾</button>
+        <button class="btn btn-danger btn-sm" data-del-token="${esc(tx.token)}">🗑</button>
+      </td>
+    </tr>`).join('')}
+  </tbody></table>`;
+
+  el.querySelectorAll('[data-save-token]').forEach(b => b.addEventListener('click', () => saveTxStatus(b.dataset.saveToken)));
+  el.querySelectorAll('[data-del-token]').forEach(b => b.addEventListener('click', () => deleteTx(b.dataset.delToken)));
 }
 function filterAllTx(){
-const q=document.getElementById('tx-search').value.toLowerCase();
-renderAllTx(allTxAdmin.filter(tx=>(tx.client_name||'').toLowerCase().includes(q)||(tx.token||'').toLowerCase().includes(q)));
+  const q = document.getElementById('tx-search').value.toLowerCase();
+  renderAllTx(allTxAdmin.filter(tx =>
+    (tx.client_name||'').toLowerCase().includes(q) ||
+    (tx.token||'').toLowerCase().includes(q)
+  ));
 }
-function saveTxStatusFromBtn(btn){ saveTxStatus(btn.dataset.token); }
-function deleteTxFromBtn(btn){ deleteTx(btn.dataset.token); }
+document.getElementById('tx-search').addEventListener('input', filterAllTx);
+
 async function saveTxStatus(token){
-const status=document.getElementById('tx-status-'+token).value;
-try{
-const r=await apiFetch('/api/admin/transactions/'+token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-const data=await r.json(); toast(data.ok?'Statut mis à jour':(data.error||'Erreur'),data.ok);
-}catch(e){ toast('Erreur de connexion',false); }
+  const status = document.getElementById('tx-status-'+token).value;
+  try{
+    const r = await apiFetch('/api/admin/transactions/'+token, {method:'PUT', body: JSON.stringify({status})});
+    const data = await r.json();
+    toast(data.ok ? 'Statut mis à jour' : (data.error || 'Erreur'), data.ok);
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 async function deleteTx(token){
-if(!confirm('Supprimer cette transaction ?')) return;
-try{
-const r=await apiFetch('/api/admin/transactions/'+token,{method:'DELETE'});
-const data=await r.json();
-if(data.ok){ toast('Transaction supprimée'); loadAllTx(); } else { toast(data.error||'Erreur',false); }
-}catch(e){ toast('Erreur de connexion',false); }
+  if(!confirm('Supprimer cette transaction ?')) return;
+  try{
+    const r = await apiFetch('/api/admin/transactions/'+token, {method:'DELETE'});
+    const data = await r.json();
+    if(data.ok){ toast('Transaction supprimée'); loadAllTx(); }
+    else{ toast(data.error || 'Erreur', false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
-function openPayoutForm(){ const box=document.getElementById('payout-form-box'); box.style.display=box.style.display==='none'?'block':'none'; }
-async function createPayout(){
-const payload={
-user_id: document.getElementById('po-user-id').value.trim(),
-amount: document.getElementById('po-amount').value,
-phone: document.getElementById('po-phone').value.trim(),
-operator: document.getElementById('po-operator').value.trim(),
-country: document.getElementById('po-country').value.trim(),
-status: document.getElementById('po-status').value
-};
-if(!payload.user_id||!payload.amount||!payload.phone){ toast('User ID, montant et téléphone requis',false); return; }
-try{
-const r=await apiFetch('/api/admin/payouts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-const data=await r.json();
-if(data.ok){ toast('Payout créé'); document.getElementById('payout-form-box').style.display='none'; loadPayouts(); } else { toast(data.error||'Erreur',false); }
-}catch(e){ toast('Erreur de connexion',false); }
-}
+// ── Payouts ─────────────────────────────────────────
+document.getElementById('btn-open-payout-form').addEventListener('click', () => {
+  const box = document.getElementById('payout-form-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('btn-create-payout').addEventListener('click', async () => {
+  const payload = {
+    user_id: document.getElementById('po-user-id').value.trim(),
+    amount: document.getElementById('po-amount').value,
+    phone: document.getElementById('po-phone').value.trim(),
+    operator: document.getElementById('po-operator').value.trim(),
+    country: document.getElementById('po-country').value.trim(),
+    status: document.getElementById('po-status').value,
+  };
+  if(!payload.user_id || !payload.amount || !payload.phone){ toast('User ID, montant et téléphone requis', false); return; }
+  try{
+    const r = await apiFetch('/api/admin/payouts', {method:'POST', body: JSON.stringify(payload)});
+    const data = await r.json();
+    if(data.ok){ toast('Payout créé'); document.getElementById('payout-form-box').style.display = 'none'; loadPayouts(); }
+    else{ toast(data.error || 'Erreur', false); }
+  }catch(e){ toast('Erreur de connexion', false); }
+});
+
 async function loadPayouts(){
-const el=document.getElementById('payouts-list');
-el.innerHTML='<div class="skeleton-row"></div><div class="skeleton-row"></div>';
-try{
-const r=await fetch('/api/admin/payouts');
-const data=await r.json();
-const items=data.items||[];
-if(!items.length){ el.innerHTML='<div class="empty">Aucun payout enregistré.</div>'; return; }
-el.innerHTML=`<table class="tbl"><thead><tr><th>User ID</th><th>Montant</th><th>Téléphone</th><th>Opérateur</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody>
-${items.map(p=>`<tr>
-<td class="mono">${esc((p.user_id||'').substring(0,8))}...</td>
-<td>${fmtAmount(p.amount)} ${esc(p.currency||'')}</td>
-<td>${esc(p.phone)}</td>
-<td>${esc(p.operator)}</td>
-<td><select class="mini-select" id="po-status-${esc(p.id)}">
-<option value="pending" ${p.status==='pending'?'selected':''}>En attente</option>
-<option value="paid" ${p.status==='paid'?'selected':''}>Payé</option>
-<option value="failed" ${p.status==='failed'?'selected':''}>Échoué</option>
-</select></td>
-<td style="font-size:.72rem;color:var(--muted)">${fmtDate(p.created_at)}</td>
-<td style="white-space:nowrap">
-<button class="btn btn-primary btn-sm" data-id="${esc(p.id)}" onclick="savePayoutStatusFromBtn(this)">💾</button>
-<button class="btn btn-danger btn-sm" data-id="${esc(p.id)}" onclick="deletePayoutFromBtn(this)">🗑</button>
-</td></tr>`).join('')}
-</tbody></table>`;
-}catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
+  const el = document.getElementById('payouts-list');
+  el.innerHTML = '<div class="skeleton-row"></div><div class="skeleton-row"></div>';
+  try{
+    const r = await fetch('/api/admin/payouts');
+    const data = await r.json();
+    const items = data.items || [];
+    if(!items.length){ el.innerHTML = '<div class="empty">Aucun payout enregistré.</div>'; return; }
+    el.innerHTML = `<table class="tbl"><thead><tr><th>User ID</th><th>Montant</th><th>Téléphone</th><th>Opérateur</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody>
+      ${items.map(p => `<tr>
+        <td class="mono">${esc((p.user_id||'').substring(0,8))}...</td>
+        <td>${fmtAmount(p.amount)} ${esc(p.currency||'')}</td>
+        <td>${esc(p.phone)}</td>
+        <td>${esc(p.operator)}</td>
+        <td><select class="mini-select" id="po-status-${esc(p.id)}">
+          <option value="pending" ${p.status==='pending'?'selected':''}>En attente</option>
+          <option value="paid" ${p.status==='paid'?'selected':''}>Payé</option>
+          <option value="failed" ${p.status==='failed'?'selected':''}>Échoué</option>
+        </select></td>
+        <td style="font-size:.72rem;color:var(--muted)">${fmtDate(p.created_at)}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-primary btn-sm" data-save-pid="${esc(p.id)}">💾</button>
+          <button class="btn btn-danger btn-sm" data-del-pid="${esc(p.id)}">🗑</button>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+    el.querySelectorAll('[data-save-pid]').forEach(b => b.addEventListener('click', () => savePayoutStatus(b.dataset.savePid)));
+    el.querySelectorAll('[data-del-pid]').forEach(b => b.addEventListener('click', () => deletePayout(b.dataset.delPid)));
+  }catch(e){ el.innerHTML = '<div class="empty">Erreur de chargement.</div>'; }
 }
-function savePayoutStatusFromBtn(btn){ savePayoutStatus(btn.dataset.id); }
-function deletePayoutFromBtn(btn){ deletePayout(btn.dataset.id); }
 async function savePayoutStatus(id){
-const status=document.getElementById('po-status-'+id).value;
-try{
-const r=await apiFetch('/api/admin/payouts/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-const data=await r.json(); toast(data.ok?'Statut mis à jour':(data.error||'Erreur'),data.ok);
-}catch(e){ toast('Erreur de connexion',false); }
+  const status = document.getElementById('po-status-'+id).value;
+  try{
+    const r = await apiFetch('/api/admin/payouts/'+id, {method:'PUT', body: JSON.stringify({status})});
+    const data = await r.json();
+    toast(data.ok ? 'Statut mis à jour' : (data.error || 'Erreur'), data.ok);
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 async function deletePayout(id){
-if(!confirm('Supprimer ce payout ?')) return;
-try{
-const r=await apiFetch('/api/admin/payouts/'+id,{method:'DELETE'});
-const data=await r.json();
-if(data.ok){ toast('Payout supprimé'); loadPayouts(); } else { toast(data.error||'Erreur',false); }
-}catch(e){ toast('Erreur de connexion',false); }
+  if(!confirm('Supprimer ce payout ?')) return;
+  try{
+    const r = await apiFetch('/api/admin/payouts/'+id, {method:'DELETE'});
+    const data = await r.json();
+    if(data.ok){ toast('Payout supprimé'); loadPayouts(); }
+    else{ toast(data.error || 'Erreur', false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeRestrictModal(); closeHistoryModal(); }});
-document.getElementById('restrict-modal').addEventListener('click', e=>{ if(e.target.id==='restrict-modal') closeRestrictModal(); });
-document.getElementById('history-modal').addEventListener('click', e=>{ if(e.target.id==='history-modal') closeHistoryModal(); });
+// ── Init ────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ closeRestrictModal(); closeHistoryModal(); }
+});
+loadOverview();
 </script>
 </body>
 </html>
