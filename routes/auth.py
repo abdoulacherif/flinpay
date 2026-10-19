@@ -1,6 +1,7 @@
 import logging
 import uuid as uuid_lib
 import hashlib
+import secrets
 from datetime import datetime, timedelta
 
 import bcrypt
@@ -18,13 +19,12 @@ from services.auth import (
 from services.restrictions import is_login_blocked, login_block_message
 from services.activity_log import log_user_activity
 from services.billing import get_user_by_id, get_balances, get_monthly_transaction_count
-from services.email import send_verification_email
+from services.email import send_verification_email, send_login_magic_link_email
 
 logger = logging.getLogger('flinpay.routes.auth')
-
 auth_bp = Blueprint('auth', __name__)
-
 DUMMY_HASH = bcrypt.hashpw(b'dummy_password_for_timing', bcrypt.gensalt()).decode()
+
 
 @auth_bp.route('/api/login', methods=['POST'])
 @limiter.limit('5 per minute')
@@ -38,7 +38,6 @@ def api_login():
 
     user = sb_get_one('users', 'email', email)
     if not user:
-        # Anti timing-attack : on fait quand même le check de mot de passe
         bcrypt.checkpw(password.encode('utf-8'), DUMMY_HASH.encode('utf-8'))
         return jsonify({'ok': False, 'error': 'Identifiants incorrects'}), 401
 
@@ -91,7 +90,7 @@ def api_login_2fa():
         return jsonify({'ok': False, 'error': "2FA non configurée"}), 400
 
     if is_locked_out(user):
-        return jsonify({'ok': False, 'error': f'Trop de tentatives.'}), 429
+        return jsonify({'ok': False, 'error': 'Trop de tentatives.'}), 429
 
     totp = pyotp.TOTP((user.get('totp_secret') or '').strip())
     if not totp.verify(code.replace(' ', ''), valid_window=2):
@@ -104,6 +103,93 @@ def api_login_2fa():
     return _login_success_response(user)
 
 
+# ── NOUVEAU : Connexion par lien email (Magic Link) ──
+@auth_bp.route('/api/login/email-link', methods=['POST'])
+@limiter.limit('3 per 15 minutes')
+def api_login_email_link():
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password')
+
+    user = sb_get_one('users', 'email', email)
+    if not user:
+        bcrypt.checkpw(b'dummy', DUMMY_HASH.encode())
+        return jsonify({'ok': True, 'message': 'Si un compte correspond, un lien a été envoyé.'})
+
+    if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+        return jsonify({'ok': True, 'message': 'Si un compte correspond, un lien a été envoyé.'})
+
+    if not user.get('email_link_enabled', False):
+        return jsonify({'ok': False, 'error': "Cette fonctionnalité n'est pas activée sur votre compte."}), 403
+
+    # Génération du token et du code de secours
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    expires_at = (datetime.utcnow() + timedelta(minutes=15)).isoformat()
+
+    code = f"{secrets.randbelow(900000) + 100000}"
+    code_hash = hashlib.sha256(code.encode()).hexdigest()
+
+    sb_patch('users', 'id', user['id'], {
+        'login_link_token_hash': token_hash,
+        'login_link_code_hash': code_hash,
+        'login_link_expires_at': expires_at
+    })
+
+    magic_url = f"https://www.flinpay.cfd/login?link_token={raw_token}"
+    send_login_magic_link_email(email, user['firstname'], magic_url, code)
+    
+    log_user_activity(user['id'], 'login_magic_link_sent', {})
+    return jsonify({'ok': True, 'message': 'Lien envoyé par email.'})
+
+
+@auth_bp.route('/api/login/verify-link', methods=['POST'])
+@limiter.limit('5 per minute')
+def api_login_verify_link():
+    data = request.get_json() or {}
+    raw_token = data.get('token')
+    code = data.get('code')
+
+    if not raw_token or not code:
+        return jsonify({'ok': False, 'error': 'Données manquantes'}), 400
+
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    user = sb_get_one('users', 'login_link_token_hash', token_hash)
+    
+    if not user:
+        return jsonify({'ok': False, 'error': 'Lien invalide ou déjà utilisé'}), 401
+
+    expires_at = user.get('login_link_expires_at')
+    if not expires_at or datetime.fromisoformat(expires_at.replace('Z', '+00:00')).replace(tzinfo=None) < datetime.utcnow():
+        return jsonify({'ok': False, 'error': 'Lien expiré'}), 401
+
+    code_hash = hashlib.sha256(code.encode()).hexdigest()
+    if code_hash != user.get('login_link_code_hash'):
+        return jsonify({'ok': False, 'error': 'Code invalide'}), 401
+
+    # Invalider le lien immédiatement
+    sb_patch('users', 'id', user['id'], {
+        'login_link_token_hash': None,
+        'login_link_code_hash': None,
+        'login_link_expires_at': None
+    })
+
+    log_user_activity(user['id'], 'login_success', {'via': 'magic_link'})
+    return _login_success_response(user)
+
+
+@auth_bp.route('/api/settings/toggle-email-link', methods=['POST'])
+@user_required
+@csrf_protect
+def api_toggle_email_link():
+    data = request.get_json() or {}
+    enabled = bool(data.get('enabled'))
+    sb_patch('users', 'id', request.user_id, {'email_link_enabled': enabled})
+    log_user_activity(request.user_id, 'settings_updated', {'email_link_enabled': enabled})
+    return jsonify({'ok': True, 'enabled': enabled})
+
+
+# ── Logout et compte ─────────────────────────────────
 @auth_bp.route('/api/logout', methods=['POST'])
 def api_logout():
     resp = make_response(redirect(url_for('public.login_page')))
@@ -129,10 +215,12 @@ def api_me():
         'usage_this_month': get_monthly_transaction_count(request.user_id),
         'monthly_limit': config.FREE_PLAN_MONTHLY_LIMIT,
         'available_balance': total_balance, 'balances': balances,
-        'totp_enabled': user.get('totp_enabled', False)
+        'totp_enabled': user.get('totp_enabled', False),
+        'email_link_enabled': user.get('email_link_enabled', False)
     }})
 
 
+# ── Inscription et vérification ──────────────────────
 @auth_bp.route('/api/register', methods=['POST'])
 @limiter.limit('3 per hour')
 def api_register():
@@ -176,7 +264,6 @@ def api_register():
     if not user or (isinstance(user, dict) and user.get('_error')):
         return jsonify({'ok': False, 'error': 'Erreur lors de la création du compte'}), 500
 
-    # L'IP est loggée seulement après succès pour ne pas bloquer les erreurs de syntaxe
     ip = get_client_ip()
     sb_post('registration_ips', {'ip_address': ip, 'created_at': datetime.utcnow().isoformat()})
     
@@ -195,8 +282,8 @@ def verify_email(token):
         return render_template('verify_result.html', success=False, message="Lien invalide ou déjà utilisé.")
         
     expires_at = user.get('email_verify_token_expires_at')
-    if not expires_at or datetime.fromisoformat(expires_at) < datetime.utcnow():
-        return render_template('verify_result.html', success=False, message="Ce lien a expiré. Veuillez en demander un nouveau.")
+    if not expires_at or datetime.fromisoformat(expires_at.replace('Z', '+00:00')).replace(tzinfo=None) < datetime.utcnow():
+        return render_template('verify_result.html', success=False, message="Ce lien a expiré.")
 
     sb_patch('users', 'id', user['id'], {
         'email_verified': True, 
@@ -226,6 +313,7 @@ def api_resend_verification():
     return jsonify({'ok': True})
 
 
+# ── 2FA ─────────────────────────────────────────────
 @auth_bp.route('/api/2fa/setup', methods=['POST'])
 @user_required
 @csrf_protect
@@ -288,7 +376,7 @@ def api_2fa_disable():
 
     totp = pyotp.TOTP((secret or '').strip())
     if not totp.verify((code or '').replace(' ', ''), valid_window=2):
-        register_failed_login(user) # Protège contre le bruteforce si le cookie de session est volé
+        register_failed_login(user)
         return jsonify({'ok': False, 'error': 'Code invalide'}), 401
 
     ok = sb_patch('users', 'id', request.user_id, {'totp_enabled': False, 'totp_secret': None})
