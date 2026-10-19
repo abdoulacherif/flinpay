@@ -81,14 +81,15 @@ a{color:inherit}
 
 .page{padding:0 20px calc(var(--bottom-nav-h) + 40px);margin-top:-22px;position:relative;z-index:2}
 .balance-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px}
-.balance-card{background:white;border-radius:20px;padding:20px 22px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 12px 32px rgba(10,50,150,.15);border:1px solid rgba(255,255,255,.5)}
+.balance-card{background:white;border-radius:20px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 12px 32px rgba(10,50,150,.15);border:1px solid rgba(255,255,255,.5);gap:12px}
 .balance-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.balance-value{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.7rem;color:var(--ink);letter-spacing:-.02em}
+.balance-value{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;color:var(--ink);letter-spacing:-.02em;display:flex;align-items:center;gap:6px}
 .balance-value small{font-size:.95rem;color:var(--muted);font-weight:600}
-.currency-pill{background:var(--blue-tint);color:var(--blue);font-size:.75rem;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.05em}
-.btn-green{background:var(--green);color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;text-decoration:none}
+.currency-pill{background:var(--blue-tint);color:var(--blue);font-size:.7rem;font-weight:800;padding:2px 9px;border-radius:20px;letter-spacing:.04em;cursor:pointer;transition:background .15s;user-select:none}
+.currency-pill:hover{background:#D5E5FF}
+.btn-green{background:var(--green);color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;text-decoration:none;flex-shrink:0}
 .btn-green:hover{background:#00A876}
-.btn-red{background:#FF5C5C;color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;text-decoration:none}
+.btn-red{background:#FF5C5C;color:white;border:none;border-radius:10px;padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;text-decoration:none;flex-shrink:0}
 .btn-red:hover{background:#E84545}
 
 .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
@@ -168,21 +169,16 @@ a{color:inherit}
 .bnav-item span{font-size:.64rem;font-weight:600}
 .bnav-item.active{color:var(--blue)}
 
-/* ── Modal devise ──────────────────────────────── */
+/* Modal devise */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px}
 .modal-bg.show{display:flex}
-.modal{background:white;border-radius:18px;padding:24px;width:100%;max-width:380px;box-shadow:0 30px 60px rgba(10,12,25,0.25);opacity:0;transform:translateY(12px) scale(.98);transition:all .22s cubic-bezier(.16,.8,.3,1)}
+.modal{background:white;border-radius:18px;padding:22px;width:100%;max-width:360px;box-shadow:0 30px 60px rgba(10,12,25,0.25);opacity:0;transform:translateY(12px) scale(.98);transition:all .22s cubic-bezier(.16,.8,.3,1)}
 .modal-bg.show .modal{opacity:1;transform:translateY(0) scale(1)}
-.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:6px}
-.modal p{font-size:.8rem;color:var(--muted);margin-bottom:14px;line-height:1.5}
-.currency-opt{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1.5px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;margin-bottom:8px}
+.modal h3{font-size:1.02rem;font-weight:800;margin-bottom:4px}
+.modal p{font-size:.78rem;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.currency-opt{display:flex;justify-content:space-between;align-items:center;width:100%;padding:11px 13px;border:1.5px solid var(--border);background:white;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;margin-bottom:8px;text-align:left}
 .currency-opt:hover{border-color:var(--blue);background:var(--blue-tint)}
 .currency-opt.active{border-color:var(--blue);background:var(--blue-tint)}
-.currency-opt .cur-code{font-weight:800;font-size:.92rem;color:var(--ink)}
-.currency-opt .cur-name{font-size:.72rem;color:var(--muted);margin-top:2px}
-.currency-opt .cur-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1rem;color:var(--ink);text-align:right}
-.currency-opt .cur-active{font-size:.65rem;color:var(--blue);font-weight:700}
-.currency-opt .cur-flag{font-size:1.2rem}
 
 #toast{position:fixed;bottom:calc(var(--bottom-nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.83rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
@@ -200,8 +196,8 @@ a{color:inherit}
   .topbar-title{font-size:1.5rem}
   .page{max-width:1180px;margin:-32px auto 0;padding:0 40px 60px}
   .balance-grid{grid-template-columns:1fr 1fr}
-  .balance-card{padding:24px 26px}
-  .balance-value{font-size:1.9rem}
+  .balance-card{padding:22px 26px}
+  .balance-value{font-size:1.7rem}
   .stats-grid{grid-template-columns:repeat(4,1fr)}
   .quick-grid{grid-template-columns:repeat(4,1fr)}
   .content-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start}
@@ -236,7 +232,6 @@ a{color:inherit}
 <symbol id="ic-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
 <symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
 <symbol id="ic-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
-<symbol id="ic-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
 </defs>
 </svg>
 
@@ -306,18 +301,17 @@ a{color:inherit}
 <div class="page">
 <div class="balance-grid">
   <div class="balance-card">
-    <div style="flex:1">
+    <div>
       <div class="balance-label">Solde disponible</div>
-      <div class="balance-value" id="hero-balance" style="cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none" title="Changer de devise">
+      <div class="balance-value">
         <span id="hero-balance-amount">0</span>
-        <span class="currency-pill" id="hero-balance-currency">XOF</span>
-        <span class="icon" style="width:16px;height:16px;color:var(--muted)"><svg><use href="#ic-chevron-down"/></svg></span>
+        <span class="currency-pill" id="hero-balance-currency" title="Changer de devise">XOF ▾</span>
       </div>
     </div>
     <a href="/payouts" class="btn-green"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-plus"/></svg></span> Retirer</a>
   </div>
   <div class="balance-card">
-    <div style="flex:1">
+    <div>
       <div class="balance-label">Récompenses FP</div>
       <div class="balance-value" id="hero-reward">0 <small>FP</small></div>
     </div>
@@ -410,11 +404,10 @@ a{color:inherit}
 <a class="bnav-item" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span><span>Profil</span></a>
 </nav>
 
-<!-- MODAL DEVISES -->
 <div class="modal-bg" id="currency-modal">
   <div class="modal">
     <h3>Choisir la devise</h3>
-    <p>Sélectionnez la devise de solde à afficher sur votre dashboard.</p>
+    <p>Sélectionnez la devise de solde à afficher.</p>
     <div id="currency-list"></div>
     <button class="btn btn-gold btn-sm" id="btn-close-currency" style="width:100%;margin-top:8px">Fermer</button>
   </div>
@@ -455,10 +448,10 @@ function toast(msg, ok=true){
 
 // ── Sélecteur de devise ─────────────────────────────
 let userBalances = {};
-let selectedCurrency = null;
+let selectedCurrency = 'XOF';
 
-const CURRENCY_NAMES = {XOF:'Franc CFA (UEMOA)', XAF:'Franc CFA (CEMAC)', CDF:'Franc congolais'};
-const CURRENCY_FLAGS = {XOF:'🌍', XAF:'🌍', CDF:'🇨🇩'};
+const CURRENCY_NAMES = {XOF:'Franc CFA (UEMOA)', XAF:'Franc CFA (CEMAC)', CDF:'Franc congolais', EUR:'Euro', USD:'Dollar'};
+const CURRENCY_FLAGS = {XOF:'🌍', XAF:'🌍', CDF:'🇨🇩', EUR:'🇪🇺', USD:'🇺🇸'};
 
 function initCurrencySelector(balances){
   userBalances = balances || {};
@@ -479,7 +472,7 @@ function initCurrencySelector(balances){
 function renderSelectedBalance(){
   const amount = userBalances[selectedCurrency] || 0;
   document.getElementById('hero-balance-amount').textContent = fmtNumber(amount);
-  document.getElementById('hero-balance-currency').textContent = selectedCurrency;
+  document.getElementById('hero-balance-currency').textContent = selectedCurrency + ' ▾';
 }
 
 function openCurrencyModal(){
@@ -494,15 +487,15 @@ function openCurrencyModal(){
       return `
         <button type="button" class="currency-opt ${isActive?'active':''}" data-currency="${escapeHtml(cur)}">
           <div style="display:flex;align-items:center;gap:10px">
-            <span class="cur-flag">${CURRENCY_FLAGS[cur] || '💱'}</span>
+            <span style="font-size:1.2rem">${CURRENCY_FLAGS[cur] || '💱'}</span>
             <div style="text-align:left">
-              <div class="cur-code">${escapeHtml(cur)}</div>
-              <div class="cur-name">${escapeHtml(CURRENCY_NAMES[cur] || cur)}</div>
+              <div style="font-weight:800;font-size:.92rem;color:var(--ink)">${escapeHtml(cur)}</div>
+              <div style="font-size:.72rem;color:var(--muted)">${escapeHtml(CURRENCY_NAMES[cur] || cur)}</div>
             </div>
           </div>
           <div style="text-align:right">
-            <div class="cur-amount">${fmtNumber(userBalances[cur])}</div>
-            ${isActive ? '<div class="cur-active">ACTUEL</div>' : ''}
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1rem;color:var(--ink)">${fmtNumber(userBalances[cur])}</div>
+            ${isActive ? '<div style="font-size:.65rem;color:var(--blue);font-weight:700">ACTUEL</div>' : ''}
           </div>
         </button>`;
     }).join('');
@@ -512,7 +505,7 @@ function openCurrencyModal(){
         selectedCurrency = btn.dataset.currency;
         localStorage.setItem('preferred_currency', selectedCurrency);
         renderSelectedBalance();
-        document.getElementById('currency-modal').classList.remove('show');
+        closeCurrencyModal();
         toast(`Devise affichée : ${selectedCurrency}`);
       });
     });
@@ -654,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
   document.getElementById('overlay').addEventListener('click', closeSidebar);
   document.getElementById('retry-btn').addEventListener('click', retryLoad);
-  document.getElementById('hero-balance').addEventListener('click', openCurrencyModal);
+  document.getElementById('hero-balance-currency').addEventListener('click', openCurrencyModal);
   document.getElementById('btn-close-currency').addEventListener('click', closeCurrencyModal);
   document.getElementById('currency-modal').addEventListener('click', (e)=>{
     if(e.target.id==='currency-modal') closeCurrencyModal();
