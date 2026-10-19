@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Dashboard</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
@@ -30,28 +31,12 @@ a{color:inherit}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-/* ── structure ─────────────────────────────── */
 .shell{display:flex;min-height:100vh}
 
-.overlay{
-  display:none;
-  position:fixed;top:0;left:0;right:0;bottom:0;
-  background:rgba(8,9,16,0.55);
-  z-index:250;
-  backdrop-filter:blur(2px);
-}
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,9,16,0.55);z-index:250;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
 
-.sidebar{
-  position:fixed;top:0;left:0;bottom:0;
-  width:82%;max-width:320px;
-  background:var(--ink);
-  z-index:300;
-  display:flex;flex-direction:column;
-  transform:translateX(-100%);
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-  overflow-y:auto;
-}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto}
 .sidebar.open{transform:translateX(0)}
 
 .sidebar-top{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;flex-shrink:0}
@@ -68,11 +53,7 @@ a{color:inherit}
 
 .sidebar-nav{flex:1;padding:8px 0}
 .nav-group{font-size:.6rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:14px 20px 6px}
-.nav-link{
-  display:flex;align-items:center;gap:12px;padding:9px 20px;color:rgba(255,255,255,0.5);
-  font-size:.84rem;font-weight:500;cursor:pointer;transition:all .15s;
-  border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left
-}
+.nav-link{display:flex;align-items:center;gap:12px;padding:9px 20px;color:rgba(255,255,255,0.5);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
@@ -89,7 +70,6 @@ a{color:inherit}
 
 .main{flex:1;min-width:0;background:var(--bg);width:100%}
 
-/* ── hero ──────────────────────────────────── */
 .hero{background:linear-gradient(135deg,var(--blue) 0%,var(--blue-deep) 55%,#3A1A8C 100%);border-radius:0 0 28px 28px;padding-bottom:26px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;top:-60px;right:-50px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,0.05)}
 .hero::after{content:'';position:absolute;bottom:-70px;left:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,180,0,0.09)}
@@ -123,7 +103,6 @@ a{color:inherit}
 .hstat-val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.28rem;color:white;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hstat-unit{font-size:.66rem;color:rgba(255,255,255,.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ── page ──────────────────────────────────── */
 .page{padding:22px 20px calc(var(--bottom-nav-h) + 40px)}
 .section-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .section-head h2{font-size:.72rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--muted-soft);white-space:nowrap}
@@ -203,18 +182,7 @@ a{color:inherit}
 .note-danger span{font-size:.74rem;color:#B3271A;opacity:.9}
 .note .btn{margin-left:auto;flex-shrink:0}
 
-/* ── BOTTOM NAV (mobile) ───────────────────── */
-.bottom-nav{
-  position:fixed;
-  bottom:0;left:0;right:0;
-  background:var(--surface);
-  border-top:1px solid var(--border);
-  display:flex;
-  z-index:200;
-  box-shadow:0 -4px 16px rgba(15,17,32,.06);
-  height:var(--bottom-nav-h);
-  padding-bottom:env(safe-area-inset-bottom);
-}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:200;box-shadow:0 -4px 16px rgba(15,17,32,.06);height:var(--bottom-nav-h);padding-bottom:env(safe-area-inset-bottom)}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 4px;text-decoration:none;color:var(--muted-soft);transition:color .15s}
 .bnav-item .icon{width:20px;height:20px}
 .bnav-item span{font-size:.64rem;font-weight:600}
@@ -223,17 +191,9 @@ a{color:inherit}
 #toast{position:fixed;bottom:calc(var(--bottom-nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.83rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
-/* ── Desktop (≥960px) ─── */
 @media(min-width:960px){
   .overlay{display:none !important}
-  .sidebar{
-    position:sticky;top:0;
-    height:100vh;
-    width:var(--sidebar-w);
-    max-width:var(--sidebar-w);
-    transform:none;
-    flex-shrink:0;
-  }
+  .sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar-w);max-width:var(--sidebar-w);transform:none;flex-shrink:0}
   .close-sidebar{display:none}
   .burger-btn{display:none}
   .bottom-nav{display:none}
@@ -291,7 +251,7 @@ a{color:inherit}
 <div class="sidebar-top">
 <div>
 <a href="/" class="logo-text">Flin<span>pay</span></a>
-<div class="plan-badge-pill" id="plan-badge-pill">🚀 {{ 'Pro' if user.plan == 'pro' else 'Starter' }}</div>
+<div class="plan-badge-pill" id="plan-badge-pill">🚀 Starter</div>
 </div>
 <button class="close-sidebar" id="close-sidebar" aria-label="Fermer">✕</button>
 </div>
@@ -475,6 +435,24 @@ a{color:inherit}
 <script nonce="{{ csp_nonce }}">
 "use strict";
 
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.getAttribute('content') : '';
+}
+
+async function apiFetch(url, options = {}) {
+  const opts = { ...options };
+  opts.headers = { ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+    opts.headers['X-CSRF-Token'] = getCsrfToken();
+  }
+  if (opts.body && typeof opts.body === 'string') {
+    opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+  }
+  return fetch(url, opts);
+}
+
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.add('show');
@@ -517,7 +495,7 @@ let lastLoadFailed=false;
 
 async function loadProfile(){
   try{
-    const r=await fetch('/api/me');
+    const r=await apiFetch('/api/me');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     if(!r.ok) throw new Error('http '+r.status);
     const data=await r.json();
@@ -604,7 +582,7 @@ function renderBalances(balances, fallbackTotal){
 
 async function loadTransactions(){
   try{
-    const r=await fetch('/api/transactions');
+    const r=await apiFetch('/api/transactions');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     if(!r.ok) throw new Error('http '+r.status);
     const data=await r.json();
