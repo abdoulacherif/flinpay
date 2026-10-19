@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 import bcrypt
 import pyotp
-from flask import Blueprint, request, jsonify, redirect, url_for, make_response
+from flask import Blueprint, request, jsonify, redirect, url_for, make_response, render_template
 
 from config import config
 from extensions import limiter, get_client_ip
@@ -26,6 +26,7 @@ auth_bp = Blueprint('auth', __name__)
 DUMMY_HASH = bcrypt.hashpw(b'dummy_password_for_timing', bcrypt.gensalt()).decode()
 
 
+# ── Connexion classique ─────────────────────────────
 @auth_bp.route('/api/login', methods=['POST'])
 @limiter.limit('5 per minute')
 def api_login():
@@ -72,6 +73,7 @@ def api_login():
     return _login_success_response(user)
 
 
+# ── Vérification 2FA ────────────────────────────────
 @auth_bp.route('/api/login/2fa', methods=['POST'])
 @limiter.limit('5 per minute')
 def api_login_2fa():
@@ -103,7 +105,7 @@ def api_login_2fa():
     return _login_success_response(user)
 
 
-# ── NOUVEAU : Connexion par lien email (Magic Link) ──
+# ── Connexion par lien email (Magic Link) ───────────
 @auth_bp.route('/api/login/email-link', methods=['POST'])
 @limiter.limit('3 per 15 minutes')
 def api_login_email_link():
@@ -122,7 +124,6 @@ def api_login_email_link():
     if not user.get('email_link_enabled', False):
         return jsonify({'ok': False, 'error': "Cette fonctionnalité n'est pas activée sur votre compte."}), 403
 
-    # Génération du token et du code de secours
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
     expires_at = (datetime.utcnow() + timedelta(minutes=15)).isoformat()
@@ -138,7 +139,7 @@ def api_login_email_link():
 
     magic_url = f"https://www.flinpay.cfd/login?link_token={raw_token}"
     send_login_magic_link_email(email, user['firstname'], magic_url, code)
-    
+
     log_user_activity(user['id'], 'login_magic_link_sent', {})
     return jsonify({'ok': True, 'message': 'Lien envoyé par email.'})
 
@@ -155,7 +156,7 @@ def api_login_verify_link():
 
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
     user = sb_get_one('users', 'login_link_token_hash', token_hash)
-    
+
     if not user:
         return jsonify({'ok': False, 'error': 'Lien invalide ou déjà utilisé'}), 401
 
@@ -167,7 +168,6 @@ def api_login_verify_link():
     if code_hash != user.get('login_link_code_hash'):
         return jsonify({'ok': False, 'error': 'Code invalide'}), 401
 
-    # Invalider le lien immédiatement
     sb_patch('users', 'id', user['id'], {
         'login_link_token_hash': None,
         'login_link_code_hash': None,
@@ -189,8 +189,8 @@ def api_toggle_email_link():
     return jsonify({'ok': True, 'enabled': enabled})
 
 
-# ── Logout et compte ─────────────────────────────────
-@auth_bp.route('/api/logout', methods=['POST'])
+# ── Logout et compte ────────────────────────────────
+@auth_bp.route('/api/logout')
 def api_logout():
     resp = make_response(redirect(url_for('public.login_page')))
     resp.delete_cookie('__Host-fp_session')
@@ -220,7 +220,7 @@ def api_me():
     }})
 
 
-# ── Inscription et vérification ──────────────────────
+# ── Inscription et vérification ─────────────────────
 @auth_bp.route('/api/register', methods=['POST'])
 @limiter.limit('3 per hour')
 def api_register():
@@ -249,7 +249,7 @@ def api_register():
     hashed = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     verify_token_raw = uuid_lib.uuid4().hex
     verify_token_hash = hashlib.sha256(verify_token_raw.encode()).hexdigest()
-    
+
     user = sb_post('users', {
         'firstname': data['firstname'].strip()[:80],
         'lastname': data['lastname'].strip()[:80],
@@ -266,7 +266,7 @@ def api_register():
 
     ip = get_client_ip()
     sb_post('registration_ips', {'ip_address': ip, 'created_at': datetime.utcnow().isoformat()})
-    
+
     send_verification_email(email, data['firstname'].strip(), verify_token_raw)
     return jsonify({'ok': True, 'message': "Compte créé ! Vérifiez votre email."})
 
@@ -274,19 +274,18 @@ def api_register():
 @auth_bp.route('/verify-email/<token>')
 @limiter.limit('10 per minute')
 def verify_email(token):
-    from flask import render_template
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     user = sb_get_one('users', 'email_verify_token_hash', token_hash)
-    
+
     if not user:
         return render_template('verify_result.html', success=False, message="Lien invalide ou déjà utilisé.")
-        
+
     expires_at = user.get('email_verify_token_expires_at')
     if not expires_at or datetime.fromisoformat(expires_at.replace('Z', '+00:00')).replace(tzinfo=None) < datetime.utcnow():
         return render_template('verify_result.html', success=False, message="Ce lien a expiré.")
 
     sb_patch('users', 'id', user['id'], {
-        'email_verified': True, 
+        'email_verified': True,
         'email_verify_token_hash': None,
         'email_verify_token_expires_at': None
     })
@@ -301,10 +300,10 @@ def api_resend_verification():
     user = sb_get_one('users', 'email', email)
     if not user or user.get('email_verified'):
         return jsonify({'ok': True})
-        
+
     token_raw = uuid_lib.uuid4().hex
     token_hash = hashlib.sha256(token_raw.encode()).hexdigest()
-    
+
     sb_patch('users', 'id', user['id'], {
         'email_verify_token_hash': token_hash,
         'email_verify_token_expires_at': (datetime.utcnow() + timedelta(hours=24)).isoformat()
