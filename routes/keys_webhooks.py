@@ -3,6 +3,7 @@ from datetime import datetime
 
 from flask import Blueprint, request, jsonify, render_template
 
+from extensions import limiter
 from db.supabase import sb_get_eq, sb_post, sb_delete_multi
 from services.auth import user_required, get_current_user, csrf_protect, generate_api_key
 from services.webhooks import test_merchant_webhook, is_safe_webhook_url
