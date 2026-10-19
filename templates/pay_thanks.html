@@ -5,31 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Merci — Flinpay</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
+:root{--blue:#0A6CFF;--cyan:#00C4FF;--green:#00C48C;--ink:#0B0D17;
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%)}
 body{
-  font-family:'Inter',sans-serif;background:#0D0D0D;min-height:100vh;
+  font-family:'Inter',sans-serif;background:var(--gradient);min-height:100vh;
   display:flex;align-items:center;justify-content:center;padding:40px 20px;
-  position:relative;overflow:hidden
+  position:relative;overflow:hidden;
 }
-body::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(0,196,140,0.18) 0%,transparent 70%);
-  pointer-events:none
-}
+body::before{content:'';position:absolute;top:-100px;right:-100px;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
+body::after{content:'';position:absolute;bottom:-150px;left:-100px;width:350px;height:350px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none}
 .box{
-  background:#141420;border:1px solid rgba(255,255,255,0.08);
-  border-radius:24px;padding:44px 36px;width:100%;max-width:420px;
-  text-align:center;position:relative;z-index:1;box-shadow:0 32px 64px rgba(0,0,0,0.4)
+  background:white;border-radius:24px;padding:44px 36px;width:100%;max-width:420px;
+  text-align:center;position:relative;z-index:1;box-shadow:0 30px 60px rgba(0,30,100,0.3);
 }
-.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;color:white;margin-bottom:20px}
-.logo span{color:#1A3CFF}
-.icon{font-size:2.8rem;margin-bottom:16px}
-.msg{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:white;line-height:1.5;margin-bottom:10px}
-.note{color:rgba(255,255,255,0.4);font-size:0.85rem;line-height:1.6}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;color:var(--ink);margin-bottom:20px}
+.logo span{color:var(--blue)}
+.icon{font-size:3rem;margin-bottom:16px;display:inline-block;animation:bounce 1.4s ease infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.msg{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:var(--ink);line-height:1.5;margin-bottom:10px}
+.note{color:#767A94;font-size:0.85rem;line-height:1.6}
 .back{margin-top:24px;font-size:0.82rem}
-.back a{color:rgba(255,255,255,0.3);text-decoration:none}
-.back a:hover{color:white}
+.back a{color:#A6AABF;text-decoration:none}
+.back a:hover{color:var(--ink)}
 </style>
 </head>
 <body>
