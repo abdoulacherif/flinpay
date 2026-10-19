@@ -4,22 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Liens de paiement</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
---ink:#0B0D17;--ink-soft:#141625;
---bg:#F5F6FB;--surface:#FFFFFF;
---border:#E7E9F3;--border-soft:#F0F1F8;
---blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
---gold:#FFB400;--gold-tint:#FFF6E0;
---green:#00C48C;--green-tint:#E3FBF3;
---danger:#FF4D4D;--danger-tint:#FFEAEA;
---text:#12131C;--muted:#767A94;--muted-soft:#A6AABF;
---r-lg:18px;--r-md:14px;--r-sm:9px;
---shadow-sm:0 1px 2px rgba(15,17,32,.04);
---shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
---sidebar-w:270px;
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;--muted-soft:#A6AABF;
+  --r-lg:18px;--r-md:14px;--r-sm:9px;
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --shadow-md:0 10px 28px -14px rgba(10,50,150,.18);
+  --sidebar-w:270px;
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+  --gradient-soft:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 100%);
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
@@ -28,7 +30,6 @@ a{color:inherit}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
-/* ── structure : sidebar + contenu (parité avec dashboard.html) ── */
 .shell{display:flex;min-height:100vh}
 .overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:250;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
@@ -36,15 +37,15 @@ a{color:inherit}
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:320px;background:var(--ink);z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto}
 .sidebar.open{transform:translateX(0)}
 .sidebar-top{padding:22px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;flex-shrink:0}
-.sidebar-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar-top::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
 .close-sidebar{background:none;border:none;color:rgba(255,255,255,0.45);font-size:1.2rem;cursor:pointer;padding:4px}
 
 .corridor{margin:14px 20px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px;flex-shrink:0}
 .corridor-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
-.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-label b{color:#8ECFFF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.9rem;line-height:1}
 
 .sidebar-nav{flex:1;padding:8px 0}
@@ -53,28 +54,30 @@ a{color:inherit}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
-.nav-link.active .icon{color:#8EA6FF}
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
 
 .sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;flex-shrink:0}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
 .user-email{font-size:.68rem;color:rgba(255,255,255,0.32);margin-top:1px;word-break:break-all}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.76rem;padding:11px 20px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
 
 .main{flex:1;min-width:0}
+.topbar{background:var(--gradient);padding:20px;color:white;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;overflow:hidden}
+.topbar::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0;position:relative;z-index:1}
+.burger-btn{background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;display:flex;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center;flex-shrink:0}
+.burger-btn:hover{background:rgba(255,255,255,0.28)}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-title .icon{width:22px;height:22px;color:white}
 
-.topbar{background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
-.burger-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.02rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.page{padding:20px;animation:fadeUp .3s ease}
+.page{padding:22px 20px 60px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page{animation:fadeUp .3s ease}
 
 .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .search-wrap{position:relative;flex:1;min-width:180px}
@@ -85,7 +88,7 @@ a{color:inherit}
 .filter-chip{padding:9px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
 .filter-chip.active{border-color:var(--blue);background:var(--blue-tint);color:var(--blue)}
 
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border-soft);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
 .card-head{padding:16px 20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:10px}
 .card-title{font-size:.88rem;font-weight:700;letter-spacing:-.01em}
 .card-body{padding:16px}
@@ -105,12 +108,11 @@ a{color:inherit}
 .btn-toggle-off:hover{background:var(--border-soft)}
 .btn:disabled{opacity:.55;cursor:not-allowed}
 
-.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%;background:var(--surface)}
+.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%;background:var(--surface);color:var(--text)}
 .form-input:focus{border-color:var(--blue)}
 .form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
 .form-group{margin-bottom:14px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.field-hint{font-size:.72rem;color:var(--muted);margin-top:5px}
 
 .link-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:16px 18px;margin-bottom:10px;transition:all .2s;opacity:0;transform:translateY(6px);animation:cardIn .35s ease forwards}
 @keyframes cardIn{to{opacity:1;transform:translateY(0)}}
@@ -137,7 +139,7 @@ a{color:inherit}
 .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
 .preview-box{background:var(--ink);border-radius:16px;padding:26px;text-align:center;margin-top:18px}
 .preview-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.25rem;color:white;margin-bottom:14px}
-.preview-logo span{color:#5B7CFF}
+.preview-logo span{color:var(--cyan)}
 .preview-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.2rem;color:white;letter-spacing:-.02em}
 .preview-desc{color:rgba(255,255,255,0.5);font-size:.84rem;margin-top:6px}
 .preview-btn{background:var(--blue);color:white;border:none;border-radius:10px;padding:13px 32px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.92rem;margin-top:18px;cursor:pointer;width:100%}
@@ -146,7 +148,7 @@ a{color:inherit}
 .amount-type-btn.active{border-color:var(--blue);background:var(--blue-tint);color:var(--blue)}
 
 .img-drop{border:1.5px dashed var(--border);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;background:var(--bg);font-size:.82rem;color:var(--muted);transition:all .15s;display:block}
-.img-drop:hover, .img-drop.drag-over{border-color:var(--blue);background:var(--blue-tint);color:var(--blue)}
+.img-drop:hover{border-color:var(--blue);background:var(--blue-tint);color:var(--blue)}
 .img-drop input{display:none}
 .img-preview-wrap{position:relative;display:none;margin-top:10px}
 .img-preview{max-width:100%;max-height:120px;border-radius:10px;display:block}
@@ -173,20 +175,21 @@ input:checked + .slider:before{transform:translateX(18px)}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
 @media(min-width:960px){
-.overlay{display:none !important}
-.sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar-w);max-width:var(--sidebar-w);transform:none;flex-shrink:0}
-.close-sidebar{display:none}
-.burger-btn{display:none}
-.page{max-width:1100px;margin:0 auto;padding:26px 32px 60px}
-.topbar{padding:0 32px}
+  .overlay{display:none !important}
+  .sidebar{position:sticky;top:0;height:100vh;width:var(--sidebar-w);max-width:var(--sidebar-w);transform:none;flex-shrink:0}
+  .close-sidebar{display:none}
+  .burger-btn{display:none}
+  .page{max-width:1100px;margin:0 auto;padding:26px 32px 60px}
+  .topbar{padding:20px 32px}
 }
 @media(max-width:520px){
-.form-grid{grid-template-columns:1fr}
-.link-top{flex-direction:column}
-.link-actions{width:100%;justify-content:flex-start}
+  .form-grid{grid-template-columns:1fr}
+  .link-top{flex-direction:column}
+  .link-actions{width:100%;justify-content:flex-start}
+  .topbar-title span:not(.icon){display:none}
 }
 @media(prefers-reduced-motion:reduce){
-*{animation-duration:.001ms !important;transition-duration:.001ms !important}
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
 }
 </style>
 </head>
@@ -221,22 +224,20 @@ input:checked + .slider:before{transform:translateX(18px)}
 </svg>
 
 <div class="shell">
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="overlay" id="overlay"></div>
 
-<aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+<aside class="sidebar" id="sidebar">
 <div class="sidebar-top">
 <div>
 <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
 <div class="plan-badge-pill" id="plan-badge-pill">🚀 Starter</div>
 </div>
-<button class="close-sidebar" onclick="closeSidebar()" aria-label="Fermer le menu">✕</button>
+<button class="close-sidebar" id="close-sidebar" aria-label="Fermer">✕</button>
 </div>
-
 <div class="corridor">
 <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-<div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
+<div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
 </div>
-
 <nav class="sidebar-nav">
 <div class="nav-group">Principal</div>
 <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
@@ -244,19 +245,16 @@ input:checked + .slider:before{transform:translateX(18px)}
 <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
 <a class="nav-link active" href="/payment-links" aria-current="page"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
 <a class="nav-link" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
-
 <div class="nav-group">Développeur</div>
 <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
 <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
 <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
-
 <div class="nav-group">Compte</div>
 <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
 <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
 <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
 <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
 </nav>
-
 <div class="sidebar-user">
 <div class="user-row">
 <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
@@ -272,23 +270,22 @@ input:checked + .slider:before{transform:translateX(18px)}
 <div class="main">
 <div class="topbar">
 <div class="topbar-left">
-<button class="burger-btn" id="burger" onclick="openSidebar()" aria-label="Ouvrir le menu"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
-<div class="topbar-title"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</div>
+<button class="burger-btn" id="burger-btn" aria-label="Ouvrir le menu"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+<div class="topbar-title"><span class="icon"><svg><use href="#ic-link"/></svg></span> <span>Liens de paiement</span></div>
 </div>
-<button class="btn btn-primary btn-sm" onclick="openModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> <span class="hide-xs">Créer un lien</span></button>
+<button class="btn btn-primary btn-sm" id="btn-open-modal"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Créer</button>
 </div>
 
 <div class="page">
-
 <div class="toolbar">
 <div class="search-wrap">
 <span class="icon"><svg><use href="#ic-search"/></svg></span>
-<input class="search-input" id="search-input" type="search" placeholder="Rechercher un lien..." oninput="renderLinks()" aria-label="Rechercher un lien">
+<input class="search-input" id="search-input" type="search" placeholder="Rechercher un lien..." aria-label="Rechercher">
 </div>
-<div class="filter-chips" role="group" aria-label="Filtrer par statut">
-<button class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">Tous</button>
-<button class="filter-chip" data-filter="active" onclick="setFilter('active',this)">Actifs</button>
-<button class="filter-chip" data-filter="inactive" onclick="setFilter('inactive',this)">Inactifs</button>
+<div class="filter-chips">
+<button class="filter-chip active" data-filter="all">Tous</button>
+<button class="filter-chip" data-filter="active">Actifs</button>
+<button class="filter-chip" data-filter="inactive">Inactifs</button>
 </div>
 </div>
 
@@ -300,30 +297,29 @@ input:checked + .slider:before{transform:translateX(18px)}
 <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
 </div>
 </div>
-
 </div>
 </div>
 </div>
 
 <!-- MODAL CRÉATION -->
 <div class="modal-bg" id="modal">
-<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-<h3 id="modal-title"><span class="icon"><svg><use href="#ic-link"/></svg></span> Créer un lien de paiement</h3>
+<div class="modal">
+<h3><span class="icon"><svg><use href="#ic-link"/></svg></span> Créer un lien de paiement</h3>
 <div class="form-grid">
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label" for="lk-name">Nom du produit / service *</label>
-<input class="form-input" id="lk-name" type="text" placeholder="Ex: Abonnement mensuel" maxlength="120" oninput="updatePreview()">
+<input class="form-input" id="lk-name" type="text" placeholder="Ex: Abonnement mensuel" maxlength="120">
 </div>
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label">Type de montant</label>
 <div class="amount-type-toggle">
-<button type="button" class="amount-type-btn active" id="btn-type-fixed" onclick="setAmountType('fixed')">💰 Montant fixe</button>
-<button type="button" class="amount-type-btn" id="btn-type-flexible" onclick="setAmountType('flexible')">✏️ Montant libre</button>
+<button type="button" class="amount-type-btn active" id="btn-type-fixed">💰 Montant fixe</button>
+<button type="button" class="amount-type-btn" id="btn-type-flexible">✏️ Montant libre</button>
 </div>
 </div>
 <div class="form-group" id="fixed-amount-group">
 <label class="form-label" id="lk-amount-label" for="lk-amount">Montant *</label>
-<input class="form-input" id="lk-amount" type="number" min="0" placeholder="5000" oninput="updatePreview()">
+<input class="form-input" id="lk-amount" type="number" min="0" placeholder="5000">
 </div>
 <div class="form-group" id="min-amount-group" style="display:none">
 <label class="form-label" for="lk-min-amount">Montant minimum (optionnel)</label>
@@ -339,17 +335,17 @@ input:checked + .slider:before{transform:translateX(18px)}
 </div>
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label" for="lk-desc">Description</label>
-<input class="form-input" id="lk-desc" type="text" maxlength="500" placeholder="Description optionnelle" oninput="updatePreview()">
+<input class="form-input" id="lk-desc" type="text" maxlength="500" placeholder="Description optionnelle">
 </div>
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label">Photo du produit (optionnel)</label>
 <label class="img-drop" id="img-drop-label" for="lk-image">
 <span id="img-drop-text">📷 Cliquez ou glissez une image (jpg, png, webp — 5 Mo max)</span>
-<input type="file" id="lk-image" accept=".jpg,.jpeg,.png,.webp" onchange="onImageChange()">
+<input type="file" id="lk-image" accept=".jpg,.jpeg,.png,.webp">
 </label>
 <div class="img-preview-wrap" id="img-preview-wrap">
-<img class="img-preview" id="img-preview">
-<button type="button" class="img-remove" onclick="removeImage()" aria-label="Retirer l'image">✕</button>
+<img class="img-preview" id="img-preview" alt="">
+<button type="button" class="img-remove" id="btn-remove-img" aria-label="Retirer">✕</button>
 </div>
 </div>
 <div class="form-group" style="grid-column:1/-1">
@@ -361,26 +357,23 @@ input:checked + .slider:before{transform:translateX(18px)}
 <input class="form-input" id="lk-thankyou" type="text" maxlength="500" placeholder="Merci pour votre achat !">
 </div>
 </div>
-
 <div class="preview-box">
 <div class="preview-logo">Flin<span>pay</span></div>
 <div class="preview-amount" id="prev-amount">0</div>
 <div class="preview-desc" id="prev-desc">Description du produit</div>
 <button class="preview-btn" type="button" disabled>💳 Payer maintenant</button>
 </div>
-
 <div class="modal-actions">
-<button class="btn btn-outline" onclick="closeModal()">Annuler</button>
-<button class="btn btn-primary" id="btn-create-link" onclick="createLink()">Créer le lien</button>
+<button class="btn btn-outline" id="btn-cancel-modal">Annuler</button>
+<button class="btn btn-primary" id="btn-create-link">Créer le lien</button>
 </div>
 </div>
 </div>
 
 <!-- MODAL ÉDITION -->
 <div class="modal-bg" id="edit-modal">
-<div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
-<h3 id="edit-modal-title"><span class="icon"><svg><use href="#ic-edit"/></svg></span> Modifier le lien</h3>
-
+<div class="modal">
+<h3><span class="icon"><svg><use href="#ic-edit"/></svg></span> Modifier le lien</h3>
 <div class="status-toggle-row">
 <div>
 <div class="status-toggle-label">Lien actif</div>
@@ -391,22 +384,21 @@ input:checked + .slider:before{transform:translateX(18px)}
 <span class="slider"></span>
 </label>
 </div>
-
 <div class="form-grid">
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label" for="ed-name">Nom du produit / service *</label>
-<input class="form-input" id="ed-name" type="text" maxlength="120" oninput="updateEditPreview()">
+<input class="form-input" id="ed-name" type="text" maxlength="120">
 </div>
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label">Type de montant</label>
 <div class="amount-type-toggle">
-<button type="button" class="amount-type-btn active" id="ed-btn-type-fixed" onclick="setEditAmountType('fixed')">💰 Montant fixe</button>
-<button type="button" class="amount-type-btn" id="ed-btn-type-flexible" onclick="setEditAmountType('flexible')">✏️ Montant libre</button>
+<button type="button" class="amount-type-btn active" id="ed-btn-type-fixed">💰 Montant fixe</button>
+<button type="button" class="amount-type-btn" id="ed-btn-type-flexible">✏️ Montant libre</button>
 </div>
 </div>
 <div class="form-group" id="ed-fixed-amount-group">
 <label class="form-label" id="ed-amount-label" for="ed-amount">Montant *</label>
-<input class="form-input" id="ed-amount" type="number" min="0" oninput="updateEditPreview()">
+<input class="form-input" id="ed-amount" type="number" min="0">
 </div>
 <div class="form-group" id="ed-min-amount-group" style="display:none">
 <label class="form-label" for="ed-min-amount">Montant minimum (optionnel)</label>
@@ -422,7 +414,7 @@ input:checked + .slider:before{transform:translateX(18px)}
 </div>
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label" for="ed-desc">Description</label>
-<input class="form-input" id="ed-desc" type="text" maxlength="500" oninput="updateEditPreview()">
+<input class="form-input" id="ed-desc" type="text" maxlength="500">
 </div>
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label" for="ed-redirect">URL de redirection après paiement (optionnel)</label>
@@ -430,440 +422,384 @@ input:checked + .slider:before{transform:translateX(18px)}
 </div>
 <div class="form-group" style="grid-column:1/-1">
 <label class="form-label" for="ed-thankyou">Message de remerciement (optionnel)</label>
-<input class="form-input" id="ed-thankyou" type="text" maxlength="500" placeholder="Merci pour votre achat !">
+<input class="form-input" id="ed-thankyou" type="text" maxlength="500">
 </div>
 </div>
-
 <div class="preview-box">
 <div class="preview-logo">Flin<span>pay</span></div>
 <div class="preview-amount" id="ed-prev-amount">0</div>
 <div class="preview-desc" id="ed-prev-desc">Description du produit</div>
 <button class="preview-btn" type="button" disabled>💳 Payer maintenant</button>
 </div>
-
 <div class="modal-actions">
-<button class="btn btn-outline" onclick="closeEditModal()">Annuler</button>
-<button class="btn btn-primary" id="btn-save-edit" onclick="saveEdit()">Enregistrer</button>
+<button class="btn btn-outline" id="btn-cancel-edit">Annuler</button>
+<button class="btn btn-primary" id="btn-save-edit">Enregistrer</button>
 </div>
 </div>
 </div>
 
-<!-- MODAL CONFIRMATION SUPPRESSION -->
+<!-- MODAL SUPPRESSION -->
 <div class="modal-bg" id="confirm-modal">
-<div class="modal" style="max-width:380px" role="dialog" aria-modal="true">
+<div class="modal" style="max-width:380px">
 <h3>🗑️ Supprimer ce lien ?</h3>
 <p style="font-size:.87rem;color:var(--muted);line-height:1.6">Cette action est définitive. Le lien ne sera plus accessible et ne pourra plus recevoir de paiement.</p>
 <div class="modal-actions">
-<button class="btn btn-outline" onclick="closeConfirmModal()">Annuler</button>
-<button class="btn btn-danger" id="btn-confirm-delete" onclick="confirmDelete()">Supprimer</button>
+<button class="btn btn-outline" id="btn-cancel-delete">Annuler</button>
+<button class="btn btn-danger" id="btn-confirm-delete">Supprimer</button>
 </div>
 </div>
 </div>
 
-<div id="toast" role="status" aria-live="polite"></div>
-<script>
+<div id="toast"></div>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 
-// ── Devise du marchand : jamais figée sur XOF, dépend de son pays ──
 const COUNTRY_CURRENCY = {CM:'XAF',CI:'XOF',BF:'XOF',BJ:'XOF',TG:'XOF',CD:'CDF',GA:'XAF'};
 let merchantCurrency = 'XOF';
+let links = [];
+let currentFilter = 'all';
+let currentAmountType = 'fixed';
+let editAmountType = 'fixed';
+let editingToken = null;
+let pendingDeleteToken = null;
 
-function $(id){ return document.getElementById(id); }
-
-function escapeHtml(str){
-const div=document.createElement('div');
-div.textContent = str==null ? '' : String(str);
-return div.innerHTML;
-}
-
-function fmtAmount(n){
-return (Number(n)||0).toLocaleString('fr-FR');
-}
-
-// ── CSRF : lu depuis le cookie posé à la connexion, renvoyé dans
-// l'en-tête X-CSRF-Token sur toute requête qui modifie une donnée
-// (voir services/auth.py côté serveur — csrf_protect). ────────────
-function getCsrfToken(){
-const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
-return m ? decodeURIComponent(m[1]) : '';
-}
+function getCsrfToken(){const m=document.querySelector('meta[name="csrf-token"]');return m?m.getAttribute('content'):''}
 async function apiFetch(url, options={}){
-const headers = Object.assign({}, options.headers || {});
-if(options.method && options.method !== 'GET'){
-headers['X-CSRF-Token'] = getCsrfToken();
+  const opts={...options}; opts.headers={...(opts.headers||{})};
+  const method=(opts.method||'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){
+    const t=getCsrfToken(); if(t) opts.headers['X-CSRF-Token']=t;
+  }
+  if(opts.body && typeof opts.body === 'string'){
+    opts.headers['Content-Type']=opts.headers['Content-Type']||'application/json';
+  }
+  return fetch(url, opts);
 }
-return fetch(url, Object.assign({}, options, {headers}));
-}
+function $(id){ return document.getElementById(id); }
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
+function fmtAmount(n){return (Number(n)||0).toLocaleString('fr-FR');}
+function toast(msg,ok=true){const t=$('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');clearTimeout(t._hideTimer);t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000);}
 
-function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
+function openSidebar(){ $('sidebar').classList.add('open'); $('overlay').classList.add('show'); document.body.style.overflow='hidden'; }
+function closeSidebar(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('show'); document.body.style.overflow=''; }
 
-function toast(msg,ok=true){
-const t=document.getElementById('toast');
-t.textContent=(ok?'✅ ':'❌ ')+msg;
-t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';
-t.classList.add('show');
-clearTimeout(t._hideTimer);
-t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000);
-}
-
-function openModal(){document.getElementById('modal').classList.add('show')}
-function closeModal(){document.getElementById('modal').classList.remove('show')}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal()})
-document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-modal'))closeEditModal()})
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeEditModal(); closeConfirmModal(); }});
-
-let currentAmountType='fixed';
 function setAmountType(type){
-currentAmountType=type;
-document.getElementById('btn-type-fixed').classList.toggle('active', type==='fixed');
-document.getElementById('btn-type-flexible').classList.toggle('active', type==='flexible');
-document.getElementById('fixed-amount-group').style.display=type==='fixed'?'block':'none';
-document.getElementById('min-amount-group').style.display=type==='flexible'?'block':'none';
-updatePreview();
+  currentAmountType=type;
+  $('btn-type-fixed').classList.toggle('active', type==='fixed');
+  $('btn-type-flexible').classList.toggle('active', type==='flexible');
+  $('fixed-amount-group').style.display=type==='fixed'?'block':'none';
+  $('min-amount-group').style.display=type==='flexible'?'block':'none';
+  updatePreview();
 }
-
-function onImageChange(){
-const f=document.getElementById('lk-image').files[0];
-const wrap=document.getElementById('img-preview-wrap');
-const prev=document.getElementById('img-preview');
-if(f){
-if(f.size > 5*1024*1024){ toast('Image trop volumineuse (5 Mo max)', false); document.getElementById('lk-image').value=''; return; }
-const reader=new FileReader();
-reader.onload=e=>{ prev.src=e.target.result; wrap.style.display='block'; };
-reader.readAsDataURL(f);
-}else{
-wrap.style.display='none';
-}
-}
-function removeImage(){
-document.getElementById('lk-image').value='';
-document.getElementById('img-preview-wrap').style.display='none';
+function setEditAmountType(type){
+  editAmountType=type;
+  $('ed-btn-type-fixed').classList.toggle('active', type==='fixed');
+  $('ed-btn-type-flexible').classList.toggle('active', type==='flexible');
+  $('ed-fixed-amount-group').style.display=type==='fixed'?'block':'none';
+  $('ed-min-amount-group').style.display=type==='flexible'?'block':'none';
 }
 
 function updatePreview(){
-const amount=document.getElementById('lk-amount').value;
-const desc=document.getElementById('lk-desc').value||document.getElementById('lk-name').value||'Description du produit';
-document.getElementById('prev-amount').textContent = currentAmountType==='flexible'
-? 'Montant libre'
-: fmtAmount(amount)+' '+merchantCurrency;
-document.getElementById('prev-desc').textContent=desc;
+  const amount = $('lk-amount').value;
+  const desc = $('lk-desc').value || $('lk-name').value || 'Description du produit';
+  $('prev-amount').textContent = currentAmountType==='flexible' ? 'Montant libre' : fmtAmount(amount)+' '+merchantCurrency;
+  $('prev-desc').textContent = desc;
+}
+function updateEditPreview(){
+  const amount = $('ed-amount').value;
+  const desc = $('ed-desc').value || $('ed-name').value || 'Description du produit';
+  $('ed-prev-amount').textContent = editAmountType==='flexible' ? 'Montant libre' : fmtAmount(amount)+' '+merchantCurrency;
+  $('ed-prev-desc').textContent = desc;
 }
 
-// ── PROFIL (sidebar + devise) — via /api/me ───────
+function onImageChange(){
+  const f = $('lk-image').files[0];
+  const wrap = $('img-preview-wrap');
+  const prev = $('img-preview');
+  if(f){
+    if(f.size > 5*1024*1024){ toast('Image trop volumineuse (5 Mo max)', false); $('lk-image').value=''; return; }
+    const r = new FileReader();
+    r.onload = e => { prev.src = e.target.result; wrap.style.display='block'; };
+    r.readAsDataURL(f);
+  } else {
+    wrap.style.display='none';
+  }
+}
+
 async function loadProfile(){
-try{
-const r=await fetch('/api/me');
-if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-const data=await r.json();
-if(!data.ok) return;
-const user=data.user;
-document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
-document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
-document.getElementById('user-email').textContent=user.email||'';
-document.getElementById('plan-badge-pill').textContent = user.plan==='pro' ? '🚀 Pro' : '🚀 Starter';
-merchantCurrency = COUNTRY_CURRENCY[user.country] || 'XOF';
-document.getElementById('lk-amount-label').textContent = `Montant (${merchantCurrency}) *`;
-document.getElementById('ed-amount-label').textContent = `Montant (${merchantCurrency}) *`;
-}catch(e){}
-}
-
-// ── LIENS DE PAIEMENT — via /api/payment-links ────
-let links=[];
-let currentFilter='all';
-
-function setFilter(filter, btn){
-currentFilter=filter;
-document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
-btn.classList.add('active');
-renderLinks();
+  try{
+    const r = await apiFetch('/api/me');
+    if(r.status===401 || r.redirected){ window.location.href='/login'; return; }
+    const data = await r.json();
+    if(!data.ok) return;
+    const user = data.user;
+    $('user-av').textContent = (user.firstname||'U')[0].toUpperCase();
+    $('user-name').textContent = (user.firstname||'')+' '+(user.lastname||'');
+    $('user-email').textContent = user.email||'';
+    $('plan-badge-pill').textContent = user.plan==='pro' ? '⭐ Pro' : '🚀 Starter';
+    merchantCurrency = COUNTRY_CURRENCY[user.country] || 'XOF';
+    $('lk-amount-label').textContent = `Montant (${merchantCurrency}) *`;
+    $('ed-amount-label').textContent = `Montant (${merchantCurrency}) *`;
+  }catch(e){}
 }
 
 async function loadLinks(){
-try{
-const r=await fetch('/api/payment-links');
-if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-const data=await r.json();
-if(!data.ok){ toast(data.error||'Erreur de chargement',false); links=[]; renderLinks(); return; }
-links=(data.links||[]).map(l=>({
-token:l.token, name:l.name||'', amount:Number(l.amount)||0,
-amountType:l.amount_type||'fixed', minAmount:l.min_amount,
-desc:l.description||'', limit:l.usage_limit||'∞', expire:l.expires_at||null,
-imageUrl:l.image_url||null,
-redirect:l.redirect_url||'', thankyou:l.thank_you_message||'',
-url:`https://www.flinpay.cfd/pay/${l.token}`,
-active:l.active!==false, views:l.views||0, paid:l.paid_count||0
-}));
-renderLinks();
-}catch(e){
-toast('Impossible de charger les liens',false);
-links=[]; renderLinks();
-}
+  try{
+    const r = await apiFetch('/api/payment-links');
+    if(r.status===401 || r.redirected){ window.location.href='/login'; return; }
+    const data = await r.json();
+    if(!data.ok){ links=[]; renderLinks(); return; }
+    links = (data.links||[]).map(l=>({
+      token: l.token, name: l.name||'', amount: Number(l.amount)||0,
+      amountType: l.amount_type||'fixed', minAmount: l.min_amount,
+      desc: l.description||'', limit: l.usage_limit||'∞', expire: l.expires_at||null,
+      imageUrl: l.image_url||null, redirect: l.redirect_url||'', thankyou: l.thank_you_message||'',
+      url: `https://www.flinpay.cfd/pay/${l.token}`,
+      active: l.active!==false, views: l.views||0, paid: l.paid_count||0
+    }));
+    renderLinks();
+  }catch(e){
+    toast('Impossible de charger les liens', false);
+    links=[]; renderLinks();
+  }
 }
 
 async function createLink(){
-const name=document.getElementById('lk-name').value.trim();
-const amount=document.getElementById('lk-amount').value;
-const minAmount=document.getElementById('lk-min-amount').value;
-const desc=document.getElementById('lk-desc').value.trim();
-const limit=document.getElementById('lk-limit').value;
-const expire=document.getElementById('lk-expire').value;
-const redirect=document.getElementById('lk-redirect').value.trim();
-const thankyou=document.getElementById('lk-thankyou').value.trim();
-const imageFile=document.getElementById('lk-image').files[0];
+  const name = $('lk-name').value.trim();
+  const amount = $('lk-amount').value;
+  const minAmount = $('lk-min-amount').value;
+  const desc = $('lk-desc').value.trim();
+  const limit = $('lk-limit').value;
+  const expire = $('lk-expire').value;
+  const redirect = $('lk-redirect').value.trim();
+  const thankyou = $('lk-thankyou').value.trim();
+  const imageFile = $('lk-image').files[0];
 
-if(!name){toast('Le nom est requis',false);return}
-if(currentAmountType==='fixed' && !amount){toast('Le montant est requis',false);return}
+  if(!name){ toast('Le nom est requis', false); return; }
+  if(currentAmountType==='fixed' && !amount){ toast('Le montant est requis', false); return; }
 
-const btn=document.getElementById('btn-create-link');
-btn.disabled=true; btn.textContent='Création...';
+  const btn = $('btn-create-link');
+  btn.disabled = true; btn.textContent = 'Création...';
 
-const fd=new FormData();
-fd.append('name', name);
-fd.append('amount_type', currentAmountType);
-if(currentAmountType==='fixed') fd.append('amount', amount);
-else if(minAmount) fd.append('min_amount', minAmount);
-fd.append('description', desc);
-if(limit) fd.append('usage_limit', limit);
-if(expire) fd.append('expires_at', expire);
-if(redirect) fd.append('redirect_url', redirect);
-if(thankyou) fd.append('thank_you_message', thankyou);
-if(imageFile) fd.append('image', imageFile);
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('amount_type', currentAmountType);
+  if(currentAmountType==='fixed') fd.append('amount', amount);
+  else if(minAmount) fd.append('min_amount', minAmount);
+  fd.append('description', desc);
+  if(limit) fd.append('usage_limit', limit);
+  if(expire) fd.append('expires_at', expire);
+  if(redirect) fd.append('redirect_url', redirect);
+  if(thankyou) fd.append('thank_you_message', thankyou);
+  if(imageFile) fd.append('image', imageFile);
 
-try{
-const r=await apiFetch('/api/payment-links',{ method:'POST', body:fd });
-const data=await r.json();
-if(data.ok){
-closeModal();
-['lk-name','lk-amount','lk-min-amount','lk-desc','lk-limit','lk-expire','lk-redirect','lk-thankyou'].forEach(id=>document.getElementById(id).value='');
-removeImage();
-setAmountType('fixed');
-updatePreview();
-toast('Lien créé ! Partagez-le avec vos clients.');
-loadLinks();
-}else{
-toast(data.error||'Erreur lors de la création',false);
-}
-}catch(e){
-toast('Erreur de connexion',false);
-}
-btn.disabled=false; btn.textContent='Créer le lien';
+  try{
+    const r = await apiFetch('/api/payment-links', { method:'POST', body: fd });
+    const data = await r.json();
+    if(data.ok){
+      closeModal();
+      ['lk-name','lk-amount','lk-min-amount','lk-desc','lk-limit','lk-expire','lk-redirect','lk-thankyou'].forEach(id => $(id).value='');
+      $('lk-image').value=''; $('img-preview-wrap').style.display='none';
+      setAmountType('fixed');
+      updatePreview();
+      toast('Lien créé !');
+      loadLinks();
+    }else{
+      toast(data.error || 'Erreur lors de la création', false);
+    }
+  }catch(e){ toast('Erreur de connexion', false); }
+  btn.disabled = false; btn.textContent = 'Créer le lien';
 }
 
-// ── ÉDITION D'UN LIEN ──────────────────────────────
-let editingToken=null;
-let editAmountType='fixed';
-
-function setEditAmountType(type){
-editAmountType=type;
-document.getElementById('ed-btn-type-fixed').classList.toggle('active', type==='fixed');
-document.getElementById('ed-btn-type-flexible').classList.toggle('active', type==='flexible');
-document.getElementById('ed-fixed-amount-group').style.display=type==='fixed'?'block':'none';
-document.getElementById('ed-min-amount-group').style.display=type==='flexible'?'block':'none';
-updateEditPreview();
-}
-
-function updateEditPreview(){
-const amount=document.getElementById('ed-amount').value;
-const desc=document.getElementById('ed-desc').value||document.getElementById('ed-name').value||'Description du produit';
-document.getElementById('ed-prev-amount').textContent = editAmountType==='flexible'
-? 'Montant libre'
-: fmtAmount(amount)+' '+merchantCurrency;
-document.getElementById('ed-prev-desc').textContent=desc;
-}
-
+function openModal(){ $('modal').classList.add('show'); }
+function closeModal(){ $('modal').classList.remove('show'); }
 function openEditModal(token){
-const l=links.find(x=>x.token===token);
-if(!l) return;
-editingToken=token;
-document.getElementById('ed-name').value=l.name||'';
-document.getElementById('ed-amount').value=l.amount||'';
-document.getElementById('ed-min-amount').value=l.minAmount||'';
-document.getElementById('ed-desc').value=l.desc||'';
-document.getElementById('ed-limit').value=(l.limit==='∞'?'':l.limit)||'';
-document.getElementById('ed-expire').value=l.expire||'';
-document.getElementById('ed-redirect').value=l.redirect||'';
-document.getElementById('ed-thankyou').value=l.thankyou||'';
-document.getElementById('ed-active').checked=l.active;
-setEditAmountType(l.amountType||'fixed');
-updateEditPreview();
-document.getElementById('edit-modal').classList.add('show');
+  const l = links.find(x => x.token === token); if(!l) return;
+  editingToken = token;
+  $('ed-name').value = l.name||'';
+  $('ed-amount').value = l.amount||'';
+  $('ed-min-amount').value = l.minAmount||'';
+  $('ed-desc').value = l.desc||'';
+  $('ed-limit').value = (l.limit==='∞'?'':l.limit)||'';
+  $('ed-expire').value = l.expire||'';
+  $('ed-redirect').value = l.redirect||'';
+  $('ed-thankyou').value = l.thankyou||'';
+  $('ed-active').checked = l.active;
+  setEditAmountType(l.amountType||'fixed');
+  updateEditPreview();
+  $('edit-modal').classList.add('show');
 }
-function closeEditModal(){ document.getElementById('edit-modal').classList.remove('show'); editingToken=null; }
+function closeEditModal(){ $('edit-modal').classList.remove('show'); editingToken=null; }
 
 async function saveEdit(){
-if(!editingToken) return;
-const name=document.getElementById('ed-name').value.trim();
-const amount=document.getElementById('ed-amount').value;
-if(!name){toast('Le nom est requis',false);return}
-if(editAmountType==='fixed' && !amount){toast('Le montant est requis',false);return}
+  if(!editingToken) return;
+  const name = $('ed-name').value.trim();
+  const amount = $('ed-amount').value;
+  if(!name){ toast('Le nom est requis', false); return; }
+  if(editAmountType==='fixed' && !amount){ toast('Le montant est requis', false); return; }
 
-const btn=document.getElementById('btn-save-edit');
-btn.disabled=true; btn.textContent='Enregistrement...';
+  const btn = $('btn-save-edit');
+  btn.disabled = true; btn.textContent = 'Enregistrement...';
 
-const payload={
-name,
-amount_type: editAmountType,
-description: document.getElementById('ed-desc').value.trim(),
-usage_limit: document.getElementById('ed-limit').value || null,
-expires_at: document.getElementById('ed-expire').value || null,
-redirect_url: document.getElementById('ed-redirect').value.trim(),
-thank_you_message: document.getElementById('ed-thankyou').value.trim(),
-active: document.getElementById('ed-active').checked
-};
-if(editAmountType==='fixed') payload.amount=amount;
-else payload.min_amount=document.getElementById('ed-min-amount').value || null;
+  const payload = {
+    name, amount_type: editAmountType,
+    description: $('ed-desc').value.trim(),
+    usage_limit: $('ed-limit').value || null,
+    expires_at: $('ed-expire').value || null,
+    redirect_url: $('ed-redirect').value.trim(),
+    thank_you_message: $('ed-thankyou').value.trim(),
+    active: $('ed-active').checked
+  };
+  if(editAmountType==='fixed') payload.amount = amount;
+  else payload.min_amount = $('ed-min-amount').value || null;
 
-try{
-const r=await apiFetch('/api/payment-links/'+editingToken,{
-method:'PUT',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify(payload)
-});
-const data=await r.json();
-if(data.ok){
-closeEditModal();
-toast('Lien mis à jour');
-loadLinks();
-}else{
-toast(data.error||'Erreur lors de la mise à jour',false);
-}
-}catch(e){
-toast('Erreur de connexion',false);
-}
-btn.disabled=false; btn.textContent='Enregistrer';
+  try{
+    const r = await apiFetch('/api/payment-links/'+editingToken, { method:'PUT', body: JSON.stringify(payload) });
+    const data = await r.json();
+    if(data.ok){ closeEditModal(); toast('Lien mis à jour'); loadLinks(); }
+    else toast(data.error||'Erreur lors de la mise à jour', false);
+  }catch(e){ toast('Erreur de connexion', false); }
+  btn.disabled = false; btn.textContent = 'Enregistrer';
 }
 
-// ── ACTIVER / DÉSACTIVER RAPIDE ────────────────────
 async function toggleActive(token, current){
-try{
-const r=await apiFetch('/api/payment-links/'+token,{
-method:'PUT',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({ active: !current })
-});
-const data=await r.json();
-if(data.ok){
-toast(!current ? 'Lien activé' : 'Lien désactivé');
-loadLinks();
-}else{
-toast(data.error||'Erreur lors du changement de statut',false);
-}
-}catch(e){
-toast('Erreur de connexion',false);
-}
+  try{
+    const r = await apiFetch('/api/payment-links/'+token, { method:'PUT', body: JSON.stringify({ active: !current }) });
+    const data = await r.json();
+    if(data.ok){ toast(!current?'Lien activé':'Lien désactivé'); loadLinks(); }
+    else toast(data.error||'Erreur', false);
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
-// ── SUPPRESSION (avec confirmation dans un modal, pas confirm()) ──
-let pendingDeleteToken=null;
 function deleteLink(token){
-pendingDeleteToken=token;
-document.getElementById('confirm-modal').classList.add('show');
+  pendingDeleteToken = token;
+  $('confirm-modal').classList.add('show');
 }
-function closeConfirmModal(){
-document.getElementById('confirm-modal').classList.remove('show');
-pendingDeleteToken=null;
-}
+function closeConfirmModal(){ $('confirm-modal').classList.remove('show'); pendingDeleteToken=null; }
 async function confirmDelete(){
-if(!pendingDeleteToken) return;
-const btn=document.getElementById('btn-confirm-delete');
-btn.disabled=true; btn.textContent='Suppression...';
-try{
-const r=await apiFetch('/api/payment-links/'+pendingDeleteToken,{method:'DELETE'});
-const data=await r.json();
-if(data.ok){ toast('Lien supprimé'); loadLinks(); }
-else{ toast(data.error||'Erreur lors de la suppression',false); }
-}catch(e){
-toast('Erreur de connexion',false);
-}
-btn.disabled=false; btn.textContent='Supprimer';
-closeConfirmModal();
+  if(!pendingDeleteToken) return;
+  const btn = $('btn-confirm-delete');
+  btn.disabled = true; btn.textContent = 'Suppression...';
+  try{
+    const r = await apiFetch('/api/payment-links/'+pendingDeleteToken, { method:'DELETE' });
+    const data = await r.json();
+    if(data.ok){ toast('Lien supprimé'); loadLinks(); }
+    else toast(data.error||'Erreur', false);
+  }catch(e){ toast('Erreur de connexion', false); }
+  btn.disabled = false; btn.textContent = 'Supprimer';
+  closeConfirmModal();
 }
 
 function copyLink(url){
-navigator.clipboard.writeText(url).then(()=>toast('Lien copié !')).catch(()=>toast('Impossible de copier',false));
+  navigator.clipboard.writeText(url).then(() => toast('Lien copié !')).catch(() => toast('Impossible de copier', false));
 }
 function shareLink(url, name){
-if(navigator.share){ navigator.share({title:'Payer — '+name, url}).catch(()=>{}); }
-else copyLink(url);
+  if(navigator.share){ navigator.share({title:'Payer — '+name, url}).catch(()=>{}); }
+  else copyLink(url);
 }
 
 function renderLinks(){
-const el=document.getElementById('links-list');
-const query=(document.getElementById('search-input').value||'').toLowerCase().trim();
+  const el = $('links-list');
+  const query = ($('search-input').value||'').toLowerCase().trim();
+  const filtered = links.filter(l=>{
+    if(currentFilter==='active' && !l.active) return false;
+    if(currentFilter==='inactive' && l.active) return false;
+    if(query && !(l.name.toLowerCase().includes(query) || l.desc.toLowerCase().includes(query))) return false;
+    return true;
+  });
+  $('links-count').textContent = links.length ? `(${links.length})` : '';
 
-let filtered=links.filter(l=>{
-if(currentFilter==='active' && !l.active) return false;
-if(currentFilter==='inactive' && l.active) return false;
-if(query && !(l.name.toLowerCase().includes(query) || l.desc.toLowerCase().includes(query))) return false;
-return true;
+  if(!links.length){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔗</div><div class="empty-text">Aucun lien créé.<br>Créez un lien de paiement partageable.</div></div>';
+    return;
+  }
+  if(!filtered.length){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">Aucun lien ne correspond à cette recherche.</div></div>';
+    return;
+  }
+  el.innerHTML = filtered.map((l,i) => {
+    const amountLabel = l.amountType==='flexible'
+      ? (l.minAmount ? `Dès ${fmtAmount(l.minAmount)} ${merchantCurrency}` : 'Montant libre')
+      : `${fmtAmount(l.amount)} ${merchantCurrency}`;
+    return `
+    <div class="link-card ${l.active?'':'is-inactive'}" style="animation-delay:${Math.min(i*.04,.4)}s">
+    <div class="link-top">
+    ${l.imageUrl?`<img src="${escapeHtml(l.imageUrl)}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:10px;flex-shrink:0">`:''}
+    <div style="flex:1;min-width:0">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+    <div class="link-name">${escapeHtml(l.name)}</div>
+    <span class="badge ${l.active?'b-active':'b-inactive'}">${l.active?'Actif':'Inactif'}</span>
+    <span class="badge b-type">${l.amountType==='flexible'?'✏️ Libre':'💰 Fixe'}</span>
+    </div>
+    <div class="link-amount">${amountLabel}</div>
+    ${l.desc?`<div style="font-size:.78rem;color:var(--muted);margin-top:4px">${escapeHtml(l.desc)}</div>`:''}
+    <div class="link-url">${escapeHtml(l.url)}</div>
+    <div class="link-stats">
+    <div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-eye"/></svg></span> <strong>${fmtAmount(l.views)}</strong> vues</div>
+    <div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-check-count"/></svg></span> <strong>${fmtAmount(l.paid)}</strong> paiements</div>
+    <div class="link-stat">🔢 Limite : <strong>${l.limit==='∞'?'∞':fmtAmount(l.limit)}</strong></div>
+    ${l.expire?`<div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-calendar"/></svg></span> Expire : <strong>${escapeHtml(l.expire)}</strong></div>`:''}
+    </div>
+    </div>
+    <div class="link-actions">
+    <button class="btn ${l.active?'btn-toggle-on':'btn-toggle-off'} btn-sm btn-icon" data-action="toggle" data-token="${l.token}" data-active="${l.active}" aria-label="${l.active?'Désactiver':'Activer'}"><span class="icon"><svg><use href="#ic-power"/></svg></span></button>
+    <button class="btn btn-outline btn-sm btn-icon" data-action="edit" data-token="${l.token}" aria-label="Modifier"><span class="icon"><svg><use href="#ic-edit"/></svg></span></button>
+    <button class="btn btn-outline btn-sm btn-icon" data-action="copy" data-url="${escapeHtml(l.url)}" aria-label="Copier"><span class="icon"><svg><use href="#ic-copy"/></svg></span></button>
+    <button class="btn btn-outline btn-sm btn-icon" data-action="share" data-url="${escapeHtml(l.url)}" data-name="${escapeHtml(l.name)}" aria-label="Partager"><span class="icon"><svg><use href="#ic-share"/></svg></span></button>
+    <button class="btn btn-danger btn-sm btn-icon" data-action="delete" data-token="${l.token}" aria-label="Supprimer"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
+    </div>
+    </div>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  $('burger-btn').addEventListener('click', openSidebar);
+  $('close-sidebar').addEventListener('click', closeSidebar);
+  $('overlay').addEventListener('click', closeSidebar);
+  $('btn-open-modal').addEventListener('click', openModal);
+  $('btn-cancel-modal').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', e => { if(e.target.id==='modal') closeModal(); });
+  $('btn-cancel-edit').addEventListener('click', closeEditModal);
+  $('edit-modal').addEventListener('click', e => { if(e.target.id==='edit-modal') closeEditModal(); });
+  $('btn-cancel-delete').addEventListener('click', closeConfirmModal);
+  $('confirm-modal').addEventListener('click', e => { if(e.target.id==='confirm-modal') closeConfirmModal(); });
+  $('btn-create-link').addEventListener('click', createLink);
+  $('btn-save-edit').addEventListener('click', saveEdit);
+  $('btn-confirm-delete').addEventListener('click', confirmDelete);
+  $('btn-type-fixed').addEventListener('click', () => setAmountType('fixed'));
+  $('btn-type-flexible').addEventListener('click', () => setAmountType('flexible'));
+  $('ed-btn-type-fixed').addEventListener('click', () => setEditAmountType('fixed'));
+  $('ed-btn-type-flexible').addEventListener('click', () => setEditAmountType('flexible'));
+  $('lk-name').addEventListener('input', updatePreview);
+  $('lk-amount').addEventListener('input', updatePreview);
+  $('lk-desc').addEventListener('input', updatePreview);
+  $('ed-name').addEventListener('input', updateEditPreview);
+  $('ed-amount').addEventListener('input', updateEditPreview);
+  $('ed-desc').addEventListener('input', updateEditPreview);
+  $('lk-image').addEventListener('change', onImageChange);
+  $('btn-remove-img').addEventListener('click', () => { $('lk-image').value=''; $('img-preview-wrap').style.display='none'; });
+  $('search-input').addEventListener('input', renderLinks);
+  document.querySelectorAll('.filter-chip').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    b.classList.add('active');
+    currentFilter = b.dataset.filter;
+    renderLinks();
+  }));
+  $('links-list').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]'); if(!btn) return;
+    const a = btn.dataset.action;
+    if(a==='toggle') toggleActive(btn.dataset.token, btn.dataset.active==='true');
+    if(a==='edit') openEditModal(btn.dataset.token);
+    if(a==='copy') copyLink(btn.dataset.url);
+    if(a==='share') shareLink(btn.dataset.url, btn.dataset.name);
+    if(a==='delete') deleteLink(btn.dataset.token);
+  });
+  document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeModal(); closeEditModal(); closeConfirmModal(); } });
+
+  loadProfile();
+  loadLinks();
 });
-
-document.getElementById('links-count').textContent=links.length?`(${links.length})`:'';
-
-if(!links.length){
-el.innerHTML='<div class="empty"><div class="empty-icon">🔗</div><div class="empty-text">Aucun lien créé.<br>Créez un lien de paiement partageable, sans écrire de code.</div></div>';
-return;
-}
-if(!filtered.length){
-el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">Aucun lien ne correspond à cette recherche.</div></div>';
-return;
-}
-
-el.innerHTML=filtered.map((l,i)=>{
-const amountLabel = l.amountType==='flexible'
-? (l.minAmount ? `Dès ${fmtAmount(l.minAmount)} ${merchantCurrency}` : 'Montant libre')
-: `${fmtAmount(l.amount)} ${merchantCurrency}`;
-return `
-<div class="link-card ${l.active?'':'is-inactive'}" style="animation-delay:${Math.min(i*.04,.4)}s">
-<div class="link-top">
-${l.imageUrl?`<img src="${escapeHtml(l.imageUrl)}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:10px;flex-shrink:0">`:''}
-<div style="flex:1;min-width:0">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-<div class="link-name">${escapeHtml(l.name)}</div>
-<span class="badge ${l.active?'b-active':'b-inactive'}">${l.active?'Actif':'Inactif'}</span>
-<span class="badge b-type">${l.amountType==='flexible'?'✏️ Libre':'💰 Fixe'}</span>
-</div>
-<div class="link-amount">${amountLabel}</div>
-${l.desc?`<div style="font-size:.78rem;color:var(--muted);margin-top:4px">${escapeHtml(l.desc)}</div>`:''}
-<div class="link-url">${escapeHtml(l.url)}</div>
-<div class="link-stats">
-<div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-eye"/></svg></span> <strong>${fmtAmount(l.views)}</strong> vues</div>
-<div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-check-count"/></svg></span> <strong>${fmtAmount(l.paid)}</strong> paiements</div>
-<div class="link-stat">🔢 Limite : <strong>${l.limit==='∞'?'∞':fmtAmount(l.limit)}</strong></div>
-${l.expire?`<div class="link-stat"><span class="icon" style="width:14px;height:14px"><svg><use href="#ic-calendar"/></svg></span> Expire : <strong>${escapeHtml(l.expire)}</strong></div>`:''}
-</div>
-</div>
-<div class="link-actions">
-<button class="btn ${l.active?'btn-toggle-on':'btn-toggle-off'} btn-sm btn-icon" data-action="toggle" data-token="${l.token}" data-active="${l.active}" aria-label="${l.active?'Désactiver':'Activer'} ce lien"><span class="icon"><svg><use href="#ic-power"/></svg></span></button>
-<button class="btn btn-outline btn-sm btn-icon" data-action="edit" data-token="${l.token}" aria-label="Modifier ce lien"><span class="icon"><svg><use href="#ic-edit"/></svg></span></button>
-<button class="btn btn-outline btn-sm btn-icon" data-action="copy" data-url="${escapeHtml(l.url)}" aria-label="Copier le lien"><span class="icon"><svg><use href="#ic-copy"/></svg></span></button>
-<button class="btn btn-outline btn-sm btn-icon" data-action="share" data-url="${escapeHtml(l.url)}" data-name="${escapeHtml(l.name)}" aria-label="Partager le lien"><span class="icon"><svg><use href="#ic-share"/></svg></span></button>
-<button class="btn btn-danger btn-sm btn-icon" data-action="delete" data-token="${l.token}" aria-label="Supprimer ce lien"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
-</div>
-</div>
-</div>`;
-}).join('');
-}
-
-// Délégation d'événements : les data-attributes portent les valeurs (jamais
-// interpolées dans un attribut onclick="") — évite toute possibilité
-// d'injection via un nom de lien contenant des guillemets ou des caractères
-// spéciaux, même si escapeHtml() protège déjà le HTML affiché.
-document.getElementById('links-list').addEventListener('click', function(e){
-const btn = e.target.closest('button[data-action]');
-if(!btn) return;
-const action = btn.dataset.action;
-if(action==='toggle') toggleActive(btn.dataset.token, btn.dataset.active==='true');
-if(action==='edit') openEditModal(btn.dataset.token);
-if(action==='copy') copyLink(btn.dataset.url);
-if(action==='share') shareLink(btn.dataset.url, btn.dataset.name);
-if(action==='delete') deleteLink(btn.dataset.token);
-});
-
-// ── INIT ─────────────────────────────────────────
-loadProfile();
-loadLinks();
 </script>
 </body>
 </html>
