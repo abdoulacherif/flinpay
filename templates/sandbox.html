@@ -4,152 +4,441 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Sandbox</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1A3CFF;--gold:#FFB400;--green:#00C48C;--black:#0D0D0D;--bg:#F5F6FA;--text:#1A1A2E;--muted:#8A8FA8;--danger:#FF4444}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+:root{
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --text:#12131C;--muted:#767A94;
+  --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;background:var(--black);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
-.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
-.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.4rem;color:white;text-decoration:none}
-.logo-text span{color:var(--blue)}
-.close-sb{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer}
-.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
-.nav-group{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:14px 20px 5px}
-.nav-link{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.45);font-size:0.86rem;font-weight:500;text-decoration:none;border-left:3px solid transparent;transition:all .2s}
-.nav-link:hover{color:white;background:rgba(255,255,255,0.04)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.15);border-left-color:var(--blue)}
-.nav-link .icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0}
-.sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06)}
+.icon{width:18px;height:18px;flex-shrink:0}
+.icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
+.corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
+.corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
+.corridor-label b{color:#8ECFFF;font-weight:700}
+.corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
+.sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:9px 22px;color:rgba(255,255,255,0.5);font-size:.855rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none;background:none;width:100%;text-align:left}
+.nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
+.nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
+.sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.88rem}
-.user-name{font-size:0.83rem;font-weight:600;color:white}
-.user-email{font-size:0.7rem;color:rgba(255,255,255,0.3)}
-.logout-link{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.25);font-size:0.78rem;padding:10px 20px 14px;text-decoration:none;border-top:1px solid rgba(255,255,255,0.04)}
-.logout-link:hover{color:#ff7070}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-name{font-size:.82rem;font-weight:600;color:white}
+.user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
+.logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
+.logout-link:hover{color:#ff7d7d}
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
-.main{margin-left:250px;min-height:100vh}
-.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:62px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
-.burger{display:none;background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:5px}
-.burger-line{width:22px;height:2px;background:var(--text);border-radius:2px;display:block}
-.page-title{font-size:1rem;font-weight:700}
-.content{padding:28px;max-width:700px}
-.card{background:white;border-radius:14px;border:1px solid #E8EAF0;overflow:hidden;margin-bottom:18px}
-.card-head{padding:16px 22px;border-bottom:1px solid #F0F2F7}
-.card-title{font-size:0.9rem;font-weight:700}
+
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--gradient);padding:20px 30px;color:white;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+.topbar::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.topbar-left{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.burger-btn{display:none;background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center}
+.burger-btn:hover{background:rgba(255,255,255,0.28)}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:10px}
+.topbar-title .icon{width:22px;height:22px;color:white}
+
+.page{flex:1;padding:26px 30px 60px;max-width:860px}
+
+.card{background:white;border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px;border:1px solid var(--border-soft)}
+.card-head{padding:18px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.card-title{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:22px}
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.9rem;padding:12px 18px;border-radius:9px;border:none;cursor:pointer;width:100%}
-.btn-primary{background:var(--blue);color:white}
+
+.warn-banner{background:var(--gold-tint);border:1px solid rgba(255,180,0,.35);border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:.83rem;color:#8A5B00;line-height:1.6;display:flex;gap:10px;align-items:flex-start}
+.warn-banner strong{color:#5C3D00;display:block;margin-bottom:4px;font-size:.87rem}
+
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .form-group{display:flex;flex-direction:column;gap:6px}
-.form-label{font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase}
-.form-input{padding:10px 14px;border:1.5px solid #E0E2EC;border-radius:9px;font-size:0.88rem}
-.result-box{margin-top:16px;display:none;background:#0D0D0D;border-radius:10px;padding:16px;font-family:monospace;font-size:0.8rem;color:#00E5FF;white-space:pre-wrap;word-break:break-all}
-@media(max-width:900px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.burger{display:flex}.close-sb{display:block}.content{padding:16px}.form-grid{grid-template-columns:1fr}}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.form-input,.form-select{padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;background:white;color:var(--text)}
+.form-input:focus,.form-select:focus{border-color:var(--blue)}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.9rem;padding:12px 20px;border-radius:10px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;text-decoration:none}
+.btn-primary{background:var(--gradient);color:white;box-shadow:0 6px 18px rgba(10,108,255,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(10,108,255,.4)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-full{width:100%;margin-top:16px}
+
+.result-box{margin-top:18px;display:none;background:#0B0D17;border-radius:12px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#00E5FF;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;line-height:1.6}
+.result-box.show{display:block}
+.result-box .k{color:#8ECFFF}
+.result-box .s{color:#7DFFB0}
+.result-box .e{color:#FF8E8E}
+.result-box .n{color:#FFD873}
+
+.test-numbers{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+.test-item{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.test-item code{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.85rem;color:var(--text)}
+.test-badge{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700}
+.tb-success{background:var(--green-tint);color:#0A7A50}
+.tb-failed{background:var(--danger-tint);color:#B3271A}
+.tb-pending{background:var(--gold-tint);color:#8A5B00}
+
+.status-indicator{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:.75rem;font-weight:700;background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(8px)}
+.status-indicator .dot{width:7px;height:7px;border-radius:50%;background:#7DFFB0;box-shadow:0 0 8px 2px rgba(125,255,176,.6);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
+#toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .burger-btn{display:flex}
+  .close-sidebar{display:block}
+  .page{padding:16px;max-width:100%}
+  .topbar{padding:16px 20px}
+  .form-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
-<div class="overlay" id="overlay" onclick="closeSB()"></div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="ic-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="ic-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2 11.4 11.6"/><path d="M15.5 7.5 19 11l3-3-3.5-3.5"/></symbol>
+    <symbol id="ic-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="ic-flask" viewBox="0 0 24 24"><path d="M9 2v6L3 18a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-6-10V2"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="8" y1="14" x2="16" y2="14"/></symbol>
+    <symbol id="ic-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></symbol>
+    <symbol id="ic-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="ic-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="ic-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+    <symbol id="ic-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol>
+  </defs>
+</svg>
+
+<div class="overlay" id="overlay"></div>
+
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
-    <button class="close-sb" onclick="closeSB()">✕</button>
+    <div>
+      <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
+      <div class="plan-badge-pill">🚀 Starter</div>
+    </div>
+    <button class="close-sidebar" id="close-sidebar">✕</button>
+  </div>
+  <div class="corridor">
+    <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
+    <div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
-    <a class="nav-link" href="/dashboard"><span class="icon">📊</span> Vue d'ensemble</a>
-    <a class="nav-link" href="/transactions"><span class="icon">💳</span> Transactions</a>
-    <a class="nav-link" href="/payouts"><span class="icon">📤</span> Payouts</a>
-    <a class="nav-link" href="/payment-links"><span class="icon">🔗</span> Liens de paiement</a>
+    <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
+    <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
+    <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
+    <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
     <div class="nav-group">Développeur</div>
-    <a class="nav-link" href="/api-keys"><span class="icon">🔑</span> Clés API</a>
-    <a class="nav-link" href="/webhooks"><span class="icon">🪝</span> Webhooks</a>
-    <a class="nav-link active" href="/sandbox"><span class="icon">🧪</span> Sandbox</a>
+    <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
+    <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
+    <a class="nav-link active" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
     <div class="nav-group">Compte</div>
-    <a class="nav-link" href="/profile"><span class="icon">👤</span> Profil</a>
-    <a class="nav-link" href="/billing"><span class="icon">💰</span> Facturation</a>
-    <a class="nav-link" href="/referral"><span class="icon">🎁</span> Parrainage</a>
+    <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
+    <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
+    <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
   <div class="sidebar-user">
     <div class="user-row">
-      <div class="user-av">U</div>
-      <div><div class="user-name">Utilisateur</div><div class="user-email">—</div></div>
+      <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
+      <div>
+        <div class="user-name" id="user-name">{{ user.firstname }} {{ user.lastname }}</div>
+        <div class="user-email" id="user-email">{{ user.email }}</div>
+      </div>
     </div>
   </div>
-  <a class="logout-link" href="/login">🚪 Déconnexion</a>
+  <a class="logout-link" href="/api/logout"><span class="icon"><svg><use href="#ic-logout"/></svg></span> Déconnexion</a>
 </aside>
+
 <div class="main">
   <div class="topbar">
-    <button class="burger" onclick="openSB()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
-    <div class="page-title">🧪 Sandbox</div>
+    <div class="topbar-left">
+      <button class="burger-btn" id="burger-btn"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+      <div class="topbar-title"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</div>
+    </div>
+    <span class="status-indicator"><span class="dot"></span> Mode test</span>
   </div>
-  <div class="content">
+
+  <div class="page">
+    <div class="warn-banner">
+      <span class="icon" style="color:#8A5B00;margin-top:2px"><svg><use href="#ic-alert"/></svg></span>
+      <div>
+        <strong>Mode sandbox</strong>
+        Les paiements créés ici sont fictifs. Aucun argent n'est débité. Utilise un numéro de test ci-dessous pour simuler un succès, un échec ou une attente.
+      </div>
+    </div>
+
     <div class="card">
-      <div class="card-head"><div class="card-title">🧪 Tester un paiement</div></div>
+      <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-play"/></svg></span> Tester un paiement API</div></div>
       <div class="card-body">
         <div class="form-grid">
           <div class="form-group">
-            <div class="form-label">Montant</div>
-            <input class="form-input" type="number" id="sb-amount" value="500">
+            <label class="form-label">Montant (XOF)</label>
+            <input class="form-input" type="number" id="sb-amount" value="500" min="100" step="100">
           </div>
           <div class="form-group">
-            <div class="form-label">Téléphone</div>
-            <input class="form-input" type="text" id="sb-phone" placeholder="0700000000">
+            <label class="form-label">Téléphone</label>
+            <input class="form-input" type="text" id="sb-phone" value="0700000001" placeholder="0700000001">
           </div>
           <div class="form-group">
-            <div class="form-label">Nom client</div>
-            <input class="form-input" type="text" id="sb-name" placeholder="Kouamé Diallo">
+            <label class="form-label">Nom client</label>
+            <input class="form-input" type="text" id="sb-name" value="Kouamé Diallo">
           </div>
           <div class="form-group">
-            <div class="form-label">ID commande</div>
-            <input class="form-input" type="text" id="sb-order" placeholder="ORD-001">
+            <label class="form-label">Pays</label>
+            <select class="form-select" id="sb-country">
+              <option value="CM">🇨🇲 Cameroun</option>
+              <option value="CI" selected>🇨🇮 Côte d'Ivoire</option>
+              <option value="BF">🇧🇫 Burkina Faso</option>
+              <option value="BJ">🇧🇯 Bénin</option>
+              <option value="TG">🇹🇬 Togo</option>
+              <option value="CD">🇨🇩 RDC</option>
+              <option value="GA">🇬🇦 Gabon</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Opérateur</label>
+            <input class="form-input" type="text" id="sb-operator" value="orange" placeholder="orange, mtn, moov...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ID commande</label>
+            <input class="form-input" type="text" id="sb-order" placeholder="auto">
           </div>
         </div>
-        <button class="btn btn-primary" style="margin-top:16px" onclick="testPayment()">⚡ Lancer le test</button>
+        <button class="btn btn-primary btn-full" id="btn-test">
+          <span class="icon" style="width:16px;height:16px"><svg><use href="#ic-play"/></svg></span>
+          Lancer le test
+        </button>
         <div id="sb-result" class="result-box"></div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-head"><div class="card-title">📖 Numéros de test</div></div>
-      <div class="card-body" style="font-size:0.85rem;color:var(--muted);line-height:1.8">
-        <div><strong style="color:var(--text)">0700000001</strong> — Paiement toujours réussi</div>
-        <div><strong style="color:var(--text)">0700000002</strong> — Paiement toujours échoué</div>
-        <div><strong style="color:var(--text)">0700000003</strong> — Paiement en attente (timeout)</div>
+      <div class="card-body">
+        <div class="test-numbers">
+          <div class="test-item">
+            <code>0700000001</code>
+            <span class="test-badge tb-success">✅ Paiement réussi</span>
+          </div>
+          <div class="test-item">
+            <code>0700000002</code>
+            <span class="test-badge tb-failed">❌ Paiement échoué</span>
+          </div>
+          <div class="test-item">
+            <code>0700000003</code>
+            <span class="test-badge tb-pending">⏳ En attente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">🔑 Clé API sandbox</div></div>
+      <div class="card-body">
+        <div style="font-size:.83rem;color:var(--muted);margin-bottom:12px;line-height:1.6">
+          Une clé API sandbox unique est générée à chaque test. Le résultat est le vrai JSON renvoyé par <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.8rem">POST /api/pay</code>.
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;background:var(--bg);padding:12px;border-radius:10px;word-break:break-all;color:var(--muted)" id="api-key-display">
+          Chargement...
+        </div>
       </div>
     </div>
   </div>
 </div>
-<script>
-function openSB(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-function testPayment(){
-  var amount=document.getElementById('sb-amount').value;
-  var phone=document.getElementById('sb-phone').value;
-  var name=document.getElementById('sb-name').value;
-  var order=document.getElementById('sb-order').value||'ORD-'+Date.now();
-  if(!amount||!phone){alert('Remplissez montant et téléphone');return}
-  var result=document.getElementById('sb-result');
-  result.style.display='block';
-  result.textContent='Envoi en cours...';
-  setTimeout(function(){
-    var token='fp_'+Math.random().toString(36).substr(2,20);
-    var data={
-      ok:true,
-      token:token,
-      order_id:order,
-      amount:parseInt(amount),
-      phone:phone,
-      client:name,
-      status:'pending',
-      payment_url:'https://pay.moneyfusion.net/test/'+Math.random().toString(36).substr(2,8),
-      created_at:new Date().toISOString()
-    };
-    result.textContent=JSON.stringify(data,null,2);
-  },1000);
+
+<div id="toast"></div>
+
+<script nonce="{{ csp_nonce }}">
+"use strict";
+
+let sbApiKey = null;
+
+function getCsrfToken(){
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.getAttribute('content') : '';
 }
+
+async function apiFetch(url, options = {}){
+  const opts = { ...options };
+  opts.headers = { ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if (['POST','PUT','DELETE','PATCH'].includes(method)) {
+    const token = getCsrfToken();
+    if (token) opts.headers['X-CSRF-Token'] = token;
+  }
+  if (opts.body && typeof opts.body === 'string') {
+    opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+  }
+  return fetch(url, opts);
+}
+
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
+
+function toast(msg, ok=true){
+  const t = document.getElementById('toast');
+  t.textContent = (ok?'✅ ':'❌ ') + msg;
+  t.style.borderLeftColor = ok ? 'var(--green)' : 'var(--danger)';
+  t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function loadProfile(){
+  try{
+    const r = await apiFetch('/api/me');
+    if(r.status === 401 || r.redirected){ window.location.href = '/login'; return; }
+    const data = await r.json();
+    if(!data.ok) return;
+    const user = data.user;
+    document.getElementById('user-av').textContent = (user.firstname || 'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent = (user.firstname || '') + ' ' + (user.lastname || '');
+    document.getElementById('user-email').textContent = user.email || '';
+  }catch(e){}
+}
+
+async function ensureSandboxKey(){
+  // Génère une clé sandbox via l'API existante
+  if (sbApiKey) return sbApiKey;
+  try{
+    const r = await apiFetch('/api/keys', {
+      method: 'POST',
+      body: JSON.stringify({ environment: 'sandbox', label: 'Sandbox auto ' + new Date().toISOString() })
+    });
+    const data = await r.json();
+    if (data.ok && data.key) {
+      sbApiKey = data.key;
+      document.getElementById('api-key-display').textContent = sbApiKey;
+      return sbApiKey;
+    }
+    // Si création impossible (KYC non vérifié), on affiche un message
+    document.getElementById('api-key-display').textContent = data.error || 'Impossible de générer une clé sandbox. Vérifiez votre KYC.';
+    return null;
+  }catch(e){
+    document.getElementById('api-key-display').textContent = 'Erreur de génération de clé.';
+    return null;
+  }
+}
+
+function syntaxHighlight(json) {
+  json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    let cls = 'n';
+    if (/^"/.test(match)) {
+      if (/:$/.test(match)) cls = 'k';
+      else cls = 's';
+    } else if (/true|false|null/.test(match)) {
+      cls = 'n';
+    } else if (/^\d/.test(match)) {
+      cls = 'n';
+    }
+    return '<span class="' + cls + '">' + match + '</span>';
+  });
+}
+
+async function testPayment(){
+  const btn = document.getElementById('btn-test');
+  const result = document.getElementById('sb-result');
+  const amount = parseFloat(document.getElementById('sb-amount').value);
+  const phone = document.getElementById('sb-phone').value.trim();
+  const name = document.getElementById('sb-name').value.trim();
+  const country = document.getElementById('sb-country').value;
+  const operator = document.getElementById('sb-operator').value.trim();
+  const order = document.getElementById('sb-order').value.trim() || ('ORD-' + Date.now());
+
+  if (!amount || !phone) { toast('Remplissez le montant et le téléphone', false); return; }
+  if (!sbApiKey) {
+    const key = await ensureSandboxKey();
+    if (!key) { toast('Clé sandbox indisponible', false); return; }
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="icon" style="width:16px;height:16px;animation:spin 1s linear infinite"><svg><use href="#ic-play"/></svg></span> Envoi...';
+  result.classList.add('show');
+  result.textContent = 'Envoi vers /api/pay...';
+
+  try {
+    const r = await fetch('/api/pay', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + sbApiKey
+      },
+      body: JSON.stringify({
+        amount: amount,
+        phone: phone,
+        client_name: name,
+        order_id: order,
+        country: country,
+        operator: operator
+      })
+    });
+
+    let data = null;
+    try { data = await r.json(); } catch (e) {}
+
+    if (!data) {
+      result.innerHTML = '<span class="e">Erreur serveur (' + r.status + ') — réponse non-JSON</span>';
+      toast('Erreur serveur', false);
+    } else {
+      const jsonStr = JSON.stringify(data, null, 2);
+      result.innerHTML = syntaxHighlight(jsonStr);
+      if (data.ok) {
+        toast('Paiement créé (statut : ' + (data.status || 'pending') + ')');
+      } else {
+        toast(data.error || 'Erreur API', false);
+      }
+    }
+  } catch (e) {
+    result.innerHTML = '<span class="e">Erreur réseau : ' + e.message + '</span>';
+    toast('Erreur réseau', false);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span class="icon" style="width:16px;height:16px"><svg><use href="#ic-play"/></svg></span> Lancer le test';
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('burger-btn').addEventListener('click', openSidebar);
+  document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
+  document.getElementById('overlay').addEventListener('click', closeSidebar);
+  document.getElementById('btn-test').addEventListener('click', testPayment);
+
+  loadProfile();
+  ensureSandboxKey();
+});
 </script>
 </body>
 </html>
