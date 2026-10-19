@@ -1,15 +1,3 @@
-"""
-Configuration centralisée de Flinpay.
-
-Règle de sécurité n°1 de ce fichier : on ne démarre JAMAIS l'application avec un
-secret manquant ou une valeur par défaut faible. Avant, `app.py` faisait
-`os.getenv('JWT_SECRET')` sans aucune vérification — si la variable d'env était
-absente (mauvais déploiement, .env oublié...), JWT_SECRET valait `None` et
-l'application démarrait quand même, avec un système de session cassé de façon
-silencieuse. Ici, ça plante au démarrage avec un message clair, ce qui est
-exactement ce qu'on veut pour une variable qui protège l'argent de vrais
-utilisateurs.
-"""
 import os
 import sys
 from dotenv import load_dotenv
@@ -18,118 +6,113 @@ load_dotenv()
 
 
 def _require(name: str) -> str:
-    """Lève une erreur explicite et arrête le démarrage si une variable
-    d'environnement critique est absente. Mieux vaut un crash au déploiement
-    qu'une clé JWT ou un secret webhook vide en production."""
     value = os.getenv(name)
     if not value:
-        sys.stderr.write(
-            f"\n[CONFIG] Variable d'environnement manquante : {name}\n"
-            f"[CONFIG] L'application ne peut pas démarrer sans cette valeur "
-            f"(elle protège des données ou des fonds utilisateurs).\n\n"
-        )
         raise RuntimeError(f"Missing required environment variable: {name}")
     return value
 
 
 def _optional(name: str, default: str = '') -> str:
-    return os.getenv(name, default)
+    return os.getenv(name, default) or default
+
+
+def _require_in_prod(name: str, default: str = '') -> str:
+    value = os.getenv(name, default)
+    if not value and os.getenv('FLASK_ENV', 'production').lower() == 'production':
+        raise RuntimeError(f"Missing required environment variable in production: {name}")
+    return value or default
 
 
 class Config:
-    # ── Environnement ──────────────────────────────
-    ENV = os.getenv('FLASK_ENV', 'production')
+    ENV = os.getenv('FLASK_ENV', 'production').lower().strip()
+    if ENV not in ('production', 'development', 'test'):
+        raise RuntimeError(f"Invalid FLASK_ENV: {ENV!r}")
+
     DEBUG = os.getenv('FLASK_DEBUG', 'false').lower() in ('1', 'true', 'yes')
     IS_PRODUCTION = ENV == 'production'
 
-    # ── Secrets critiques (obligatoires) ───────────
-    # Si l'une de ces lignes lève une exception, c'est volontaire : ne jamais
-    # faire tourner Flinpay sans ces valeurs correctement configurées.
+    if IS_PRODUCTION and DEBUG:
+        raise RuntimeError("FLASK_DEBUG is forbidden in production")
+
     SECRET_KEY = _require('SECRET_KEY')
     JWT_SECRET = _require('JWT_SECRET')
     SUPABASE_URL = _require('SUPABASE_URL')
     SUPABASE_KEY = _require('SUPABASE_KEY')
-    # ── Passerelle de paiement (ex-SoleasPay, aujourd'hui l'écosystème
-    # Mysoleas). Ce nom n'apparaît jamais côté utilisateur — voir
-    # services/gateway.py — mais reste nécessaire ici en interne.
+    SUPABASE_KEY_READONLY = _optional('SUPABASE_KEY_READONLY') or SUPABASE_KEY
+
     GATEWAY_CLIENT_ID = _require('GATEWAY_CLIENT_ID')
     GATEWAY_CLIENT_SECRET = _require('GATEWAY_CLIENT_SECRET')
-    # Optionnelle : uniquement utilisée pour la vérification de numéro de
-    # téléphone (/phone-numbers/verify), qui s'authentifie par clé API et non
-    # par JWT. Fonctionnalité de confort — dégradable si absente.
     GATEWAY_MERCHANT_API_KEY = _optional('GATEWAY_MERCHANT_API_KEY')
-    # L'application OAuth2 créée côté Mysoleas est elle-même déclarée comme
-    # "sandbox" ou "production" (visible sur leur dashboard, section
-    # Applications OAuth2). On doit le préciser dans nos appels via l'en-tête
-    # X-SP-Environment, sinon l'authentification échoue parfois même avec
-    # les bons identifiants si le client est scoppé à un seul environnement.
-    # Repasser à 'production' une fois l'app Mysoleas elle-même basculée en
-    # production de leur côté.
-    GATEWAY_ENVIRONMENT = _optional('GATEWAY_ENVIRONMENT', 'sandbox')
 
-    # ── Garde-fou supplémentaire : longueur minimale des secrets ──
-    # Un secret JWT de 4 caractères techniquement "présent" reste catastrophique.
-    for _name, _val, _min_len in [
+    GATEWAY_ENVIRONMENT = _optional('GATEWAY_ENVIRONMENT', '').lower().strip()
+    if IS_PRODUCTION:
+        # Démarrer en sandbox en production ferait passer des paiements fictifs pour réels.
+        if GATEWAY_ENVIRONMENT != 'production':
+            raise RuntimeError(
+                f"GATEWAY_ENVIRONMENT must be 'production' in production (got {GATEWAY_ENVIRONMENT!r})"
+            )
+    elif GATEWAY_ENVIRONMENT not in ('sandbox', 'production'):
+        GATEWAY_ENVIRONMENT = 'sandbox'
+
+    for _name, _val, _min in [
         ('SECRET_KEY', SECRET_KEY, 32),
         ('JWT_SECRET', JWT_SECRET, 32),
         ('GATEWAY_CLIENT_SECRET', GATEWAY_CLIENT_SECRET, 16),
     ]:
-        if len(_val) < _min_len:
-            sys.stderr.write(
-                f"\n[CONFIG] {_name} fait moins de {_min_len} caractères — "
-                f"trop court pour être un secret cryptographique sûr. "
-                f"Générez-en un nouveau, par exemple avec :\n"
-                f"    python -c \"import secrets; print(secrets.token_hex(32))\"\n\n"
-            )
-            raise RuntimeError(f"{_name} is too short to be a secure secret")
+        if len(_val) < _min:
+            raise RuntimeError(f"{_name} must be at least {_min} characters")
 
-    # ── Secrets optionnels (fonctionnalités dégradables) ───
-    # Ces intégrations sont importantes mais pas vitales au démarrage : si elles
-    # manquent, on veut que l'app tourne quand même (KYC, connexion, paiements de
-    # base restent fonctionnels) — seule la fonctionnalité concernée est coupée.
+    if not SUPABASE_URL.startswith('https://'):
+        raise RuntimeError("SUPABASE_URL must use HTTPS")
+
     ADMIN_USERNAME = _optional('ADMIN_USERNAME')
-    ADMIN_PASSWORD = _optional('ADMIN_PASSWORD')
+    ADMIN_PASSWORD_HASH = _optional('ADMIN_PASSWORD_HASH')
+    if IS_PRODUCTION and ADMIN_USERNAME and not ADMIN_PASSWORD_HASH:
+        raise RuntimeError("ADMIN_PASSWORD_HASH is required when ADMIN_USERNAME is set in production")
+
+    # Un stockage mémoire divise la limite par worker et la rend illusoire en multi-instance.
+    LIMITER_STORAGE_URI = _require_in_prod('LIMITER_STORAGE_URI', default='memory://')
+    if IS_PRODUCTION and LIMITER_STORAGE_URI == 'memory://':
+        raise RuntimeError("LIMITER_STORAGE_URI must not be memory:// in production")
 
     LEEKPAY_SECRET_KEY = _optional('LEEKPAY_SECRET_KEY')
     LEEKPAY_PUBLIC_KEY = _optional('LEEKPAY_PUBLIC_KEY')
     LEEKPAY_API_BASE = 'https://leekpay.fr/api/v1'
 
-    # ── Domaines de la passerelle (voir services/gateway.py) ────
     GATEWAY_BASE_URL = 'https://api.mysoleas.com'
     IDENTITY_BASE_URL = 'https://account.mysoleas.com'
-    GATEWAY_MIN_AMOUNT = 100  # plancher de sécurité ; le vrai minimum dépend du service (catalogue)
+    GATEWAY_MIN_AMOUNT = 100
 
-    # RÈGLE FINANCIÈRE IMPORTANTE — voir services/gateway.py::compute_customer_charge.
-    # Faute de pouvoir lire la configuration réelle de feeBearer sur le
-    # dashboard Mysoleas, on part du principe (confirmé par le comportement de
-    # l'ancienne intégration) que les frais du prestataire sont déduits de ce
-    # que Flinpay reçoit. Le code se couvre donc lui-même en les ajoutant au
-    # montant demandé au client, en se basant sur le devis réel
-    # (/transactions/fees/quote) plutôt qu'un pourcentage estimé à l'aveugle.
-    # À repasser à False seulement après avoir confirmé avec Mysoleas que
-    # feeBearer=CUSTOMER est actif sur l'application (sinon double-facturation
-    # du client).
+    for _name, _url in [('GATEWAY_BASE_URL', GATEWAY_BASE_URL),
+                        ('IDENTITY_BASE_URL', IDENTITY_BASE_URL)]:
+        if not _url.startswith('https://'):
+            raise RuntimeError(f"{_name} must use HTTPS")
+
     GATEWAY_FEES_DEDUCTED_FROM_MERCHANT = True
 
     EMAIL_ADDRESS = _optional('EMAIL_ADDRESS')
     EMAIL_APP_PASSWORD = _optional('EMAIL_APP_PASSWORD')
 
-    # ── CORS : liste blanche stricte, jamais de wildcard ───
     ALLOWED_ORIGINS = [
         'https://www.flinpay.cfd',
         'https://flinpay.cfd',
-        'https://flinpay.vercel.app',
     ]
+    if not IS_PRODUCTION:
+        ALLOWED_ORIGINS += ['http://localhost:5000', 'http://127.0.0.1:5000']
 
-    # ── Cookies de session ──────────────────────────
-    # Secure=True bloque l'envoi du cookie de session en clair sur HTTP — on ne
-    # le force que hors dev local, pour ne pas casser un environnement de test
-    # qui tournerait sans HTTPS.
+    ALLOWED_HOSTS = {'www.flinpay.cfd', 'flinpay.cfd'}
+    if not IS_PRODUCTION:
+        ALLOWED_HOSTS |= {'localhost', '127.0.0.1'}
+
     SESSION_COOKIE_SECURE = IS_PRODUCTION
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
+    # Lax laisse passer les POST cross-site via <form> ; Strict ferme le CSRF résiduel.
+    SESSION_COOKIE_SAMESITE = 'Strict'
+    SESSION_COOKIE_NAME = '__Host-fp_session'
+    PERMANENT_SESSION_LIFETIME_SECONDS = 12 * 3600
 
-    # ── Pays et opérateurs mobile money couverts ────
+    MAX_CONTENT_LENGTH = 12 * 1024 * 1024
+
     COUNTRIES = [
         {'code': 'CM', 'name': 'Cameroun', 'flag': '🇨🇲', 'currency': 'XAF'},
         {'code': 'CI', 'name': "Côte d'Ivoire", 'flag': '🇨🇮', 'currency': 'XOF'},
@@ -140,29 +123,23 @@ class Config:
         {'code': 'GA', 'name': 'Gabon', 'flag': '🇬🇦', 'currency': 'XAF'},
     ]
 
-    # Correspondance code pays interne (ISO alpha-2, utilisé dans nos URLs et
-    # notre base de données) -> code ISO alpha-3 attendu par la passerelle.
-    # La liste des services actifs n'est plus codée en dur ici : elle est
-    # désormais interrogée en direct (avec cache court) via
-    # services/gateway.list_services(), car elle peut changer côté
-    # prestataire sans que nous ayons à redéployer.
     COUNTRY_ALPHA3 = {
         'CM': 'CMR', 'CI': 'CIV', 'BF': 'BFA', 'BJ': 'BEN',
         'TG': 'TGO', 'CD': 'COD', 'GA': 'GAB',
     }
+    if set(COUNTRY_ALPHA3.keys()) != {c['code'] for c in COUNTRIES}:
+        raise RuntimeError("COUNTRIES and COUNTRY_ALPHA3 are out of sync")
 
-    # ── Constantes métier (plans, quotas, retraits) ─
     FREE_PLAN_MONTHLY_LIMIT = 300
     PAYOUT_MIN_AMOUNT = 600
     PAYOUT_FEE_PERCENT = 3.5
     CONVERSION_FEE_PERCENT = 5.5
     REFERRAL_COMMISSION_RATE = 0.10
 
-    # ── Anti-bruteforce connexion ───────────────────
     LOGIN_MAX_ATTEMPTS = 5
     LOGIN_LOCKOUT_MINUTES = 15
+    TOTP_FAILURE_WINDOW_MINUTES = 15
 
-    # ── Marges (liens de paiement / API directe) ────
     LINK_MARKUP_DEFAULT_PERCENT = 5.0
     LINK_MARKUP_DEFAULT_FLAT_FEE = 150
     LINK_MARKUP_BY_OPERATOR = {}
@@ -172,6 +149,22 @@ class Config:
     API_MARKUP_DEFAULT_FLAT_FEE = 150
     API_MARKUP_BY_OPERATOR = {}
     API_MARKUP_FLAT_FEE_BY_OPERATOR = {}
+
+    for _name, _val in [
+        ('LINK_MARKUP_DEFAULT_PERCENT', LINK_MARKUP_DEFAULT_PERCENT),
+        ('API_MARKUP_DEFAULT_PERCENT', API_MARKUP_DEFAULT_PERCENT),
+        ('CONVERSION_FEE_PERCENT', CONVERSION_FEE_PERCENT),
+        ('PAYOUT_FEE_PERCENT', PAYOUT_FEE_PERCENT),
+        ('REFERRAL_COMMISSION_RATE', REFERRAL_COMMISSION_RATE * 100),
+    ]:
+        if not (0 <= _val <= 30):
+            raise RuntimeError(f"{_name} out of range: {_val}")
+    for _name, _val in [
+        ('LINK_MARKUP_DEFAULT_FLAT_FEE', LINK_MARKUP_DEFAULT_FLAT_FEE),
+        ('API_MARKUP_DEFAULT_FLAT_FEE', API_MARKUP_DEFAULT_FLAT_FEE),
+    ]:
+        if not (0 <= _val <= 10000):
+            raise RuntimeError(f"{_name} out of range: {_val}")
 
 
 config = Config()
