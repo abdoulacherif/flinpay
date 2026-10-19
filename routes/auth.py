@@ -3,7 +3,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 import jwt
-from flask import request, jsonify, g, redirect
+from flask import request, jsonify, g, redirect, make_response
 
 from config import config
 from db.supabase import sb_get_one, sb_patch
@@ -12,14 +12,13 @@ from services.activity_log import log_user_activity
 logger = logging.getLogger('flinpay.auth')
 
 
-# ── CSRF ─────────────────────────────────────────
+# ── CSRF (manuel, compatible X-CSRF-Token) ──────
 def csrf_protect(f):
-    """Décorateur CSRF manuel qui lit le token depuis X-CSRF-Token (header)
-    ou _csrf_token (form). Utilisé en complément de csrf_guard global."""
+    """Décorateur CSRF qui lit le token depuis le header X-CSRF-Token
+    ou depuis le form (_csrf_token). Compatible avec apiFetch() côté client."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        from flask_wtf.csrf import validate_csrf
-        from flask_wtf.csrf import CSRFError
+        from flask_wtf.csrf import validate_csrf, CSRFError
 
         token = (
             request.headers.get('X-CSRF-Token')
@@ -27,15 +26,17 @@ def csrf_protect(f):
             or (request.form.get('_csrf_token') if request.form else None)
             or (request.get_json(silent=True) or {}).get('_csrf_token')
         )
+
         if not token:
-            logger.warning(f"[csrf_protect] jeton CSRF manquant ou invalide sur {request.path}")
-            return jsonify({'ok': False, 'error': 'Jeton de sécurité invalide ou expiré'}), 403
+            logger.warning(f"[csrf_protect] Jeton manquant sur {request.path}")
+            return jsonify({'ok': False, 'error': 'Jeton de sécurité manquant'}), 403
 
         try:
             validate_csrf(token)
-        except CSRFError:
-            logger.warning(f"[csrf_protect] jeton CSRF invalide sur {request.path}")
+        except CSRFError as e:
+            logger.warning(f"[csrf_protect] Jeton invalide sur {request.path}: {e}")
             return jsonify({'ok': False, 'error': 'Jeton de sécurité invalide ou expiré'}), 403
+
         return f(*args, **kwargs)
     return decorated
 
@@ -50,8 +51,7 @@ def get_current_user():
         user_id = payload.get('sub')
         if not user_id:
             return None
-        user = sb_get_one('users', 'id', user_id)
-        return user
+        return sb_get_one('users', 'id', user_id)
     except jwt.ExpiredSignatureError:
         return None
     except jwt.InvalidTokenError:
@@ -94,7 +94,9 @@ def register_failed_login(user):
     attempts = (user.get('login_attempts') or 0) + 1
     update = {'login_attempts': attempts}
     if attempts >= config.LOGIN_MAX_ATTEMPTS:
-        update['locked_until'] = (datetime.utcnow() + timedelta(minutes=config.LOGIN_LOCKOUT_MINUTES)).isoformat()
+        update['locked_until'] = (
+            datetime.utcnow() + timedelta(minutes=config.LOGIN_LOCKOUT_MINUTES)
+        ).isoformat()
     sb_patch('users', 'id', user['id'], update)
 
 
@@ -132,7 +134,6 @@ def verify_token(token):
 
 # ── Login response ───────────────────────────────
 def _login_success_response(user):
-    from flask import make_response
     token = generate_session_token(user['id'])
     resp = make_response(jsonify({
         'ok': True,
@@ -151,3 +152,17 @@ def _login_success_response(user):
         samesite='Strict',
     )
     return resp
+
+
+# ── API key generation ───────────────────────────
+import secrets
+import hashlib
+
+def generate_api_key(environment='live'):
+    """Génère une clé API. Retourne (full_key, key_hash, display_prefix)."""
+    prefix = 'fp_live_' if environment == 'live' else 'fp_test_'
+    random_part = secrets.token_urlsafe(32)
+    full_key = f"{prefix}{random_part}"
+    key_hash = hashlib.sha256(full_key.encode()).hexdigest()
+    display_prefix = f"{prefix}{random_part[:8]}...{random_part[-4:]}"
+    return full_key, key_hash, display_prefix
