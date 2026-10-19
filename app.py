@@ -7,10 +7,7 @@ from extensions import init_extensions, logger, csrf
 
 
 _CSRF_EXEMPT_ENDPOINTS = frozenset({
-    # Webhooks (signature de la passerelle)
     'webhook_callback.webhook_payment_events',
-
-    # Paiements publics (Bearer ou pas de session)
     'payments.api_pay',
     'payments.api_pay_link',
     'payments.api_pay_status',
@@ -18,16 +15,12 @@ _CSRF_EXEMPT_ENDPOINTS = frozenset({
     'payments.pay_thank_you',
     'invoices.api_invoice_pay',
     'invoices.invoice_view',
-
-    # Pages publiques
     'public.index',
     'public.register',
     'public.login_page',
     'public.docs',
     'public.favicon',
     'public.flinpay_widget_js',
-
-    # Authentification (pas de session avant login)
     'auth.api_login',
     'auth.api_login_2fa',
     'auth.api_login_email_link',
@@ -55,8 +48,6 @@ def create_app():
         PREFERRED_URL_SCHEME='https',
     )
 
-    # x_host NON activé : un client atteignant l'app sans passer par le proxy
-    # pourrait forger request.host et empoisonner cookies ou redirections.
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     @app.before_request
@@ -69,7 +60,6 @@ def create_app():
     @app.before_request
     def _canonical_redirect():
         host = (request.host or '').split(':')[0].lower()
-        # /webhook/ exclu : un 301 sur un POST fait perdre l'événement à la passerelle.
         if host == 'flinpay.cfd' and not request.path.startswith('/webhook/'):
             qs = f'?{request.query_string.decode()}' if request.query_string else ''
             return redirect(f'https://www.flinpay.cfd{request.path}{qs}', code=301)
@@ -85,11 +75,12 @@ def create_app():
     from routes.keys_webhooks import keys_webhooks_bp
     from routes.kyc import kyc_bp
     from routes.webhook_callback import webhook_callback_bp
+    from routes.rewards import rewards_bp
     from routes.admin import admin_blueprints
 
     for bp in (public_bp, auth_bp, dashboard_bp, payments_bp, invoices_bp,
                payouts_bp, keys_webhooks_bp, kyc_bp, webhook_callback_bp,
-               *admin_blueprints):
+               rewards_bp, *admin_blueprints):
         app.register_blueprint(bp)
 
     @app.before_request
@@ -98,11 +89,6 @@ def create_app():
             return
         if request.endpoint in _CSRF_EXEMPT_ENDPOINTS:
             return
-        # Vérification manuelle (WTF_CSRF_CHECK_DEFAULT=False dans extensions.py).
-        # Les routes exemptées (login, register, webhooks, paiements publics)
-        # passent sans CSRF car elles n'ont pas de session à protéger.
-        # Toutes les autres routes (dashboard, payouts, profile, 2FA, etc.)
-        # sont protégées par csrf.protect().
         try:
             csrf.protect()
         except CSRFError:
