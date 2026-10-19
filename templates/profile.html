@@ -12,14 +12,15 @@
 :root{
   --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
   --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;
   --gold:#FFB400;--gold-tint:#FFF6E0;
   --green:#00C48C;--green-tint:#E3FBF3;
   --danger:#FF4D4D;--danger-tint:#FFEAEA;
   --text:#12131C;--muted:#767A94;
   --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
-  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
-  --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
 }
 html{-webkit-text-size-adjust:100%}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
@@ -35,15 +36,15 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .sidebar.open{transform:translateX(0)}
 
 .sidebar-logo{padding:22px 20px 16px;position:relative;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.sidebar-logo::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar-logo::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:6px;display:inline-block}
 .close-sidebar{background:none;border:none;color:rgba(255,255,255,0.45);font-size:1.2rem;cursor:pointer;padding:4px}
 
 .corridor{margin:14px 20px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px;flex-shrink:0}
 .corridor-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
-.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-label b{color:#8ECFFF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.9rem;line-height:1}
 .sidebar-nav{flex:1;padding:8px 0}
 .nav-group{font-size:.6rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:14px 20px 6px}
@@ -51,11 +52,11 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
-.nav-link.active .icon{color:#8EA6FF}
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
 .sidebar-user{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;flex-shrink:0}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
 .user-email{font-size:.68rem;color:rgba(255,255,255,0.32);margin-top:1px;word-break:break-all}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.76rem;padding:11px 20px 15px;text-decoration:none;transition:color .15s;flex-shrink:0}
@@ -63,16 +64,23 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 
 .main{margin-left:0;min-height:100vh;display:flex;flex-direction:column;width:100%}
 
-.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 20px;height:64px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
-.burger-btn{display:flex;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.topbar{
+  background:var(--gradient);
+  padding:20px;
+  color:white;
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:14px;
+  position:relative;overflow:hidden;
+}
+.topbar::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.burger-btn{background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;display:flex;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center;position:relative;z-index:1}
+.burger-btn:hover{background:rgba(255,255,255,0.28)}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;position:relative;z-index:1}
 
-.page{flex:1;padding:22px 20px 60px;max-width:920px;width:100%;margin:0 auto;animation:fadeUp .25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page{flex:1;padding:22px 20px 80px;max-width:920px;width:100%;margin:0 auto}
 .grid-2{display:grid;grid-template-columns:1fr;gap:18px}
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
+.card{background:white;border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px;border:1px solid var(--border-soft)}
 .card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
 .card-title{font-size:.9rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
 .card-body{padding:22px}
@@ -80,17 +88,17 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 .form-group{display:flex;flex-direction:column;gap:6px}
 .form-group.full{grid-column:1/-1}
 .form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
-.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%}
+.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%}
 .form-input:focus{border-color:var(--blue)}
 .form-input:disabled{background:var(--bg);color:var(--muted)}
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.84rem;padding:10px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;justify-content:center}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.84rem;padding:10px 20px;border-radius:10px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;justify-content:center}
 .btn-primary{background:var(--blue);color:white}
 .btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
 .btn-danger:hover{background:#e03e3e}
-.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline{background:white;color:var(--blue);border:1.5px solid var(--blue)}
 .btn-sm{padding:7px 14px;font-size:.76rem}
-.avatar-big{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2rem;margin:0 auto 16px}
+.avatar-big{width:80px;height:80px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2rem;margin:0 auto 16px;box-shadow:0 8px 24px rgba(10,108,255,.25)}
 .profile-header{text-align:center;padding:26px;border-bottom:1px solid var(--border-soft)}
 .profile-name{font-size:1.2rem;font-weight:800;margin-bottom:4px}
 .profile-email{font-size:.85rem;color:var(--muted);font-family:'JetBrains Mono',monospace;word-break:break-all}
@@ -111,7 +119,7 @@ input:checked + .slider:before{transform:translateX(20px)}
 
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-bg.show{display:flex}
-.modal{background:var(--surface);border-radius:20px;padding:28px;width:100%;max-width:420px;margin:20px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal{background:white;border-radius:20px;padding:28px;width:100%;max-width:420px;margin:20px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
 .modal h3{font-size:1.05rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:9px}
 .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap}
 .qr-box{display:flex;justify-content:center;padding:16px;background:white;border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:14px}
@@ -129,18 +137,14 @@ input:checked + .slider:before{transform:translateX(20px)}
   .burger-btn{display:none}
   .overlay{display:none !important}
   .main{margin-left:0;width:calc(100% - var(--sidebar));display:flex;flex-direction:column}
-  .topbar{padding:0 30px}
+  .topbar{padding:20px 30px;position:sticky}
   .page{padding:30px;max-width:1000px}
   .grid-2{grid-template-columns:1fr 1fr}
   .form-grid{grid-template-columns:1fr 1fr}
 }
-@media(min-width:900px) and (max-width:1100px){
-  :root{--sidebar:230px}
-}
+@media(min-width:900px) and (max-width:1100px){:root{--sidebar:230px}}
 
-@media(prefers-reduced-motion:reduce){
-  *{transition-duration:.001ms !important;animation-duration:.001ms !important}
-}
+@media(prefers-reduced-motion:reduce){*{transition-duration:.001ms !important;animation-duration:.001ms !important}}
 </style>
 </head>
 <body>
@@ -175,30 +179,25 @@ input:checked + .slider:before{transform:translateX(20px)}
     </div>
     <button class="close-sidebar" id="close-sidebar" aria-label="Fermer">✕</button>
   </div>
-
   <div class="corridor">
     <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
     <div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
   </div>
-
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
     <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
     <a class="nav-link" href="/transactions"><span class="icon"><svg><use href="#ic-card"/></svg></span> Transactions</a>
     <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
     <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
-
     <div class="nav-group">Développeur</div>
     <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
     <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
     <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
-
     <div class="nav-group">Compte</div>
     <a class="nav-link active" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
     <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
     <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
-
   <div class="sidebar-user">
     <div class="user-row">
       <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
@@ -256,7 +255,7 @@ input:checked + .slider:before{transform:translateX(20px)}
                 <input class="form-input" id="p-country" type="text" disabled>
               </div>
             </div>
-            <button class="btn btn-primary" id="btn-save-profile" style="margin-top:18px;width:100%">💾 Enregistrer les modifications</button>
+            <button class="btn btn-primary" id="btn-save-profile" style="margin-top:18px;width:100%">💾 Enregistrer</button>
           </div>
         </div>
       </div>
@@ -283,37 +282,29 @@ input:checked + .slider:before{transform:translateX(20px)}
         </div>
 
         <div class="card">
-          <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-shield"/></svg></span> Authentification à deux facteurs</div></div>
+          <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-shield"/></svg></span> Authentification 2FA</div></div>
           <div class="card-body">
-            <div class="twofa-status">
-              <span class="twofa-badge off" id="twofa-badge">Désactivé</span>
-            </div>
-            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px" id="twofa-desc">
-              Protégez votre compte avec un code à usage unique généré par Google Authenticator (ou une app compatible TOTP), en plus de votre mot de passe.
-            </div>
-            <button class="btn btn-primary btn-sm" id="twofa-btn">Activer le 2FA</button>
+            <div class="twofa-status"><span class="twofa-badge off" id="twofa-badge">Désactivé</span></div>
+            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px" id="twofa-desc">Protégez votre compte avec Google Authenticator.</div>
+            <button class="btn btn-primary btn-sm" id="twofa-btn">Activer</button>
           </div>
         </div>
 
         <div class="card">
           <div class="card-head"><div class="card-title"><span class="icon"><svg><use href="#ic-mail"/></svg></span> Connexion par email</div></div>
           <div class="card-body">
-            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px">
-              Recevez un lien sécurisé par email pour vous connecter sans saisir votre mot de passe (recommandé).
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <label class="toggle-switch">
-                <input type="checkbox" id="email-link-toggle">
-                <span class="slider"></span>
-              </label>
-            </div>
+            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px">Lien sécurisé par email pour vous connecter.</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="email-link-toggle">
+              <span class="slider"></span>
+            </label>
           </div>
         </div>
 
         <div class="card">
           <div class="card-head"><div class="card-title">⚠️ Zone dangereuse</div></div>
           <div class="card-body">
-            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px">La suppression de votre compte est définitive et irréversible.</div>
+            <div style="font-size:.83rem;color:var(--muted);margin-bottom:14px">La suppression est définitive.</div>
             <button class="btn btn-danger btn-sm" id="btn-open-delete"><span class="icon"><svg><use href="#ic-trash"/></svg></span> Supprimer mon compte</button>
           </div>
         </div>
@@ -326,15 +317,15 @@ input:checked + .slider:before{transform:translateX(20px)}
   <div class="modal">
     <h3><span class="icon"><svg><use href="#ic-shield"/></svg></span> Activer le 2FA</h3>
     <div class="error-msg" id="twofa-setup-error"></div>
-    <div class="step-text">1. Scannez ce QR code avec Google Authenticator (ou une app compatible TOTP).</div>
+    <div class="step-text">1. Scannez ce QR code.</div>
     <div class="qr-box" id="twofa-qr"></div>
-    <div class="step-text">Ou entrez ce code manuellement dans l'app :</div>
+    <div class="step-text">Ou entrez ce code manuellement :</div>
     <div class="secret-box" id="twofa-secret">—</div>
-    <div class="step-text">2. Entrez le code à 6 chiffres généré par l'app pour confirmer.</div>
+    <div class="step-text">2. Entrez le code à 6 chiffres.</div>
     <input class="form-input code-input" id="twofa-setup-code" maxlength="6" placeholder="000000" inputmode="numeric">
     <div class="modal-actions">
       <button class="btn btn-outline" id="btn-close-twofa-setup">Annuler</button>
-      <button class="btn btn-primary" id="btn-confirm-twofa">Confirmer et activer</button>
+      <button class="btn btn-primary" id="btn-confirm-twofa">Confirmer</button>
     </div>
   </div>
 </div>
@@ -348,7 +339,7 @@ input:checked + .slider:before{transform:translateX(20px)}
       <input class="form-input" id="twofa-disable-password" type="password" placeholder="••••••••">
     </div>
     <div class="form-group" style="margin-bottom:4px">
-      <div class="form-label">Code de l'app d'authentification</div>
+      <div class="form-label">Code 2FA</div>
       <input class="form-input code-input" id="twofa-disable-code" maxlength="6" placeholder="000000" inputmode="numeric">
     </div>
     <div class="modal-actions">
@@ -362,15 +353,15 @@ input:checked + .slider:before{transform:translateX(20px)}
   <div class="modal">
     <h3><span class="icon" style="color:var(--danger)"><svg><use href="#ic-trash"/></svg></span> Supprimer mon compte</h3>
     <div style="font-size:.83rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-      Cette action est <strong>irréversible</strong>. Vos données financières seront conservées conformément à la loi, mais votre accès sera révoqué.
+      Cette action est <strong>irréversible</strong>. Vos données financières seront conservées conformément à la loi.
     </div>
     <div class="form-group" style="margin-bottom:16px">
       <div class="form-label">Mot de passe</div>
-      <input class="form-input" id="delete-account-password" type="password" placeholder="Confirmez avec votre mot de passe">
+      <input class="form-input" id="delete-account-password" type="password" placeholder="Confirmez">
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" id="btn-close-delete">Annuler</button>
-      <button class="btn btn-danger" id="btn-confirm-delete">Supprimer définitivement</button>
+      <button class="btn btn-danger" id="btn-confirm-delete">Supprimer</button>
     </div>
   </div>
 </div>
@@ -383,7 +374,6 @@ function getCsrfToken() {
   const meta = document.querySelector('meta[name="csrf-token"]');
   return meta ? meta.getAttribute('content') : '';
 }
-
 async function apiFetch(url, options = {}) {
   const opts = { ...options };
   opts.headers = { ...(opts.headers || {}) };
@@ -398,16 +388,8 @@ async function apiFetch(url, options = {}) {
   return fetch(url, opts);
 }
 
-function openSidebar(){
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-  document.body.style.overflow='hidden';
-}
-function closeSidebar(){
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-  document.body.style.overflow='';
-}
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
 function toast(msg, ok=true){
   const t=document.getElementById('toast');
   t.textContent=(ok?'✅ ':'❌ ')+msg;
@@ -456,9 +438,7 @@ async function loadProfile(){
     emailLinkEnabled=!!user.email_link_enabled;
     renderTwofaStatus();
     document.getElementById('email-link-toggle').checked=emailLinkEnabled;
-  }catch(e){
-    toast('Impossible de charger le profil',false);
-  }
+  }catch(e){ toast('Impossible de charger le profil',false); }
 }
 
 function renderTwofaStatus(){
@@ -466,20 +446,15 @@ function renderTwofaStatus(){
   const btn=document.getElementById('twofa-btn');
   const desc=document.getElementById('twofa-desc');
   if(twofaEnabled){
-    badge.textContent='Activé';
-    badge.className='twofa-badge on';
-    desc.textContent='Votre compte est protégé par un code à usage unique en plus de votre mot de passe.';
-    btn.textContent='Désactiver le 2FA';
-    btn.className='btn btn-danger btn-sm';
-    btn.onclick=null;
-    btn.removeEventListener('click', startTwofaSetup);
+    badge.textContent='Activé'; badge.className='twofa-badge on';
+    desc.textContent='Votre compte est protégé par un code à usage unique.';
+    btn.textContent='Désactiver le 2FA'; btn.className='btn btn-danger btn-sm';
+    btn.onclick=null; btn.removeEventListener('click', startTwofaSetup);
     btn.addEventListener('click', openTwofaDisableModal);
   }else{
-    badge.textContent='Désactivé';
-    badge.className='twofa-badge off';
-    desc.textContent='Protégez votre compte avec un code à usage unique généré par Google Authenticator, en plus de votre mot de passe.';
-    btn.textContent='Activer le 2FA';
-    btn.className='btn btn-primary btn-sm';
+    badge.textContent='Désactivé'; badge.className='twofa-badge off';
+    desc.textContent='Protégez votre compte avec Google Authenticator.';
+    btn.textContent='Activer le 2FA'; btn.className='btn btn-primary btn-sm';
     btn.removeEventListener('click', openTwofaDisableModal);
     btn.addEventListener('click', startTwofaSetup);
   }
@@ -487,23 +462,11 @@ function renderTwofaStatus(){
 
 async function toggleEmailLink(enabled){
   try{
-    const r=await apiFetch('/api/settings/toggle-email-link',{
-      method:'POST',
-      body:JSON.stringify({enabled})
-    });
-    let data=null;
-    try { data = await r.json(); } catch(err) {}
-    if(data && data.ok){
-      toast(enabled?'Connexion par lien email activée':'Connexion par lien email désactivée');
-      emailLinkEnabled=enabled;
-    }else{
-      toast((data && data.error) || ('Erreur ' + r.status), false);
-      document.getElementById('email-link-toggle').checked=!enabled;
-    }
-  }catch(e){
-    toast('Erreur de connexion', false);
-    document.getElementById('email-link-toggle').checked=!enabled;
-  }
+    const r=await apiFetch('/api/settings/toggle-email-link',{method:'POST',body:JSON.stringify({enabled})});
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){ toast(enabled?'Activée':'Désactivée'); emailLinkEnabled=enabled; }
+    else{ toast((data&&data.error)||('Erreur '+r.status),false); document.getElementById('email-link-toggle').checked=!enabled; }
+  }catch(e){ toast('Erreur réseau',false); document.getElementById('email-link-toggle').checked=!enabled; }
 }
 
 async function saveProfile(){
@@ -515,11 +478,10 @@ async function saveProfile(){
   };
   try{
     const r=await apiFetch('/api/profile',{method:'PUT',body:JSON.stringify(payload)});
-    let data=null;
-    try { data = await r.json(); } catch(err) {}
-    if(data && data.ok){ toast('Profil mis à jour avec succès !'); loadProfile(); }
-    else{ toast((data && data.error) || ('Erreur ' + r.status), false); }
-  }catch(e){ toast('Erreur de connexion', false); }
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){ toast('Profil mis à jour !'); loadProfile(); }
+    else{ toast((data&&data.error)||('Erreur '+r.status),false); }
+  }catch(e){ toast('Erreur réseau',false); }
 }
 
 async function changePass(){
@@ -531,40 +493,28 @@ async function changePass(){
   if(np!==np2){toast('Les mots de passe ne correspondent pas',false);return}
   try{
     const r=await apiFetch('/api/password',{method:'PUT',body:JSON.stringify({old_password:op,new_password:np})});
-    let data=null;
-    try { data = await r.json(); } catch(err) {}
-    if(data && data.ok){
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){
       toast('Mot de passe mis à jour !');
       document.getElementById('p-oldpass').value='';
       document.getElementById('p-newpass').value='';
       document.getElementById('p-newpass2').value='';
       document.getElementById('str-fill').style.width='0%';
-    }else{
-      toast((data && data.error) || ('Erreur ' + r.status), false);
-    }
-  }catch(e){ toast('Erreur de connexion', false); }
+    }else{ toast((data&&data.error)||('Erreur '+r.status),false); }
+  }catch(e){ toast('Erreur réseau',false); }
 }
 
-function openDeleteAccountModal(){
-  document.getElementById('delete-account-password').value='';
-  document.getElementById('delete-account-modal').classList.add('show');
-}
-function closeDeleteAccountModal(){
-  document.getElementById('delete-account-modal').classList.remove('show');
-}
+function openDeleteAccountModal(){document.getElementById('delete-account-password').value='';document.getElementById('delete-account-modal').classList.add('show')}
+function closeDeleteAccountModal(){document.getElementById('delete-account-modal').classList.remove('show')}
 async function deleteAccount(){
   const password=document.getElementById('delete-account-password').value;
   if(!password){ toast('Entrez votre mot de passe',false); return; }
   try{
-    const r=await apiFetch('/api/account',{
-      method:'DELETE',
-      body:JSON.stringify({password})
-    });
-    let data=null;
-    try { data = await r.json(); } catch(err) {}
-    if(data && data.ok){ toast('Compte supprimé',false); setTimeout(()=>window.location.href='/',1500); }
-    else{ toast((data && data.error) || ('Erreur ' + r.status), false); }
-  }catch(e){ toast('Erreur de connexion', false); }
+    const r=await apiFetch('/api/account',{method:'DELETE',body:JSON.stringify({password})});
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){ toast('Compte supprimé',false); setTimeout(()=>window.location.href='/',1500); }
+    else{ toast((data&&data.error)||('Erreur '+r.status),false); }
+  }catch(e){ toast('Erreur réseau',false); }
 }
 
 async function startTwofaSetup(){
@@ -573,19 +523,15 @@ async function startTwofaSetup(){
   document.getElementById('twofa-setup-code').value='';
   try{
     const r=await apiFetch('/api/2fa/setup',{method:'POST'});
-    let data=null;
-    try { data = await r.json(); } catch(err) {}
-    if(!data || !data.ok){ toast((data && data.error) || ('Erreur ' + r.status), false); return; }
+    let data=null; try{data=await r.json();}catch(e){}
+    if(!data||!data.ok){ toast((data&&data.error)||('Erreur '+r.status),false); return; }
     document.getElementById('twofa-secret').textContent=data.secret;
-    const qrBox=document.getElementById('twofa-qr');
-    qrBox.innerHTML='';
-    if(typeof QRCode!=='undefined'){
-      new QRCode(qrBox, { text: data.otpauth_url, width: 190, height: 190 });
-    }
+    const qrBox=document.getElementById('twofa-qr'); qrBox.innerHTML='';
+    if(typeof QRCode!=='undefined'){ new QRCode(qrBox, { text: data.otpauth_url, width: 190, height: 190 }); }
     document.getElementById('twofa-setup-modal').classList.add('show');
-  }catch(e){ toast('Erreur de connexion', false); }
+  }catch(e){ toast('Erreur réseau',false); }
 }
-function closeTwofaSetupModal(){ document.getElementById('twofa-setup-modal').classList.remove('show'); }
+function closeTwofaSetupModal(){document.getElementById('twofa-setup-modal').classList.remove('show')}
 async function confirmTwofaSetup(){
   const code=document.getElementById('twofa-setup-code').value.trim();
   const errEl=document.getElementById('twofa-setup-error');
@@ -595,12 +541,11 @@ async function confirmTwofaSetup(){
   btn.disabled=true; btn.textContent='Vérification...';
   try{
     const r=await apiFetch('/api/2fa/verify',{method:'POST',body:JSON.stringify({code})});
-    let data=null;
-    try { data = await r.json(); } catch(err) {}
-    if(data && data.ok){ closeTwofaSetupModal(); toast('2FA activée'); twofaEnabled=true; renderTwofaStatus(); }
-    else{ errEl.textContent=(data && data.error) || ('Erreur ' + r.status); errEl.style.display='block'; }
-  }catch(e){ errEl.textContent='Erreur de connexion'; errEl.style.display='block'; }
-  btn.disabled=false; btn.textContent='Confirmer et activer';
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){ closeTwofaSetupModal(); toast('2FA activée'); twofaEnabled=true; renderTwofaStatus(); }
+    else{ errEl.textContent=(data&&data.error)||('Erreur '+r.status); errEl.style.display='block'; }
+  }catch(e){ errEl.textContent='Erreur réseau'; errEl.style.display='block'; }
+  btn.disabled=false; btn.textContent='Confirmer';
 }
 
 function openTwofaDisableModal(){
@@ -609,22 +554,21 @@ function openTwofaDisableModal(){
   document.getElementById('twofa-disable-error').style.display='none';
   document.getElementById('twofa-disable-modal').classList.add('show');
 }
-function closeTwofaDisableModal(){ document.getElementById('twofa-disable-modal').classList.remove('show'); }
+function closeTwofaDisableModal(){document.getElementById('twofa-disable-modal').classList.remove('show')}
 async function confirmTwofaDisable(){
   const password=document.getElementById('twofa-disable-password').value;
   const code=document.getElementById('twofa-disable-code').value.trim();
   const errEl=document.getElementById('twofa-disable-error');
   errEl.style.display='none';
-  if(!password || !/^\d{6}$/.test(code)){ errEl.textContent='Mot de passe et code à 6 chiffres requis.'; errEl.style.display='block'; return; }
+  if(!password||!/^\d{6}$/.test(code)){ errEl.textContent='Mot de passe et code 6 chiffres requis.'; errEl.style.display='block'; return; }
   const btn=document.getElementById('btn-confirm-disable');
   btn.disabled=true; btn.textContent='Vérification...';
   try{
     const r=await apiFetch('/api/2fa/disable',{method:'POST',body:JSON.stringify({password,code})});
-    let data=null;
-    try { data = await r.json(); } catch(err) {}
-    if(data && data.ok){ closeTwofaDisableModal(); toast('2FA désactivée'); twofaEnabled=false; renderTwofaStatus(); }
-    else{ errEl.textContent=(data && data.error) || ('Erreur ' + r.status); errEl.style.display='block'; }
-  }catch(e){ errEl.textContent='Erreur de connexion'; errEl.style.display='block'; }
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){ closeTwofaDisableModal(); toast('2FA désactivée'); twofaEnabled=false; renderTwofaStatus(); }
+    else{ errEl.textContent=(data&&data.error)||('Erreur '+r.status); errEl.style.display='block'; }
+  }catch(e){ errEl.textContent='Erreur réseau'; errEl.style.display='block'; }
   btn.disabled=false; btn.textContent='Désactiver';
 }
 
@@ -632,26 +576,20 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('burger-btn').addEventListener('click', openSidebar);
   document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
   document.getElementById('overlay').addEventListener('click', closeSidebar);
-
   document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
   document.getElementById('btn-change-pass').addEventListener('click', changePass);
   document.getElementById('p-newpass').addEventListener('input', function(){ checkStr(this.value); });
-
   document.getElementById('btn-open-delete').addEventListener('click', openDeleteAccountModal);
   document.getElementById('btn-close-delete').addEventListener('click', closeDeleteAccountModal);
   document.getElementById('btn-confirm-delete').addEventListener('click', deleteAccount);
-
   document.getElementById('btn-close-twofa-setup').addEventListener('click', closeTwofaSetupModal);
   document.getElementById('btn-confirm-twofa').addEventListener('click', confirmTwofaSetup);
   document.getElementById('btn-close-twofa-disable').addEventListener('click', closeTwofaDisableModal);
   document.getElementById('btn-confirm-disable').addEventListener('click', confirmTwofaDisable);
-
   document.getElementById('email-link-toggle').addEventListener('change', function(){ toggleEmailLink(this.checked); });
-
   document.getElementById('twofa-setup-modal').addEventListener('click', e => { if(e.target===document.getElementById('twofa-setup-modal')) closeTwofaSetupModal(); });
   document.getElementById('twofa-disable-modal').addEventListener('click', e => { if(e.target===document.getElementById('twofa-disable-modal')) closeTwofaDisableModal(); });
   document.getElementById('delete-account-modal').addEventListener('click', e => { if(e.target===document.getElementById('delete-account-modal')) closeDeleteAccountModal(); });
-
   loadProfile();
 });
 </script>
