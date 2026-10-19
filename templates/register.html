@@ -6,7 +6,7 @@
 <title>Flinpay — Créer un compte</title>
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
 --ink:#0B0D17;--ink-soft:#161829;
@@ -110,8 +110,6 @@ font-size:1rem;padding:8px;border-radius:6px;line-height:1;transition:color .15s
 .terms a{color:var(--blue);text-decoration:none}
 .terms a:hover{text-decoration:underline}
 
-/* champ piège pour bots — invisible pour une personne, mais rempli automatiquement
-   par la plupart des robots de spam qui remplissent tous les champs d'un formulaire */
 .hp-field{position:absolute;left:-9999px;top:-9999px;opacity:0;height:0;width:0;overflow:hidden}
 
 .btn-register{
@@ -166,7 +164,6 @@ body{padding:60px 20px}
 <div id="success-msg" class="msg msg-success" role="status"></div>
 
 <form id="register-form" novalidate autocomplete="on">
-<!-- Champ honeypot : ne jamais le rendre visible ni le remplir vous-même -->
 <div class="hp-field" aria-hidden="true">
 <label for="website">Ne pas remplir ce champ</label>
 <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
@@ -260,10 +257,9 @@ body{padding:60px 20px}
 <div class="back"><a href="/">← Retour à l'accueil</a></div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 
-/* ── utilitaires ─────────────────────────────────── */
 function $(id){ return document.getElementById(id); }
 
 function showError(msg){
@@ -291,9 +287,6 @@ if(input) input.classList.toggle('invalid', !!show);
 if(err) err.classList.toggle('show', !!show);
 }
 
-/* ── pré-remplissage du code de parrainage depuis ?ref=CODE ──
-   Affecté via .value (jamais innerHTML) : aucune donnée de l'URL n'est
-   interprétée comme du HTML, donc aucun risque d'injection ici. */
 (function(){
 const params=new URLSearchParams(window.location.search);
 const ref=params.get('ref');
@@ -310,7 +303,6 @@ this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
 $('referral-note').classList.toggle('show', this.value.trim().length>0);
 });
 
-/* ── afficher/masquer les mots de passe ─────────────── */
 document.querySelectorAll('.eye-btn').forEach(function(btn){
 btn.addEventListener('click', function(){
 const input=$(this.dataset.target);
@@ -321,8 +313,6 @@ this.setAttribute('aria-label', showing?'Afficher le mot de passe':'Masquer le m
 });
 });
 
-/* ── force du mot de passe (indicatif seulement — la vraie règle
-   appliquée est côté serveur : 8 caractères minimum) ────────────── */
 $('password').addEventListener('input', function(){
 const val=this.value;
 const fill=$('strength-fill');
@@ -350,7 +340,6 @@ label.style.color=lvl.color;
 checkMatch();
 });
 
-/* ── correspondance des deux mots de passe, en direct ─── */
 function checkMatch(){
 const p1=$('password').value;
 const p2=$('password2').value;
@@ -367,12 +356,6 @@ hint.textContent='✗ Les mots de passe ne correspondent pas';
 }
 $('password2').addEventListener('input', checkMatch);
 
-/* ── validation ──────────────────────────────────────
-   Cette validation est un confort pour l'utilisateur : elle réduit les
-   allers-retours inutiles, mais n'est jamais la source de vérité. Toute
-   règle appliquée ici (longueur, format email, pays valide...) est
-   revérifiée côté serveur dans routes/auth.py, qui seul décide si le
-   compte est réellement créé. */
 const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validate(){
@@ -398,7 +381,6 @@ if(!$('terms-check').checked){ ok=false; }
 return ok;
 }
 
-/* ── soumission ──────────────────────────────────────── */
 let submitting=false;
 
 $('register-form').addEventListener('submit', async function(e){
@@ -406,9 +388,6 @@ e.preventDefault();
 if(submitting) return;
 clearMessages();
 
-// Honeypot : un utilisateur humain ne voit ni ne remplit jamais ce champ.
-// S'il est rempli, on abandonne silencieusement (pas de message qui
-// renseignerait un bot sur la raison de l'échec).
 if($('website').value.trim()){
 return;
 }
@@ -446,7 +425,7 @@ body:JSON.stringify({firstname, lastname, email, company, country, phone, passwo
 });
 
 let data=null;
-try{ data=await r.json(); }catch(parseErr){ /* réponse non-JSON, gérée ci-dessous */ }
+try{ data=await r.json(); }catch(parseErr){ /* réponse non-JSON */ }
 
 if(r.status===429){
 showError(data && data.error ? data.error : "Trop de tentatives depuis cette connexion. Réessayez dans quelques minutes.");
@@ -468,7 +447,6 @@ btn.classList.remove('loading');
 btnLabel.textContent='Créer mon compte →';
 });
 
-/* Efface l'état d'erreur d'un champ dès que l'utilisateur le corrige */
 ['firstname','lastname','email','country','phone'].forEach(function(id){
 $(id).addEventListener('input', function(){ setFieldError(id, false); });
 $(id).addEventListener('change', function(){ setFieldError(id, false); });
