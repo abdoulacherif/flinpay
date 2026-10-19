@@ -32,6 +32,18 @@ _CSRF_EXEMPT_ENDPOINTS = frozenset({
 })
 
 
+def _host_is_allowed(host: str) -> bool:
+    """Retourne True si le host est autorisé, en acceptant les suffixes Vercel."""
+    if not host:
+        return False
+    if host in config.ALLOWED_HOSTS:
+        return True
+    for suffix in getattr(config, 'ALLOWED_HOST_SUFFIXES', ()):
+        if host.endswith(suffix):
+            return True
+    return False
+
+
 def create_app():
     app = Flask(__name__)
 
@@ -53,7 +65,7 @@ def create_app():
     @app.before_request
     def _enforce_host():
         host = (request.host or '').split(':')[0].lower()
-        if host not in config.ALLOWED_HOSTS:
+        if not _host_is_allowed(host):
             logger.warning("Host rejected", extra={'host': host, 'path': request.path})
             return 'Bad Request', 400
 
