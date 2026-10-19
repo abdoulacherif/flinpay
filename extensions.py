@@ -1,74 +1,106 @@
-"""
-Extensions Flask partagées : CORS, rate limiting, en-têtes de sécurité, logging.
-
-Tout ce qui touche à la sécurité transversale (donc appliqué à CHAQUE requête,
-peu importe la route) vit ici plutôt que dispersé dans app.py comme avant.
-"""
 import logging
+import re
+import secrets
+import uuid
 from datetime import datetime
 
-from flask import request
+from flask import Flask, g, request
 from flask_cors import CORS
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
+from pythonjsonlogger import jsonlogger
 
 from config import config
 
-# ── Logging ─────────────────────────────────────────
-# Avant : le code utilisait `print()` partout, y compris pour journaliser des
-# corps de réponse bruts d'API tierces (SoleasPay). En production, ça part dans
-# des logs non structurés, jamais purgés, potentiellement exposés. On passe au
-# module `logging` standard avec un niveau configurable, et on interdit
-# formellement de logger un corps de réponse en entier (voir services/).
-logging.basicConfig(
-    level=logging.DEBUG if config.DEBUG else logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-)
-logger = logging.getLogger('flinpay')
+_PII_PATTERNS = [
+    (re.compile(r'[\w.+-]+@[\w-]+\.[\w.-]+'), '[EMAIL_REDACTED]'),
+    (re.compile(r'(\+?\d[\d\s\-().]{7,}\d)'), '[PHONE_REDACTED]'),
+    (re.compile(r'(?i)(bearer\s+)[\w\-._~+/]+=*'), r'\1[REDACTED]'),
+    (re.compile(
+        r'(?i)("?(?:password|secret|token|api[_-]?key|authorization)"?\s*[:=]\s*"?)[^"\s,}]+'
+    ), r'\1[REDACTED]'),
+]
 
-if config.DEBUG:
-    logger.warning(
-        "FLASK_DEBUG est activé — ne JAMAIS déployer avec cette valeur en "
-        "production (le debugger Flask permet l'exécution de code arbitraire "
-        "si l'appli plante et que le debugger est exposé publiquement)."
-    )
+
+class _PIIRedactor(logging.Filter):
+    def filter(self, record):
+        try:
+            msg = record.getMessage()
+            for pattern, repl in _PII_PATTERNS:
+                msg = pattern.sub(repl, msg)
+            record.msg = msg
+            record.args = ()
+        except Exception:
+            pass
+        return True
+
+
+def _setup_logging():
+    handler = logging.StreamHandler()
+    handler.setFormatter(jsonlogger.JsonFormatter(
+        '%(asctime)s %(levelname)s %(name)s %(message)s',
+        rename_fields={'asctime': 'ts', 'levelname': 'level', 'name': 'logger'},
+    ))
+    handler.addFilter(_PIIRedactor())
+    root = logging.getLogger()
+    root.handlers = [handler]
+    root.setLevel(logging.DEBUG if config.DEBUG else logging.INFO)
+
+
+_setup_logging()
+logger = logging.getLogger('flinpay')
 
 
 def get_client_ip() -> str:
-    """Récupère l'IP réelle du visiteur à partir de X-Forwarded-For.
-
-    Important : ceci ne doit être fiable QUE si l'application tourne derrière
-    un proxy de confiance qui écrase cet en-tête lui-même (Render, Heroku,
-    Nginx bien configuré...). Voir app.py où ProxyFix est appliqué — sans ça,
-    n'importe quel client peut usurper son IP en envoyant son propre en-tête
-    X-Forwarded-For, ce qui casserait le rate-limiting et le verrouillage anti-
-    bruteforce basés dessus.
-    """
-    ip = request.headers.get('x-forwarded-for', request.remote_addr or '')
-    if ip and ',' in ip:
-        ip = ip.split(',')[0].strip()
-    return ip or 'unknown'
+    # Ne jamais lire X-Forwarded-For ici : ProxyFix réécrit déjà remote_addr
+    # de façon sûre. Lire le header brut permet à un client de forger son IP
+    # et de contourner rate-limit et lockout.
+    return request.remote_addr or 'unknown'
 
 
-# ── CORS ────────────────────────────────────────────
 def init_cors(app):
-    """CORS restreint à la liste blanche définie dans config.py. On ne met
-    JAMAIS '*' ici : ce site gère de l'argent, un wildcard permettrait à
-    n'importe quel site tiers de faire des requêtes authentifiées via cookie
-    au nom d'un utilisateur connecté."""
-    CORS(app, origins=config.ALLOWED_ORIGINS, supports_credentials=True)
+    CORS(
+        app,
+        origins=config.ALLOWED_ORIGINS,
+        methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allow_headers=['Content-Type', 'X-CSRF-Token', 'X-Request-ID'],
+        expose_headers=['X-Request-ID', 'Retry-After'],
+        supports_credentials=True,
+        max_age=600,
+    )
 
 
-# ── Rate limiting ───────────────────────────────────
-# Limite globale par défaut + limites spécifiques posées directement sur les
-# routes sensibles (login, paiement, webhooks) dans leurs blueprints respectifs
-# via le décorateur @limiter.limit(...). Stockage en mémoire par défaut : pour
-# un déploiement multi-instances, configurer LIMITER_STORAGE_URI vers Redis
-# pour que la limite soit partagée entre tous les workers.
+csrf = CSRFProtect()
+
+
+def init_csrf(app):
+    import os
+    app.config['WTF_CSRF_SECRET_KEY'] = os.getenv('WTF_CSRF_SECRET_KEY', config.SECRET_KEY)
+    app.config['WTF_CSRF_TIME_LIMIT'] = 3600
+    app.config['WTF_CSRF_SSL_STRICT'] = config.IS_PRODUCTION
+    app.config['WTF_CSRF_HEADERS'] = ['X-CSRF-Token', 'X-CSRFToken']
+    csrf.init_app(app)
+
+
+def _rate_limit_key():
+    # Clé composite pour ne pas bloquer 1000 utilisateurs d'un NAT à cause d'un seul attaquant.
+    try:
+        from services.auth import get_current_user_optional
+        user = get_current_user_optional()
+        if user and user.get('id'):
+            return f"user:{user['id']}"
+    except Exception:
+        pass
+    return f"ip:{get_client_ip()}"
+
+
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=_rate_limit_key,
     default_limits=['200 per minute', '3000 per hour'],
-    storage_uri='memory://',
+    storage_uri=config.LIMITER_STORAGE_URI,
+    headers_enabled=True,
+    strategy='fixed-window',
+    swallow_errors=True,
 )
 
 
@@ -76,50 +108,112 @@ def init_limiter(app):
     limiter.init_app(app)
 
 
-# ── En-têtes de sécurité ────────────────────────────
+CSP_BASE = (
+    "default-src 'self'; "
+    "script-src 'self' 'nonce-{nonce}' 'strict-dynamic'; "
+    "style-src 'self' 'nonce-{nonce}'; "
+    "img-src 'self' data: blob: https://*.supabase.co; "
+    "font-src 'self' data:; "
+    "connect-src 'self' https://www.flinpay.cfd https://flinpay.cfd https://*.supabase.co; "
+    "frame-src 'self'; "
+    "frame-ancestors 'self'; "
+    "base-uri 'self'; "
+    "form-action 'self'; "
+    "object-src 'none'; "
+    "upgrade-insecure-requests;"
+)
+
+# frame-ancestors * ouvrirait le clickjacking sur les pages de paiement ;
+# on restreint aux domaines de la plateforme uniquement.
+CSP_EMBEDDABLE = CSP_BASE.replace(
+    "frame-ancestors 'self';",
+    "frame-ancestors 'self' https://www.flinpay.cfd https://flinpay.cfd;"
+)
+
+
+def _is_embeddable_path(path: str) -> bool:
+    return path.startswith('/pay/') or path.startswith('/invoice/')
+
+
+def _is_static_path(path: str) -> bool:
+    return path.startswith('/static/') or path in ('/favicon.ico', '/widget.js', '/robots.txt')
+
+
 def init_security_headers(app):
     @app.after_request
-    def set_security_headers(response):
+    def _apply(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
-        response.headers['X-XSS-Protection'] = '0'  # obsolète et parfois contre-productif ; CSP fait le travail
+        response.headers['X-XSS-Protection'] = '0'
+        response.headers['Permissions-Policy'] = (
+            'accelerometer=(), camera=(), geolocation=(), gyroscope=(), '
+            'magnetometer=(), microphone=(), payment=(), usb=(), serial=(), '
+            'bluetooth=(), clipboard-read=(), clipboard-write=(self), '
+            'interest-cohort=(), browsing-topics=(), document-domain=(), '
+            'fullscreen=(self)'
+        )
+        response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+        response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
+        response.headers.pop('Server', None)
+        response.headers.pop('X-Powered-By', None)
 
         if config.IS_PRODUCTION:
-            response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
+            response.headers['Strict-Transport-Security'] = (
+                'max-age=63072000; includeSubDomains; preload'
+            )
 
-        # Les pages de paiement et de facture doivent pouvoir être intégrées en
-        # iframe par le widget "Payer avec Flinpay" (voir /widget.js) — on ne
-        # restreint donc pas leur frame-ancestors. Tout le reste du site refuse
-        # d'être affiché dans une iframe externe (protection anti-clickjacking).
-        if request.path.startswith('/pay/') or request.path.startswith('/invoice/'):
-            response.headers['Content-Security-Policy'] = "frame-ancestors *"
+        nonce = getattr(g, 'csp_nonce', '') or ''
+        policy = CSP_EMBEDDABLE if _is_embeddable_path(request.path) else CSP_BASE
+        response.headers['Content-Security-Policy'] = policy.format(nonce=nonce)
+
+        if _is_embeddable_path(request.path):
+            response.headers.pop('X-Frame-Options', None)
         else:
             response.headers['X-Frame-Options'] = 'DENY'
-            response.headers['Content-Security-Policy'] = "frame-ancestors 'self'"
 
-        # Les réponses contenant des données de compte (solde, transactions...)
-        # ne doivent jamais être mises en cache par le navigateur ou un proxy
-        # intermédiaire partagé.
-        if request.path.startswith('/api/'):
-            response.headers['Cache-Control'] = 'no-store'
+        if _is_static_path(request.path):
+            response.headers.setdefault('Cache-Control', 'public, max-age=3600')
+        else:
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
+            response.headers['Pragma'] = 'no-cache'
 
         return response
 
 
-# ── Contexte des templates ──────────────────────────
+def init_request_context(app):
+    @app.before_request
+    def _assign():
+        incoming = request.headers.get('X-Request-ID', '')
+        # N'accepte un ID client que s'il est bien formé, sinon injection de logs.
+        if incoming and re.fullmatch(r'[a-f0-9\-]{8,64}', incoming):
+            g.request_id = incoming
+        else:
+            g.request_id = uuid.uuid4().hex
+        g.csp_nonce = secrets.token_urlsafe(16)
+
+    @app.after_request
+    def _expose(response):
+        response.headers['X-Request-ID'] = getattr(g, 'request_id', '')
+        return response
+
+
 def init_template_helpers(app):
     @app.context_processor
-    def inject_globals():
-        return {'current_year': datetime.utcnow().year}
+    def _globals():
+        return {
+            'current_year': datetime.utcnow().year,
+            'csp_nonce': getattr(g, 'csp_nonce', ''),
+        }
 
     @app.template_filter('split')
-    def split_filter(value, sep=','):
+    def _split(value, sep=','):
         return (value or '').split(sep)
 
 
-def init_extensions(app):
+def init_extensions(app: Flask):
     init_cors(app)
+    init_csrf(app)
     init_limiter(app)
+    init_request_context(app)
     init_security_headers(app)
     init_template_helpers(app)
