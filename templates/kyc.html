@@ -4,35 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Vérification d'identité</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
   --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
-  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
   --green:#00C48C;--green-tint:#E3FBF3;
   --danger:#FF4D4D;--danger-tint:#FFEAEA;
   --text:#12131C;--muted:#767A94;
   --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
-  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
 .sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
-.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
 .close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
 .corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
 .corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
-.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-label b{color:#8ECFFF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
 .sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
 .nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
@@ -40,32 +42,34 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
-.nav-link.active .icon{color:#8EA6FF}
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
 .sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
 .user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
 .overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
-.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
-.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
 
-.page{flex:1;padding:30px;max-width:640px;animation:fadeUp .25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
-.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft)}
-.card-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--gradient);padding:20px 30px;color:white;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;overflow:hidden}
+.topbar::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.burger-btn{display:none;background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center;position:relative;z-index:1}
+.burger-btn:hover{background:rgba(255,255,255,0.28)}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:10px;position:relative;z-index:1}
+.topbar-title .icon{width:22px;height:22px;color:white}
+
+.page{flex:1;padding:26px 30px 60px;max-width:640px;width:100%}
+.card{background:white;border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px;border:1px solid var(--border-soft)}
+.card-head{padding:18px 22px;border-bottom:1px solid var(--border-soft)}
+.card-title{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:22px}
 
-.status-banner{padding:16px 20px;border-radius:var(--r-md);display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+.status-banner{padding:16px 20px;border-radius:12px;display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
 .status-banner.pending{background:var(--gold-tint);color:#8A5B00}
 .status-banner.verified{background:var(--green-tint);color:#0A7A50}
 .status-banner.rejected{background:var(--danger-tint);color:#B3271A}
@@ -75,7 +79,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 .form-group{margin-bottom:16px}
 .form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
-.form-input,select.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.form-input,select.form-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;background:white}
 .form-input:focus{border-color:var(--blue)}
 
 .section-divider{display:flex;align-items:center;gap:10px;margin:24px 0 14px}
@@ -85,10 +89,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:560px){.doc-grid{grid-template-columns:1fr}}
 
-.file-drop{
-  border:2px dashed var(--border);border-radius:var(--r-md);padding:22px 16px;text-align:center;
-  cursor:pointer;transition:all .15s;background:var(--bg);position:relative;overflow:hidden
-}
+.file-drop{border:2px dashed var(--border);border-radius:var(--r-md);padding:22px 16px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg);position:relative;overflow:hidden;display:block}
 .file-drop:hover{border-color:var(--blue);background:var(--blue-tint)}
 .file-drop input{display:none}
 .file-drop .icon{width:26px;height:26px;color:var(--muted);margin:0 auto 8px}
@@ -97,15 +98,16 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .file-drop-thumb{max-width:100%;max-height:100px;border-radius:8px;margin-bottom:8px;display:none}
 .file-drop.has-file{border-style:solid;border-color:var(--green);background:var(--green-tint)}
 
-.selfie-tips{background:var(--blue-tint);border-radius:var(--r-sm);padding:12px 14px;font-size:.79rem;color:var(--blue-deep);line-height:1.55;margin-bottom:14px}
+.selfie-tips{background:var(--blue-tint);border-radius:10px;padding:12px 14px;font-size:.79rem;color:var(--blue-deep);line-height:1.55;margin-bottom:14px}
 .selfie-tips b{display:block;margin-bottom:4px;font-family:'Space Grotesk',sans-serif;font-size:.8rem}
 
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.87rem;padding:12px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;width:100%}
-.btn-primary{background:var(--blue);color:white}
-.btn-primary:hover{background:var(--blue-deep)}
-.btn-primary:disabled{opacity:.5;pointer-events:none}
-.error-msg{background:var(--danger-tint);color:#B3271A;border-radius:9px;padding:10px 14px;font-size:.83rem;margin-bottom:14px;display:none}
-#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.87rem;padding:12px 20px;border-radius:10px;border:none;cursor:pointer;transition:all .15s;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--gradient);color:white;box-shadow:0 6px 18px rgba(10,108,255,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(10,108,255,.4)}
+.btn-primary:disabled{opacity:.5;pointer-events:none;transform:none}
+.error-msg{background:var(--danger-tint);color:#B3271A;border-radius:10px;padding:10px 14px;font-size:.83rem;margin-bottom:14px;display:none;line-height:1.6}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateY(0);opacity:1}
 
 @media(max-width:900px){
@@ -114,7 +116,8 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   .main{margin-left:0}
   .burger-btn{display:flex}
   .close-sidebar{display:block}
-  .page{padding:16px}
+  .page{padding:16px;max-width:100%}
+  .topbar{padding:16px 20px}
 }
 </style>
 </head>
@@ -136,14 +139,13 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     <symbol id="ic-shield-check" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
     <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
     <symbol id="ic-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
-    <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
     <symbol id="ic-id-front" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><line x1="13" y1="10" x2="18" y2="10"/><line x1="13" y1="14" x2="18" y2="14"/></symbol>
     <symbol id="ic-id-back" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="13" x2="14" y2="13"/><line x1="5" y1="16" x2="10" y2="16"/></symbol>
     <symbol id="ic-selfie" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 18c0-2.5 2.2-4 5-4s5 1.5 5 4"/></symbol>
   </defs>
 </svg>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="overlay" id="overlay"></div>
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
@@ -151,16 +153,12 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
       <div class="plan-badge-pill">🚀 Starter</div>
     </div>
-    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+    <button class="close-sidebar" id="close-sidebar">✕</button>
   </div>
-
   <div class="corridor">
     <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-    <div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">
-      🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦
-    </div>
+    <div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
   </div>
-
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
     <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
@@ -177,7 +175,6 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
     <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
-
   <div class="sidebar-user">
     <div class="user-row">
       <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
@@ -192,7 +189,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 <div class="main">
   <div class="topbar">
-    <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+    <button class="burger-btn" id="burger-btn"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
     <div class="topbar-title"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification d'identité</div>
   </div>
 
@@ -205,19 +202,19 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
         <div class="error-msg" id="error-msg"></div>
 
         <div class="form-group">
-          <label class="form-label">Nom complet (identique à la pièce)</label>
+          <label class="form-label" for="kyc-name">Nom complet (identique à la pièce)</label>
           <input class="form-input" id="kyc-name" type="text" placeholder="Kouamé Diallo">
         </div>
         <div class="form-group">
-          <label class="form-label">Type de pièce</label>
+          <label class="form-label" for="kyc-type">Type de pièce</label>
           <select class="form-input" id="kyc-type">
-            <option value="cni">Carte Nationale d'Identité</option>
-            <option value="passeport">Passeport</option>
-            <option value="permis">Permis de conduire</option>
+            <option value="national_id">Carte Nationale d'Identité</option>
+            <option value="passport">Passeport</option>
+            <option value="driver_license">Permis de conduire</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Numéro de la pièce</label>
+          <label class="form-label" for="kyc-number">Numéro de la pièce</label>
           <input class="form-input" id="kyc-number" type="text" placeholder="CI0012345678">
         </div>
 
@@ -227,128 +224,136 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Recto</label>
             <label class="file-drop" id="drop-front">
-              <img class="file-drop-thumb" id="thumb-front">
+              <img class="file-drop-thumb" id="thumb-front" alt="">
               <span class="icon"><svg><use href="#ic-id-front"/></svg></span>
               <div class="file-drop-text">Face avant de la pièce</div>
               <div class="file-drop-name" id="name-front"></div>
-              <input type="file" id="kyc-file-front" accept=".jpg,.jpeg,.png,.pdf" onchange="onFileChange('front')">
+              <input type="file" id="kyc-file-front" accept=".jpg,.jpeg,.png,.pdf">
             </label>
           </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Verso</label>
             <label class="file-drop" id="drop-back">
-              <img class="file-drop-thumb" id="thumb-back">
+              <img class="file-drop-thumb" id="thumb-back" alt="">
               <span class="icon"><svg><use href="#ic-id-back"/></svg></span>
               <div class="file-drop-text">Face arrière de la pièce</div>
               <div class="file-drop-name" id="name-back"></div>
-              <input type="file" id="kyc-file-back" accept=".jpg,.jpeg,.png,.pdf" onchange="onFileChange('back')">
+              <input type="file" id="kyc-file-back" accept=".jpg,.jpeg,.png,.pdf">
             </label>
           </div>
         </div>
 
         <div class="section-divider"><span class="label">Photo du visage</span><span class="line"></span></div>
-
         <div class="selfie-tips">
           <b>📸 Conseils pour la photo</b>
-          Visage bien visible et centré, sans lunettes de soleil ni couvre-chef, dans un endroit bien éclairé. Vous pouvez prendre un selfie ou envoyer une photo récente.
+          Visage bien visible et centré, sans lunettes de soleil ni couvre-chef, dans un endroit bien éclairé.
         </div>
-
         <div class="form-group">
           <label class="file-drop" id="drop-selfie">
-            <img class="file-drop-thumb" id="thumb-selfie">
+            <img class="file-drop-thumb" id="thumb-selfie" alt="">
             <span class="icon"><svg><use href="#ic-selfie"/></svg></span>
             <div class="file-drop-text">Cliquez pour prendre ou choisir une photo de votre visage<br>(JPG ou PNG — 8 Mo max)</div>
             <div class="file-drop-name" id="name-selfie"></div>
-            <input type="file" id="kyc-file-selfie" accept=".jpg,.jpeg,.png" capture="user" onchange="onFileChange('selfie')">
+            <input type="file" id="kyc-file-selfie" accept=".jpg,.jpeg,.png" capture="user">
           </label>
         </div>
 
-        <button class="btn btn-primary" id="btn-submit" onclick="submitKyc()">Envoyer pour vérification</button>
+        <button class="btn btn-primary" id="btn-submit">Envoyer pour vérification</button>
       </div>
     </div>
   </div>
 </div>
 <div id="toast"></div>
 
-<script>
-function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+<script nonce="{{ csp_nonce }}">
+"use strict";
+
+function getCsrfToken(){const m=document.querySelector('meta[name="csrf-token"]');return m?m.getAttribute('content'):''}
+async function apiFetch(url, options={}){
+  const opts={...options}; opts.headers={...(opts.headers||{})};
+  const method=(opts.method||'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){
+    const t=getCsrfToken(); if(t) opts.headers['X-CSRF-Token']=t;
+  }
+  return fetch(url, opts);
+}
+
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');clearTimeout(t._hideTimer);t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000)}
 
 function onFileChange(kind){
-  const input=document.getElementById('kyc-file-'+kind);
-  const f=input.files[0];
-  const nameEl=document.getElementById('name-'+kind);
-  const thumbEl=document.getElementById('thumb-'+kind);
-  const dropEl=document.getElementById('drop-'+kind);
+  const input = document.getElementById('kyc-file-'+kind);
+  const f = input.files[0];
+  const nameEl = document.getElementById('name-'+kind);
+  const thumbEl = document.getElementById('thumb-'+kind);
+  const dropEl = document.getElementById('drop-'+kind);
   if(f){
-    nameEl.textContent=f.name;
+    nameEl.textContent = f.name;
     dropEl.classList.add('has-file');
     if(f.type.startsWith('image/')){
-      const reader=new FileReader();
-      reader.onload=e=>{ thumbEl.src=e.target.result; thumbEl.style.display='block'; };
-      reader.readAsDataURL(f);
-    }else{
-      thumbEl.style.display='none';
+      const r = new FileReader();
+      r.onload = e => { thumbEl.src = e.target.result; thumbEl.style.display='block'; };
+      r.readAsDataURL(f);
+    } else {
+      thumbEl.style.display = 'none';
     }
-  }else{
-    nameEl.textContent='';
-    thumbEl.style.display='none';
-    dropEl.classList.remove('has-file');
+  } else {
+    nameEl.textContent = ''; thumbEl.style.display = 'none'; dropEl.classList.remove('has-file');
   }
 }
 
 async function loadStatus(){
   try{
-    const r=await fetch('/api/me');
-    if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-    const data=await r.json();
+    const r = await apiFetch('/api/me');
+    if(r.status===401 || r.redirected){ window.location.href = '/login'; return; }
+    const data = await r.json();
     if(!data.ok) return;
-    const user=data.user;
-    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
-    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
-    document.getElementById('user-email').textContent=user.email||'';
+    const user = data.user;
+    document.getElementById('user-av').textContent = (user.firstname||'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent = (user.firstname||'')+' '+(user.lastname||'');
+    document.getElementById('user-email').textContent = user.email||'';
 
-    const status=user.kyc_status||'unverified';
-    const area=document.getElementById('status-area');
-    const formCard=document.getElementById('form-card');
+    const status = user.kyc_status || 'unverified';
+    const area = document.getElementById('status-area');
+    const formCard = document.getElementById('form-card');
 
-    if(status==='verified'){
-      area.innerHTML=`<div class="status-banner verified"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span><div><strong>Identité vérifiée</strong><span>Vous pouvez générer des clés API et accéder à toutes les fonctionnalités.</span></div></div>`;
-      formCard.style.display='none';
-    }else if(status==='pending'){
-      area.innerHTML=`<div class="status-banner pending"><span class="icon"><svg><use href="#ic-clock"/></svg></span><div><strong>Vérification en cours</strong><span>Vos documents ont été envoyés et sont en cours de revue (24-48h).</span></div></div>`;
-      formCard.style.display='none';
-    }else if(status==='rejected'){
-      area.innerHTML=`<div class="status-banner rejected"><span class="icon"><svg><use href="#ic-alert"/></svg></span><div><strong>Document refusé</strong><span>${user.kyc_rejection_reason||'Document invalide.'} Vous pouvez soumettre de nouveaux documents ci-dessous.</span></div></div>`;
-      formCard.style.display='block';
-    }else{
-      area.innerHTML='';
-      formCard.style.display='block';
+    if(status === 'verified'){
+      area.innerHTML = `<div class="status-banner verified"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span><div><strong>Identité vérifiée</strong><span>Vous pouvez générer des clés API et accéder à toutes les fonctionnalités.</span></div></div>`;
+      formCard.style.display = 'none';
+    } else if(status === 'pending'){
+      area.innerHTML = `<div class="status-banner pending"><span class="icon"><svg><use href="#ic-clock"/></svg></span><div><strong>Vérification en cours</strong><span>Vos documents ont été envoyés et sont en cours de revue (24-48h).</span></div></div>`;
+      formCard.style.display = 'none';
+    } else if(status === 'rejected'){
+      area.innerHTML = `<div class="status-banner rejected"><span class="icon"><svg><use href="#ic-alert"/></svg></span><div><strong>Document refusé</strong><span>${(user.kyc_rejection_reason || 'Document invalide.').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))} Vous pouvez soumettre de nouveaux documents ci-dessous.</span></div></div>`;
+      formCard.style.display = 'block';
+    } else {
+      area.innerHTML = '';
+      formCard.style.display = 'block';
     }
   }catch(e){}
 }
 
 async function submitKyc(){
-  const name=document.getElementById('kyc-name').value.trim();
-  const type=document.getElementById('kyc-type').value;
-  const number=document.getElementById('kyc-number').value.trim();
-  const fileFront=document.getElementById('kyc-file-front').files[0];
-  const fileBack=document.getElementById('kyc-file-back').files[0];
-  const fileSelfie=document.getElementById('kyc-file-selfie').files[0];
-  const err=document.getElementById('error-msg');
-  err.style.display='none';
+  const name = document.getElementById('kyc-name').value.trim();
+  const type = document.getElementById('kyc-type').value;
+  const number = document.getElementById('kyc-number').value.trim();
+  const fileFront = document.getElementById('kyc-file-front').files[0];
+  const fileBack = document.getElementById('kyc-file-back').files[0];
+  const fileSelfie = document.getElementById('kyc-file-selfie').files[0];
+  const err = document.getElementById('error-msg');
+  err.style.display = 'none';
 
-  if(!name||!number||!fileFront||!fileBack||!fileSelfie){
-    err.textContent='Remplissez tous les champs et fournissez le recto, le verso et une photo de votre visage.';
-    err.style.display='block';
+  if(!name || !number || !fileFront || !fileBack || !fileSelfie){
+    err.textContent = 'Remplissez tous les champs et fournissez le recto, le verso et une photo de votre visage.';
+    err.style.display = 'block';
     return;
   }
 
-  const btn=document.getElementById('btn-submit');
-  btn.disabled=true; btn.textContent='Envoi en cours...';
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true; btn.textContent = 'Envoi en cours...';
 
-  const fd=new FormData();
+  const fd = new FormData();
   fd.append('full_name', name);
   fd.append('id_type', type);
   fd.append('id_number', number);
@@ -357,23 +362,24 @@ async function submitKyc(){
   fd.append('selfie', fileSelfie);
 
   try{
-    const r=await fetch('/api/kyc/submit',{method:'POST', body:fd});
-    const data=await r.json();
-    if(data.ok){
-      toast('Documents envoyés pour vérification !');
-      loadStatus();
-    }else{
-      err.textContent=data.error||'Erreur lors de l\'envoi.';
-      err.style.display='block';
-    }
-  }catch(e){
-    err.textContent='Erreur de connexion.';
-    err.style.display='block';
-  }
-  btn.disabled=false; btn.textContent='Envoyer pour vérification';
+    const r = await apiFetch('/api/kyc/submit', { method:'POST', body: fd });
+    const data = await r.json();
+    if(data.ok){ toast('Documents envoyés pour vérification !'); loadStatus(); }
+    else{ err.textContent = data.error || "Erreur lors de l'envoi."; err.style.display = 'block'; }
+  }catch(e){ err.textContent = 'Erreur de connexion.'; err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = 'Envoyer pour vérification';
 }
 
-loadStatus();
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('burger-btn').addEventListener('click', openSidebar);
+  document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
+  document.getElementById('overlay').addEventListener('click', closeSidebar);
+  document.getElementById('btn-submit').addEventListener('click', submitKyc);
+  ['front','back','selfie'].forEach(k => {
+    document.getElementById('kyc-file-'+k).addEventListener('change', () => onFileChange(k));
+  });
+  loadStatus();
+});
 </script>
 </body>
 </html>
