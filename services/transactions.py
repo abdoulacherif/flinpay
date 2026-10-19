@@ -1,42 +1,42 @@
-"""
-services/transactions.py — applique les effets de bord d'un changement de
-statut de transaction (crédit du solde marchand, rapprochement facture,
-webhook marchand, email de notification).
-
-Centralisé ici et appelé par LES TROIS chemins qui peuvent faire passer une
-transaction à 'paid' (synchro manuelle, polling client, webhook SoleasPay) —
-voir routes/payments.py et routes/webhook_callback.py. Chacun de ces trois
-appelants doit d'abord passer par sb_patch_if_pending() pour garantir que
-settle_transaction() ne s'exécute qu'UNE SEULE FOIS par transaction, même si
-deux chemins arrivent en même temps (protection contre le double crédit).
-"""
 import logging
+from datetime import datetime
 
-from db.supabase import sb_get_one, sb_patch_multi
-from services.billing import get_user_by_id, credit_user_balance
-from services.email import send_payment_notification_email
-from services.webhooks import dispatch_merchant_webhooks
-from services.invoices import mark_invoice_paid_if_applicable
+from db.supabase import sb_patch, sb_post, sb_get_eq
+from services.billing import credit_user_balance
 
-logger = logging.getLogger('flinpay.services.transactions')
+logger = logging.getLogger('flinpay.transactions')
 
 
 def settle_transaction(tx: dict, new_status: str):
-    if new_status == 'paid' and tx.get('payment_link_token'):
-        link = sb_get_one('payment_links', 'token', tx['payment_link_token'])
-        if link:
-            sb_patch_multi('payment_links', {'token': tx['payment_link_token']}, {'paid_count': (link.get('paid_count') or 0) + 1})
+    """Applique les effets de bord d'un changement de statut de transaction.
+    Appelé UNIQUEMENT après avoir gagné la transition atomique
+    (sb_patch_if_pending a renvoyé True)."""
 
     if new_status == 'paid':
-        mark_invoice_paid_if_applicable(tx)
+        try:
+            amount = float(tx.get('amount') or 0)
+            currency = tx.get('currency') or 'XOF'
+            credit_user_balance(tx['user_id'], currency, amount)
 
-    if new_status == 'paid' and tx.get('user_id'):
-        merchant = get_user_by_id(tx['user_id'])
-        credit_user_balance(tx['user_id'], tx.get('currency') or 'XOF', tx.get('amount') or 0)
-        send_payment_notification_email(merchant, tx)
+            from services.billing import credit_fp_for_transaction
+            credit_fp_for_transaction(tx['user_id'], amount, tx['token'])
+        except Exception as e:
+            logger.error(f"[settle_transaction] credit failed for {tx.get('token')}: {e}")
 
-    if new_status in ('paid', 'failed') and tx.get('user_id'):
-        dispatch_merchant_webhooks(tx['user_id'], 'payment.success' if new_status == 'paid' else 'payment.failed', {
-            'token': tx.get('token'), 'order_id': tx.get('order_id'), 'amount': tx.get('amount'),
-            'status': new_status, 'client_name': tx.get('client_name'), 'client_phone': tx.get('client_phone')
-        })
+        # Notification (best-effort)
+        try:
+            from services.email import send_payment_notification_email
+            from services.billing import get_user_by_id
+            merchant = get_user_by_id(tx['user_id'])
+            if merchant:
+                send_payment_notification_email(merchant, tx)
+        except Exception:
+            pass
+
+    # ── Webhooks marchand (payment.success / payment.failed) ──
+    try:
+        from services.webhooks import dispatch_merchant_webhooks
+        event = 'payment.success' if new_status == 'paid' else 'payment.failed'
+        dispatch_merchant_webhooks(tx['user_id'], event, tx)
+    except Exception as e:
+        logger.warning(f"[settle_transaction] webhook dispatch failed: {e}")
