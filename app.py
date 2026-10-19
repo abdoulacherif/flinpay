@@ -1,16 +1,16 @@
 from flask import Flask, jsonify, redirect, render_template, request
-from flask_wtf.csrf import CSRFError, validate_csrf
+from flask_wtf.csrf import CSRFError
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import config
-from extensions import init_extensions, logger
+from extensions import init_extensions, logger, csrf
 
 
 _CSRF_EXEMPT_ENDPOINTS = frozenset({
-    # ── Webhooks (signés par la passerelle) ──
+    # Webhooks (signature de la passerelle)
     'webhook_callback.webhook_payment_events',
 
-    # ── Paiements publics (Bearer ou pas de session) ──
+    # Paiements publics (Bearer ou pas de session)
     'payments.api_pay',
     'payments.api_pay_link',
     'payments.api_pay_status',
@@ -19,7 +19,7 @@ _CSRF_EXEMPT_ENDPOINTS = frozenset({
     'invoices.api_invoice_pay',
     'invoices.invoice_view',
 
-    # ── Pages publiques ──
+    # Pages publiques
     'public.index',
     'public.register',
     'public.login_page',
@@ -27,7 +27,7 @@ _CSRF_EXEMPT_ENDPOINTS = frozenset({
     'public.favicon',
     'public.flinpay_widget_js',
 
-    # ── Authentification (pas de session avant login) ──
+    # Authentification (pas de session avant login)
     'auth.api_login',
     'auth.api_login_2fa',
     'auth.api_login_email_link',
@@ -98,13 +98,13 @@ def create_app():
             return
         if request.endpoint in _CSRF_EXEMPT_ENDPOINTS:
             return
-        token = (
-            request.headers.get('X-CSRF-Token')
-            or (request.form.get('_csrf_token') if request.form else None)
-            or (request.get_json(silent=True) or {}).get('_csrf_token')
-        )
+        # Vérification manuelle (WTF_CSRF_CHECK_DEFAULT=False dans extensions.py).
+        # Les routes exemptées (login, register, webhooks, paiements publics)
+        # passent sans CSRF car elles n'ont pas de session à protéger.
+        # Toutes les autres routes (dashboard, payouts, profile, 2FA, etc.)
+        # sont protégées par csrf.protect().
         try:
-            validate_csrf(token)
+            csrf.protect()
         except CSRFError:
             return jsonify({'ok': False, 'error': 'Jeton de sécurité invalide ou expiré'}), 400
 
