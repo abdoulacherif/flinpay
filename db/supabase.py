@@ -19,12 +19,8 @@ STORAGE_TIMEOUT = 20
 
 ALLOWED_STORAGE_BUCKETS = {'kyc-documents', 'payment-link-images'}
 
-# ── Whitelist complète des colonnes utilisées par l'application ──────
-# IMPORTANT : ne jamais utiliser de valeur utilisateur comme nom de colonne.
-# Cette whitelist est une défense en profondeur. Ajouter '*' ici désactive
-# la protection (déconseillé en production).
 ALLOWED_FILTER_COLUMNS = {
-    # Identifiants génériques
+    # Identifiants
     'id', 'token', 'user_id', 'email', 'ip_address', 'key_hash', 'wid',
     'order_id', 'gateway_reference', 'invoice_token', 'payment_link_token',
     'key_prefix', 'environment',
@@ -65,11 +61,8 @@ ALLOWED_FILTER_COLUMNS = {
     # Payouts
     'payout_id', 'net_amount', 'phone', 'note',
 
-    # Factures
-    'invoice_number',
-
     # Webhooks / API keys
-    'url', 'events', 'description', 'label', 'last_used_at', 'key_hash',
+    'url', 'events', 'description', 'label', 'last_used_at',
 
     # Site config / pricing
     'key', 'value', 'price', 'period', 'cta_text', 'features',
@@ -78,20 +71,17 @@ ALLOWED_FILTER_COLUMNS = {
     # Divers
     'source', 'created_at', 'updated_at', 'deleted_at', 'guard_field',
     'country_code', 'last4', 'name', 'role', 'company', 'firstname', 'lastname',
+
+    # Récompenses FP
+    'fp_balance', 'amount_fp', 'source_amount', 'source_currency',
 }
 
-# Si tu veux autoriser toutes les colonnes (NON RECOMMANDÉ en production) :
-# ALLOWED_FILTER_COLUMNS = {'*'}
 
-
-# ── Helpers sécurité ──────────────────────────────────────────────
 def eq(value) -> str:
-    """Échappe une valeur pour un filtre PostgREST."""
     return quote(str(value), safe='')
 
 
 def _safe_filter_field(field: str) -> str:
-    """Vérifie que le nom du champ est dans la liste blanche."""
     if not ALLOWED_FILTER_COLUMNS or '*' in ALLOWED_FILTER_COLUMNS:
         return field
     if field not in ALLOWED_FILTER_COLUMNS:
@@ -100,7 +90,6 @@ def _safe_filter_field(field: str) -> str:
 
 
 def _build_filter_qs(filters: dict) -> str:
-    """Construit la query string de manière sûre (colonnes whitelistées)."""
     parts = []
     for k, v in filters.items():
         safe_k = _safe_filter_field(k)
@@ -114,7 +103,6 @@ def _safe_storage_path(bucket: str, path: str) -> str:
 
     path = unicodedata.normalize('NFC', str(path)).strip()
 
-    # Bloque traversées de répertoire et encodages dangereux
     if ('..' in path
             or path.startswith('/')
             or '%2e' in path.lower()
@@ -123,7 +111,6 @@ def _safe_storage_path(bucket: str, path: str) -> str:
             or '\\' in path):
         raise ValueError(f"Chemin de storage invalide (sécurité) : {path!r}")
 
-    # Validation stricte du format attendu : user_id/nom_fichier.extension
     allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./-")
     if not set(path).issubset(allowed_chars):
         raise ValueError(f"Caractères invalides dans le chemin : {path!r}")
@@ -131,7 +118,6 @@ def _safe_storage_path(bucket: str, path: str) -> str:
     return path
 
 
-# ── Lecture / écriture génériques (table REST) ─────────────────────
 def sb_get(table, query=''):
     try:
         r = requests.get(
@@ -287,7 +273,6 @@ def sb_count(table, query=''):
         return 0
 
 
-# ── Storage ──────────────────────────────────────────────────────
 def sb_storage_upload(bucket, path, file_bytes, content_type):
     try:
         path = _safe_storage_path(bucket, path)
@@ -321,7 +306,6 @@ def sb_storage_sign(bucket, path, expires_in=3600):
         return None
 
     try:
-        # Borne basse (60s) et haute (3600s)
         expires_in = max(60, min(int(expires_in or 3600), 3600))
     except (ValueError, TypeError):
         expires_in = 3600
