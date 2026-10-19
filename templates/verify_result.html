@@ -5,33 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Vérification email</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#0A6CFF;--blue-deep:#0052CC;--cyan:#00C4FF;
+  --green:#00C48C;--danger:#FF4D4D;--ink:#0B0D17;
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+  --gradient-soft:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 100%);
+}
 body{
-  font-family:'Inter',sans-serif;background:#0D0D0D;min-height:100vh;
+  font-family:'Inter',sans-serif;background:var(--gradient);min-height:100vh;
   display:flex;align-items:center;justify-content:center;padding:40px 20px;
-  position:relative;overflow:hidden
+  position:relative;overflow:hidden;
 }
-body::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.18) 0%,transparent 70%);
-  pointer-events:none
-}
+body::before{content:'';position:absolute;top:-100px;right:-100px;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+body::after{content:'';position:absolute;bottom:-150px;left:-100px;width:350px;height:350px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none}
+
 .box{
-  background:#141420;border:1px solid rgba(255,255,255,0.08);border-radius:24px;
+  background:white;border-radius:24px;
   padding:44px 36px;width:100%;max-width:420px;position:relative;z-index:1;
-  box-shadow:0 32px 64px rgba(0,0,0,0.4);text-align:center
+  box-shadow:0 30px 60px rgba(0,30,100,0.3);text-align:center;
 }
-.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;color:white;margin-bottom:20px}
-.logo span{color:#1A3CFF}
-.icon-big{font-size:2.8rem;margin-bottom:14px}
-.title{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.25rem;color:white;margin-bottom:10px}
-.text{color:rgba(255,255,255,0.5);font-size:.9rem;line-height:1.6;margin-bottom:26px}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;color:var(--ink);margin-bottom:20px}
+.logo span{color:var(--blue)}
+.icon-big{font-size:3rem;margin-bottom:14px}
+.title{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.25rem;color:var(--ink);margin-bottom:10px}
+.text{color:#767A94;font-size:.9rem;line-height:1.6;margin-bottom:26px}
 .btn{
-  display:inline-block;padding:13px 28px;background:#1A3CFF;color:white;text-decoration:none;
-  border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.9rem
+  display:inline-block;padding:13px 28px;
+  background:var(--gradient-soft);color:white;text-decoration:none;
+  border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.9rem;
+  box-shadow:0 6px 18px rgba(10,108,255,.35);
+  transition:transform .15s,box-shadow .15s;
 }
-.btn:hover{background:#1430e0}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(10,108,255,.45)}
 </style>
 </head>
 <body>
