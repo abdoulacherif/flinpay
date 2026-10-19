@@ -9,447 +9,408 @@
 <style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
---ink:#0B0D17;--ink-soft:#161829;
---blue:#1A3CFF;--blue-deep:#1430E0;
---gold:#FFB400;--green:#00C48C;--danger:#FF4D4D;
---muted:#8A8FA8;--border:rgba(255,255,255,0.1);
---ease:cubic-bezier(.16,.8,.3,1);
+  --blue:#0A6CFF;--blue-deep:#0052CC;--cyan:#00C4FF;
+  --gold:#FFB400;--green:#00C48C;--danger:#FF4D4D;
+  --ink:#0B0D17;--ink-soft:#161829;--muted:#767A94;
+  --ease:cubic-bezier(.16,.8,.3,1);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+  --gradient-soft:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 100%);
 }
 html{-webkit-text-size-adjust:100%}
 body{
-font-family:'Inter',sans-serif;background:var(--ink);min-height:100vh;
-display:flex;flex-direction:column;align-items:center;
-padding:32px 16px;position:relative;overflow-x:hidden;color:white;
--webkit-font-smoothing:antialiased
+  font-family:'Inter',sans-serif;
+  background:var(--gradient);
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:32px 16px;
+  position:relative;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
 }
-:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-body::before{
-content:'';position:fixed;inset:0;
-background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.22) 0%,transparent 70%);
-pointer-events:none;z-index:0
-}
-body::after{
-content:'';position:fixed;inset:0;
-background:radial-gradient(ellipse 40% 40% at 90% 100%,rgba(0,196,140,0.09) 0%,transparent 60%);
-pointer-events:none;z-index:0
-}
+body::before{content:'';position:fixed;top:-100px;right:-100px;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;bottom:-150px;left:-100px;width:350px;height:350px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none;z-index:0}
 
-.wrap{width:100%;max-width:480px;margin:auto 0;position:relative;z-index:1}
+.wrap{width:100%;max-width:520px;margin:auto 0;position:relative;z-index:1}
 
-.top-logo{text-align:center;margin-bottom:22px;opacity:0;animation:riseIn .6s var(--ease) .05s forwards}
-.top-logo a{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.top-logo a span{color:var(--blue)}
+.top-logo{text-align:center;margin-bottom:24px}
+.top-logo a{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.6rem;color:white;text-decoration:none;letter-spacing:-.01em;text-shadow:0 2px 8px rgba(0,0,0,.15)}
+.top-logo a span{color:#7DFFB0}
 
 .box{
-background:var(--ink-soft);border:1px solid var(--border);border-radius:24px;
-padding:40px 36px;box-shadow:0 32px 64px rgba(0,0,0,0.45);
-opacity:0;transform:translateY(14px);animation:riseIn .6s var(--ease) .12s forwards
+  background:white;
+  border-radius:24px;
+  padding:40px 38px;
+  box-shadow:0 30px 60px rgba(0,30,100,0.3);
 }
-@keyframes riseIn{to{opacity:1;transform:translateY(0)}}
 
-.heading{text-align:center;margin-bottom:6px}
-.heading h1{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-.01em}
-.subtitle{text-align:center;color:rgba(255,255,255,0.4);font-size:.85rem;margin:6px 0 22px}
+.heading{text-align:center;margin-bottom:8px}
+.heading h1{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.6rem;letter-spacing:-.02em;color:var(--ink)}
+.subtitle{text-align:center;color:var(--muted);font-size:.85rem;margin:0 0 24px}
 
 .plan-badge{
-display:flex;align-items:center;justify-content:center;gap:6px;
-background:rgba(26,60,255,0.15);border:1px solid rgba(26,60,255,0.28);
-color:#8EA6FF;border-radius:8px;padding:8px 12px;font-size:.78rem;font-weight:600;
-margin-bottom:22px;text-align:center
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--blue-tint);border:1px solid rgba(10,108,255,.2);
+  color:var(--blue);border-radius:10px;padding:10px 14px;
+  font-size:.8rem;font-weight:700;margin-bottom:24px;text-align:center;
 }
 
-.msg{border-radius:10px;padding:11px 14px;font-size:.83rem;margin-bottom:16px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
+.msg{border-radius:10px;padding:12px 14px;font-size:.83rem;margin-bottom:16px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
 .msg.show{display:flex}
-.msg-error{background:rgba(255,77,77,0.1);border:1px solid rgba(255,77,77,0.3);color:#ff8f8f}
-.msg-success{background:rgba(0,196,140,0.1);border:1px solid rgba(0,196,140,0.3);color:#3ddba8;justify-content:center;text-align:center}
+.msg-error{background:#FFEAEA;border:1px solid rgba(255,77,77,.3);color:#B3271A}
+.msg-success{background:#E3FBF3;border:1px solid rgba(0,196,140,.3);color:#0A7A50;justify-content:center;text-align:center}
 
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field{margin-bottom:15px;position:relative}
+.section-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.82rem;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #F0F1F8;display:flex;align-items:center;gap:8px}
+.section-title:first-of-type{margin-top:0}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{margin-bottom:14px;position:relative}
 .field.full{grid-column:1/-1}
-label{display:block;font-size:.72rem;font-weight:600;color:rgba(255,255,255,0.4);letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+label{display:block;font-size:.72rem;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
 
 input,select{
-width:100%;padding:12px 15px;background:rgba(255,255,255,0.045);
-border:1.5px solid var(--border);border-radius:10px;color:white;
-font-size:.92rem;font-family:'Inter',sans-serif;outline:none;
-transition:border-color .2s,background .2s
+  width:100%;padding:12px 15px;background:#F5F6FB;
+  border:1.5px solid #E7E9F3;border-radius:10px;color:var(--ink);
+  font-size:.92rem;font-family:'Inter',sans-serif;outline:none;
+  transition:border-color .2s,background .2s;
 }
-input:focus,select:focus{border-color:var(--blue);background:rgba(255,255,255,0.06)}
+input:focus,select:focus{border-color:var(--blue);background:white}
 input.invalid{border-color:var(--danger)}
-input::placeholder{color:rgba(255,255,255,0.22)}
+input::placeholder{color:#A6AABF}
 select{cursor:pointer}
-select option{background:#1a1c30;color:white}
 
-.field-error{font-size:.72rem;color:#ff8f8f;margin-top:6px;display:none}
+.field-error{font-size:.72rem;color:#B3271A;margin-top:6px;display:none}
 .field-error.show{display:block}
 
 .password-wrap{position:relative}
 .password-wrap input{padding-right:46px}
 .eye-btn{
-position:absolute;right:6px;top:50%;transform:translateY(-50%);
-background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.35);
-font-size:1rem;padding:8px;border-radius:6px;line-height:1;transition:color .15s
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:#A6AABF;
+  font-size:1rem;padding:8px;border-radius:6px;line-height:1;transition:color .15s;
 }
-.eye-btn:hover{color:white}
+.eye-btn:hover{color:var(--ink)}
 
-.strength-bar{height:3px;border-radius:2px;background:rgba(255,255,255,0.08);margin-top:8px;overflow:hidden}
+.strength-bar{height:4px;border-radius:2px;background:#E7E9F3;margin-top:8px;overflow:hidden}
 .strength-fill{height:100%;border-radius:2px;transition:width .3s,background-color .3s;width:0%}
-.strength-label{font-size:.7rem;color:rgba(255,255,255,0.35);margin-top:5px;min-height:1em}
+.strength-label{font-size:.7rem;color:var(--muted);margin-top:5px;min-height:1em}
 
 .match-hint{font-size:.72rem;margin-top:6px;display:none;align-items:center;gap:5px}
 .match-hint.show{display:flex}
-.match-hint.ok{color:var(--green)}
-.match-hint.bad{color:var(--danger)}
+.match-hint.ok{color:#0A7A50}
+.match-hint.bad{color:#B3271A}
 
-.referral-note{font-size:.74rem;color:var(--green);margin-top:6px;display:none;align-items:center;gap:6px}
+.referral-note{font-size:.74rem;color:#0A7A50;margin-top:6px;display:none;align-items:center;gap:6px}
 .referral-note.show{display:flex}
 
-.terms{display:flex;align-items:flex-start;gap:10px;margin:16px 0 18px}
-.terms input[type=checkbox]{width:17px;height:17px;flex-shrink:0;margin-top:2px;accent-color:var(--blue);cursor:pointer}
-.terms label{font-size:.82rem;color:rgba(255,255,255,0.45);text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer}
-.terms a{color:var(--blue);text-decoration:none}
+.terms{display:flex;align-items:flex-start;gap:10px;margin:20px 0 18px;padding:14px;background:#F5F6FB;border-radius:10px}
+.terms input[type=checkbox]{width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:var(--blue);cursor:pointer}
+.terms label{font-size:.82rem;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer;margin:0}
+.terms a{color:var(--blue);text-decoration:none;font-weight:600}
 .terms a:hover{text-decoration:underline}
 
 .hp-field{position:absolute;left:-9999px;top:-9999px;opacity:0;height:0;width:0;overflow:hidden}
 
 .btn-register{
-width:100%;padding:14px;background:var(--blue);color:white;border:none;border-radius:10px;
-font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;
-cursor:pointer;transition:background .2s,transform .15s;letter-spacing:.01em;
-display:flex;align-items:center;justify-content:center;gap:8px
+  width:100%;padding:15px;background:var(--gradient-soft);color:white;border:none;border-radius:10px;
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;
+  cursor:pointer;transition:all .2s;letter-spacing:.01em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 6px 18px rgba(10,108,255,.35);
 }
-.btn-register:hover:not(:disabled){background:var(--blue-deep);transform:translateY(-1px)}
-.btn-register:disabled{opacity:.55;cursor:not-allowed}
+.btn-register:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 24px rgba(10,108,255,.45)}
+.btn-register:disabled{opacity:.6;cursor:not-allowed;transform:none}
 .spinner{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:white;animation:spin .7s linear infinite;display:none}
 .btn-register.loading .spinner{display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.divider{text-align:center;color:rgba(255,255,255,0.15);font-size:.8rem;margin:20px 0;display:flex;align-items:center;gap:12px}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08)}
+.divider{text-align:center;color:var(--muted);font-size:.8rem;margin:20px 0;display:flex;align-items:center;gap:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#E7E9F3}
 
-.login-link{text-align:center;font-size:.85rem;color:rgba(255,255,255,0.4)}
+.login-link{text-align:center;font-size:.85rem;color:var(--muted)}
 .login-link a{color:var(--blue);text-decoration:none;font-weight:600}
 .login-link a:hover{text-decoration:underline}
 
-.back{text-align:center;margin-top:20px;font-size:.8rem;opacity:0;animation:riseIn .6s var(--ease) .2s forwards}
-.back a{color:rgba(255,255,255,0.35);text-decoration:none}
+.back{text-align:center;margin-top:22px;font-size:.8rem}
+.back a{color:rgba(255,255,255,.8);text-decoration:none}
 .back a:hover{color:white}
 
-@media(max-width:480px){
-.box{padding:30px 22px;border-radius:18px}
-.form-row{grid-template-columns:1fr}
+@media(max-width:520px){
+  .box{padding:30px 22px;border-radius:20px}
+  .form-row{grid-template-columns:1fr}
+  .heading h1{font-size:1.35rem}
 }
-
-@media(min-width:640px){
-body{padding:60px 20px}
-}
-
 @media(prefers-reduced-motion:reduce){
-*{animation-duration:.001ms !important;transition-duration:.001ms !important}
-.box,.top-logo,.back{opacity:1;transform:none}
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
 }
 </style>
 </head>
 <body>
 
 <div class="wrap">
-<div class="top-logo"><a href="/">Flin<span>pay</span></a></div>
+  <div class="top-logo"><a href="/">Flin<span>pay</span></a></div>
 
-<div class="box">
-<div class="heading"><h1>Créer un compte</h1></div>
-<div class="subtitle">Gratuit, sans carte bancaire requise</div>
-<div class="plan-badge">🚀 Plan Starter — 300 transactions/mois offertes</div>
+  <div class="box">
+    <div class="heading"><h1>Créer un compte</h1></div>
+    <div class="subtitle">Gratuit, sans carte bancaire requise</div>
+    <div class="plan-badge">🚀 Plan Starter — 300 transactions/mois offertes</div>
 
-<div id="error-msg" class="msg msg-error" role="alert"></div>
-<div id="success-msg" class="msg msg-success" role="status"></div>
+    <div id="error-msg" class="msg msg-error" role="alert"></div>
+    <div id="success-msg" class="msg msg-success" role="status"></div>
 
-<form id="register-form" novalidate autocomplete="on">
-<div class="hp-field" aria-hidden="true">
-<label for="website">Ne pas remplir ce champ</label>
-<input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
-</div>
+    <form id="register-form" novalidate autocomplete="on">
+      <div class="hp-field" aria-hidden="true">
+        <label for="website">Ne pas remplir ce champ</label>
+        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+      </div>
 
-<div class="form-row">
-<div class="field">
-<label for="firstname">Prénom</label>
-<input type="text" id="firstname" name="given-name" autocomplete="given-name" placeholder="Kouamé" maxlength="80" required>
-<div class="field-error" id="err-firstname">Prénom requis</div>
-</div>
-<div class="field">
-<label for="lastname">Nom</label>
-<input type="text" id="lastname" name="family-name" autocomplete="family-name" placeholder="Diallo" maxlength="80" required>
-<div class="field-error" id="err-lastname">Nom requis</div>
-</div>
-</div>
+      <div class="section-title">👤 Identité</div>
+      <div class="form-row">
+        <div class="field">
+          <label for="firstname">Prénom</label>
+          <input type="text" id="firstname" name="given-name" autocomplete="given-name" placeholder="Kouamé" maxlength="80" required>
+          <div class="field-error" id="err-firstname">Prénom requis</div>
+        </div>
+        <div class="field">
+          <label for="lastname">Nom</label>
+          <input type="text" id="lastname" name="family-name" autocomplete="family-name" placeholder="Diallo" maxlength="80" required>
+          <div class="field-error" id="err-lastname">Nom requis</div>
+        </div>
+      </div>
 
-<div class="field">
-<label for="email">Email professionnel</label>
-<input type="email" id="email" name="email" autocomplete="email" placeholder="vous@entreprise.com" maxlength="254" required>
-<div class="field-error" id="err-email">Adresse email invalide</div>
-</div>
+      <div class="field">
+        <label for="email">Email professionnel</label>
+        <input type="email" id="email" name="email" autocomplete="email" placeholder="vous@entreprise.com" maxlength="254" required>
+        <div class="field-error" id="err-email">Adresse email invalide</div>
+      </div>
 
-<div class="field">
-<label for="company">Nom de l'entreprise <span style="text-transform:none;font-weight:400;color:rgba(255,255,255,.3)">(optionnel)</span></label>
-<input type="text" id="company" name="organization" autocomplete="organization" placeholder="Mon Entreprise SARL" maxlength="120">
-</div>
+      <div class="section-title">🏢 Entreprise</div>
+      <div class="field">
+        <label for="company">Nom de l'entreprise <span style="text-transform:none;font-weight:400;color:#A6AABF">(optionnel)</span></label>
+        <input type="text" id="company" name="organization" autocomplete="organization" placeholder="Mon Entreprise SARL" maxlength="120">
+      </div>
 
-<div class="field">
-<label for="country">Pays</label>
-<select id="country" name="country" autocomplete="country" required>
-<option value="">— Sélectionnez votre pays —</option>
-<option value="CM">🇨🇲 Cameroun</option>
-<option value="CI">🇨🇮 Côte d'Ivoire</option>
-<option value="BF">🇧🇫 Burkina Faso</option>
-<option value="BJ">🇧🇯 Bénin</option>
-<option value="TG">🇹🇬 Togo</option>
-<option value="CD">🇨🇩 RDC</option>
-<option value="GA">🇬🇦 Gabon</option>
-</select>
-<div class="field-error" id="err-country">Sélectionnez votre pays</div>
-</div>
+      <div class="form-row">
+        <div class="field">
+          <label for="country">Pays</label>
+          <select id="country" name="country" autocomplete="country" required>
+            <option value="">— Choisir —</option>
+            <option value="CM">🇨🇲 Cameroun</option>
+            <option value="CI">🇨🇮 Côte d'Ivoire</option>
+            <option value="BF">🇧🇫 Burkina Faso</option>
+            <option value="BJ">🇧🇯 Bénin</option>
+            <option value="TG">🇹🇬 Togo</option>
+            <option value="CD">🇨🇩 RDC</option>
+            <option value="GA">🇬🇦 Gabon</option>
+          </select>
+          <div class="field-error" id="err-country">Sélectionnez votre pays</div>
+        </div>
+        <div class="field">
+          <label for="phone">Téléphone</label>
+          <input type="tel" id="phone" name="tel" autocomplete="tel" placeholder="+237 6XX XXX XXX" maxlength="30" required>
+          <div class="field-error" id="err-phone">Numéro requis</div>
+        </div>
+      </div>
 
-<div class="field">
-<label for="phone">Téléphone</label>
-<input type="tel" id="phone" name="tel" autocomplete="tel" placeholder="+237 6XX XXX XXX" maxlength="30" required>
-<div class="field-error" id="err-phone">Numéro de téléphone requis</div>
-</div>
+      <div class="field">
+        <label for="referral">Code de parrainage <span style="text-transform:none;font-weight:400;color:#A6AABF">(optionnel)</span></label>
+        <input type="text" id="referral" name="referral" placeholder="Ex: FPA3F9C1" maxlength="12" style="text-transform:uppercase" autocomplete="off">
+        <div class="referral-note" id="referral-note">✓ Code de parrainage appliqué</div>
+      </div>
 
-<div class="field">
-<label for="referral">Code de parrainage <span style="text-transform:none;font-weight:400;color:rgba(255,255,255,.3)">(optionnel)</span></label>
-<input type="text" id="referral" name="referral" placeholder="Ex: FPA3F9C1" maxlength="12" style="text-transform:uppercase" autocomplete="off">
-<div class="referral-note" id="referral-note">✓ Code de parrainage appliqué</div>
-</div>
+      <div class="section-title">🔒 Sécurité</div>
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <div class="password-wrap">
+          <input type="password" id="password" name="new-password" autocomplete="new-password" placeholder="Min. 8 caractères" minlength="8" maxlength="128" required>
+          <button class="eye-btn" type="button" data-target="password" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        <div class="strength-label" id="strength-label" aria-live="polite"></div>
+      </div>
 
-<div class="field">
-<label for="password">Mot de passe</label>
-<div class="password-wrap">
-<input type="password" id="password" name="new-password" autocomplete="new-password" placeholder="Min. 8 caractères" minlength="8" maxlength="128" required>
-<button class="eye-btn" type="button" data-target="password" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button>
-</div>
-<div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
-<div class="strength-label" id="strength-label" aria-live="polite"></div>
-</div>
+      <div class="field">
+        <label for="password2">Confirmer le mot de passe</label>
+        <div class="password-wrap">
+          <input type="password" id="password2" name="confirm-password" autocomplete="new-password" placeholder="Répétez le mot de passe" maxlength="128" required>
+          <button class="eye-btn" type="button" data-target="password2" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button>
+        </div>
+        <div class="match-hint" id="match-hint"></div>
+      </div>
 
-<div class="field">
-<label for="password2">Confirmer le mot de passe</label>
-<div class="password-wrap">
-<input type="password" id="password2" name="confirm-password" autocomplete="new-password" placeholder="Répétez le mot de passe" maxlength="128" required>
-<button class="eye-btn" type="button" data-target="password2" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button>
-</div>
-<div class="match-hint" id="match-hint"></div>
-</div>
+      <div class="terms">
+        <input type="checkbox" id="terms-check" required>
+        <label for="terms-check">J'accepte les <a href="/docs#terms">conditions d'utilisation</a> et la <a href="/docs#privacy">politique de confidentialité</a> de Flinpay</label>
+      </div>
 
-<div class="terms">
-<input type="checkbox" id="terms-check" required>
-<label for="terms-check">J'accepte les <a href="/docs#terms">conditions d'utilisation</a> et la <a href="/docs#privacy">politique de confidentialité</a> de Flinpay</label>
-</div>
+      <button class="btn-register" id="btn-register" type="submit">
+        <span class="spinner"></span>
+        <span id="btn-label">Créer mon compte →</span>
+      </button>
+    </form>
 
-<button class="btn-register" id="btn-register" type="submit">
-<span class="spinner"></span>
-<span id="btn-label">Créer mon compte →</span>
-</button>
-</form>
+    <div class="divider">ou</div>
+    <div class="login-link">Déjà un compte ? <a href="/login">Se connecter</a></div>
+  </div>
 
-<div class="divider">ou</div>
-<div class="login-link">Déjà un compte ? <a href="/login">Se connecter</a></div>
-</div>
-
-<div class="back"><a href="/">← Retour à l'accueil</a></div>
+  <div class="back"><a href="/">← Retour à l'accueil</a></div>
 </div>
 
 <script nonce="{{ csp_nonce }}">
 "use strict";
-
 function $(id){ return document.getElementById(id); }
 
-function showError(msg){
-const el=$('error-msg');
-el.textContent='⚠ '+msg;
-el.classList.add('show');
-$('success-msg').classList.remove('show');
-el.scrollIntoView({behavior:'smooth', block:'center'});
-}
-function showSuccess(msg){
-const el=$('success-msg');
-el.textContent='✅ '+msg;
-el.classList.add('show');
-$('error-msg').classList.remove('show');
-}
-function clearMessages(){
-$('error-msg').classList.remove('show');
-$('success-msg').classList.remove('show');
-}
-
-function setFieldError(id, show){
-const input=$(id);
-const err=$('err-'+id);
-if(input) input.classList.toggle('invalid', !!show);
-if(err) err.classList.toggle('show', !!show);
-}
+function showError(msg){const el=$('error-msg');el.textContent='⚠ '+msg;el.classList.add('show');$('success-msg').classList.remove('show');el.scrollIntoView({behavior:'smooth', block:'center'});}
+function showSuccess(msg){const el=$('success-msg');el.textContent='✅ '+msg;el.classList.add('show');$('error-msg').classList.remove('show');}
+function clearMessages(){$('error-msg').classList.remove('show');$('success-msg').classList.remove('show');}
+function setFieldError(id, show){const input=$(id);const err=$('err-'+id);if(input) input.classList.toggle('invalid', !!show);if(err) err.classList.toggle('show', !!show);}
 
 (function(){
-const params=new URLSearchParams(window.location.search);
-const ref=params.get('ref');
-if(ref){
-const cleaned=ref.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
-if(cleaned){
-$('referral').value=cleaned;
-$('referral-note').classList.add('show');
-}
-}
+  const params=new URLSearchParams(window.location.search);
+  const ref=params.get('ref');
+  if(ref){
+    const cleaned=ref.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
+    if(cleaned){$('referral').value=cleaned;$('referral-note').classList.add('show');}
+  }
 })();
 $('referral').addEventListener('input', function(){
-this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
-$('referral-note').classList.toggle('show', this.value.trim().length>0);
+  this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,12);
+  $('referral-note').classList.toggle('show', this.value.trim().length>0);
 });
 
 document.querySelectorAll('.eye-btn').forEach(function(btn){
-btn.addEventListener('click', function(){
-const input=$(this.dataset.target);
-const showing=input.type==='text';
-input.type=showing?'password':'text';
-this.setAttribute('aria-pressed', String(!showing));
-this.setAttribute('aria-label', showing?'Afficher le mot de passe':'Masquer le mot de passe');
-});
+  btn.addEventListener('click', function(){
+    const input=$(this.dataset.target);
+    const showing=input.type==='text';
+    input.type=showing?'password':'text';
+    this.setAttribute('aria-pressed', String(!showing));
+    this.setAttribute('aria-label', showing?'Afficher le mot de passe':'Masquer le mot de passe');
+  });
 });
 
 $('password').addEventListener('input', function(){
-const val=this.value;
-const fill=$('strength-fill');
-const label=$('strength-label');
-let score=0;
-if(val.length>=8) score++;
-if(val.length>=12) score++;
-if(/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
-if(/[0-9]/.test(val)) score++;
-if(/[^A-Za-z0-9]/.test(val)) score++;
-
-const levels=[
-{pct:'20%', color:'#FF4D4D', text:'Très faible'},
-{pct:'40%', color:'#FF8C00', text:'Faible'},
-{pct:'60%', color:'#FFB400', text:'Moyen'},
-{pct:'80%', color:'#8FD400', text:'Bon'},
-{pct:'100%', color:'#00C48C', text:'Excellent'},
-];
-if(!val){ fill.style.width='0%'; label.textContent=''; return; }
-const lvl=levels[Math.min(score,5)-1] || levels[0];
-fill.style.width=lvl.pct;
-fill.style.background=lvl.color;
-label.textContent=lvl.text;
-label.style.color=lvl.color;
-checkMatch();
+  const val=this.value;
+  const fill=$('strength-fill');
+  const label=$('strength-label');
+  let score=0;
+  if(val.length>=8) score++;
+  if(val.length>=12) score++;
+  if(/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+  if(/[0-9]/.test(val)) score++;
+  if(/[^A-Za-z0-9]/.test(val)) score++;
+  const levels=[
+    {pct:'20%', color:'#FF4D4D', text:'Très faible'},
+    {pct:'40%', color:'#FF8C00', text:'Faible'},
+    {pct:'60%', color:'#FFB400', text:'Moyen'},
+    {pct:'80%', color:'#8FD400', text:'Bon'},
+    {pct:'100%', color:'#00C48C', text:'Excellent'},
+  ];
+  if(!val){ fill.style.width='0%'; label.textContent=''; return; }
+  const lvl=levels[Math.min(score,5)-1] || levels[0];
+  fill.style.width=lvl.pct;
+  fill.style.background=lvl.color;
+  label.textContent=lvl.text;
+  label.style.color=lvl.color;
+  checkMatch();
 });
 
 function checkMatch(){
-const p1=$('password').value;
-const p2=$('password2').value;
-const hint=$('match-hint');
-if(!p2){ hint.classList.remove('show'); return; }
-hint.classList.add('show');
-if(p1===p2){
-hint.className='match-hint show ok';
-hint.textContent='✓ Les mots de passe correspondent';
-}else{
-hint.className='match-hint show bad';
-hint.textContent='✗ Les mots de passe ne correspondent pas';
-}
+  const p1=$('password').value;
+  const p2=$('password2').value;
+  const hint=$('match-hint');
+  if(!p2){ hint.classList.remove('show'); return; }
+  hint.classList.add('show');
+  if(p1===p2){ hint.className='match-hint show ok'; hint.textContent='✓ Les mots de passe correspondent'; }
+  else{ hint.className='match-hint show bad'; hint.textContent='✗ Les mots de passe ne correspondent pas'; }
 }
 $('password2').addEventListener('input', checkMatch);
 
 const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validate(){
-let ok=true;
-const firstname=$('firstname').value.trim();
-const lastname=$('lastname').value.trim();
-const email=$('email').value.trim();
-const country=$('country').value;
-const phone=$('phone').value.trim();
-const password=$('password').value;
-const password2=$('password2').value;
-
-setFieldError('firstname', !firstname); if(!firstname) ok=false;
-setFieldError('lastname', !lastname); if(!lastname) ok=false;
-setFieldError('email', !EMAIL_RE.test(email)); if(!EMAIL_RE.test(email)) ok=false;
-setFieldError('country', !country); if(!country) ok=false;
-setFieldError('phone', phone.length<6); if(phone.length<6) ok=false;
-
-if(password.length<8){ ok=false; }
-if(password!==password2){ ok=false; }
-if(!$('terms-check').checked){ ok=false; }
-
-return ok;
+  let ok=true;
+  const firstname=$('firstname').value.trim();
+  const lastname=$('lastname').value.trim();
+  const email=$('email').value.trim();
+  const country=$('country').value;
+  const phone=$('phone').value.trim();
+  const password=$('password').value;
+  const password2=$('password2').value;
+  setFieldError('firstname', !firstname); if(!firstname) ok=false;
+  setFieldError('lastname', !lastname); if(!lastname) ok=false;
+  setFieldError('email', !EMAIL_RE.test(email)); if(!EMAIL_RE.test(email)) ok=false;
+  setFieldError('country', !country); if(!country) ok=false;
+  setFieldError('phone', phone.length<6); if(phone.length<6) ok=false;
+  if(password.length<8){ ok=false; }
+  if(password!==password2){ ok=false; }
+  if(!$('terms-check').checked){ ok=false; }
+  return ok;
 }
 
 let submitting=false;
 
 $('register-form').addEventListener('submit', async function(e){
-e.preventDefault();
-if(submitting) return;
-clearMessages();
+  e.preventDefault();
+  if(submitting) return;
+  clearMessages();
 
-if($('website').value.trim()){
-return;
-}
+  if($('website').value.trim()){ return; }
 
-const firstname=$('firstname').value.trim();
-const lastname=$('lastname').value.trim();
-const email=$('email').value.trim().toLowerCase();
-const company=$('company').value.trim();
-const country=$('country').value;
-const phone=$('phone').value.trim();
-const referral=$('referral').value.trim();
-const password=$('password').value;
-const password2=$('password2').value;
+  const firstname=$('firstname').value.trim();
+  const lastname=$('lastname').value.trim();
+  const email=$('email').value.trim().toLowerCase();
+  const company=$('company').value.trim();
+  const country=$('country').value;
+  const phone=$('phone').value.trim();
+  const referral=$('referral').value.trim();
+  const password=$('password').value;
+  const password2=$('password2').value;
 
-if(!validate()){
-if(password.length<8){ showError('Le mot de passe doit contenir au moins 8 caractères.'); }
-else if(password!==password2){ showError('Les mots de passe ne correspondent pas.'); }
-else if(!$('terms-check').checked){ showError("Veuillez accepter les conditions d'utilisation."); }
-else{ showError('Veuillez corriger les champs en rouge ci-dessus.'); }
-return;
-}
+  if(!validate()){
+    if(password.length<8){ showError('Le mot de passe doit contenir au moins 8 caractères.'); }
+    else if(password!==password2){ showError('Les mots de passe ne correspondent pas.'); }
+    else if(!$('terms-check').checked){ showError("Veuillez accepter les conditions d'utilisation."); }
+    else{ showError('Veuillez corriger les champs en rouge.'); }
+    return;
+  }
 
-const btn=$('btn-register');
-const btnLabel=$('btn-label');
-submitting=true;
-btn.disabled=true;
-btn.classList.add('loading');
-btnLabel.textContent='Création en cours…';
+  const btn=$('btn-register');
+  const btnLabel=$('btn-label');
+  submitting=true;
+  btn.disabled=true;
+  btn.classList.add('loading');
+  btnLabel.textContent='Création en cours…';
 
-try{
-const r=await fetch('/api/register', {
-method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({firstname, lastname, email, company, country, phone, password, referral_code: referral})
-});
+  try{
+    const r=await fetch('/api/register', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({firstname, lastname, email, company, country, phone, password, referral_code: referral})
+    });
+    let data=null;
+    try{ data=await r.json(); }catch(parseErr){}
 
-let data=null;
-try{ data=await r.json(); }catch(parseErr){ /* réponse non-JSON */ }
+    if(r.status===429){
+      showError(data && data.error ? data.error : "Trop de tentatives. Réessayez dans quelques minutes.");
+    }else if(data && data.ok){
+      showSuccess('Compte créé ! Redirection vers la connexion…');
+      $('register-form').reset();
+      setTimeout(function(){ window.location.href='/login'; }, 1800);
+      return;
+    }else{
+      showError((data && data.error) || 'Erreur lors de la création du compte.');
+    }
+  }catch(networkErr){
+    showError('Connexion au serveur impossible. Vérifiez votre connexion.');
+  }
 
-if(r.status===429){
-showError(data && data.error ? data.error : "Trop de tentatives depuis cette connexion. Réessayez dans quelques minutes.");
-}else if(data && data.ok){
-showSuccess('Compte créé ! Redirection vers la connexion…');
-$('register-form').reset();
-setTimeout(function(){ window.location.href='/login'; }, 1800);
-return; // on laisse le bouton désactivé le temps de la redirection
-}else{
-showError((data && data.error) || 'Erreur lors de la création du compte. Réessayez.');
-}
-}catch(networkErr){
-showError('Connexion au serveur impossible. Vérifiez votre connexion et réessayez.');
-}
-
-submitting=false;
-btn.disabled=false;
-btn.classList.remove('loading');
-btnLabel.textContent='Créer mon compte →';
+  submitting=false;
+  btn.disabled=false;
+  btn.classList.remove('loading');
+  btnLabel.textContent='Créer mon compte →';
 });
 
 ['firstname','lastname','email','country','phone'].forEach(function(id){
-$(id).addEventListener('input', function(){ setFieldError(id, false); });
-$(id).addEventListener('change', function(){ setFieldError(id, false); });
+  $(id).addEventListener('input', function(){ setFieldError(id, false); });
+  $(id).addEventListener('change', function(){ setFieldError(id, false); });
 });
 </script>
 </body>
