@@ -25,7 +25,8 @@ def get_currency_for_country(country_code: str) -> str:
 
 # ── Soldes par devise ───────────────────────────────
 def get_balances(user: dict) -> dict:
-    """Retourne un dict {devise: montant} à partir des colonnes balance_* de users."""
+    """Retourne {devise: montant} pour toutes les devises avec un solde > 0.
+    Filtre les devises vides pour ne pas polluer le sélecteur côté client."""
     if not user:
         return {}
     balances = {}
@@ -33,7 +34,12 @@ def get_balances(user: dict) -> dict:
         col = f'balance_{currency.lower()}'
         val = user.get(col)
         if val is not None:
-            balances[currency] = float(val)
+            try:
+                amount = float(val)
+            except (TypeError, ValueError):
+                continue
+            if amount > 0:
+                balances[currency] = amount
     return balances
 
 
@@ -41,11 +47,13 @@ def get_balance_for_currency(user: dict, currency: str) -> float:
     if not user:
         return 0.0
     col = f'balance_{currency.lower()}'
-    return float(user.get(col) or 0)
+    try:
+        return float(user.get(col) or 0)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def credit_user_balance(user_id: str, currency: str, amount: float):
-    """Crédite le solde du marchand dans la devise donnée."""
     try:
         user = sb_get_one('users', 'id', user_id)
         if not user:
@@ -59,7 +67,6 @@ def credit_user_balance(user_id: str, currency: str, amount: float):
 
 
 def debit_user_balance(user_id: str, currency: str, amount: float):
-    """Débite le solde du marchand dans la devise donnée."""
     try:
         user = sb_get_one('users', 'id', user_id)
         if not user:
@@ -77,7 +84,6 @@ def debit_user_balance(user_id: str, currency: str, amount: float):
 
 # ── Quotas mensuels ─────────────────────────────────
 def get_monthly_transaction_count(user_id: str) -> int:
-    """Compte les transactions du mois courant pour le marchand."""
     try:
         start_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
         rows = sb_get_eq(
@@ -91,7 +97,6 @@ def get_monthly_transaction_count(user_id: str) -> int:
 
 
 def check_quota(user_id: str) -> tuple:
-    """Vérifie si le marchand a encore du quota. Retourne (ok: bool, erreur: str|None)."""
     try:
         user = sb_get_one('users', 'id', user_id)
         if not user:
@@ -116,7 +121,6 @@ def _apply_markup(base_amount: float, operator: str, percent_map: dict, flat_map
 
 
 def amount_with_markup(base_amount: float, operator: str = '') -> float:
-    """Marge appliquée aux paiements d'abonnement / factures."""
     return _apply_markup(
         base_amount, operator,
         config.LINK_MARKUP_BY_OPERATOR, config.LINK_MARKUP_FLAT_FEE_BY_OPERATOR,
@@ -142,13 +146,11 @@ def api_amount_with_markup(base_amount: float, operator: str = '') -> float:
 
 # ── Abonnement Pro ──────────────────────────────────
 def get_subscription_price() -> float:
-    """Prix de base de l'abonnement Pro en FCFA (XOF)."""
     return 8500.0
 
 
 # ── Parrainage ──────────────────────────────────────
 def ensure_referral_code(user: dict) -> str:
-    """Génère un code de parrainage unique pour l'utilisateur si absent."""
     if not user:
         return ''
     existing = user.get('referral_code')
@@ -172,7 +174,6 @@ FP_TO_XOF_RATE = 250.0
 
 
 def compute_fp_reward(amount_collected_xof: float) -> float:
-    """Retourne le nombre de FP à créditer pour un montant XOF collecté."""
     try:
         amount = float(amount_collected_xof or 0)
     except (TypeError, ValueError):
@@ -184,7 +185,7 @@ def compute_fp_reward(amount_collected_xof: float) -> float:
 
 def credit_fp_for_transaction(user_id: str, amount_xof: float, transaction_token: str):
     """Crédite les FP au marchand pour une collecte payée. Idempotent :
-    ne crédite pas deux fois le même token."""
+    ne crédite pas deux fois le même token (vérifie fp_history)."""
     fp = compute_fp_reward(amount_xof)
     if fp <= 0:
         return 0.0
