@@ -4,37 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Factures</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
   --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
-  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
   --green:#00C48C;--green-tint:#E3FBF3;
   --danger:#FF4D4D;--danger-tint:#FFEAEA;
-  --muted-tint:#F0F1F8;
   --text:#12131C;--muted:#767A94;
   --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
-  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
-  --shadow-md:0 1px 2px rgba(15,17,32,.04),0 10px 28px -14px rgba(15,17,32,.18);
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --shadow-md:0 10px 28px -14px rgba(10,50,150,.18);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+  --gradient-soft:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 100%);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
 .sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
-.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
 .close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
 .corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
 .corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
-.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-label b{color:#8ECFFF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
 .sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
 .nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
@@ -42,83 +44,85 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
-.nav-link.active .icon{color:#8EA6FF}
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
 .sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
 .user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
 .logout-link:hover{color:#ff7d7d}
 .overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
+
 .main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.topbar-left{display:flex;align-items:center;gap:14px}
-.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.topbar{background:var(--gradient);padding:20px 30px;color:white;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+.topbar::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.topbar-left{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.burger-btn{display:none;background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center}
+.burger-btn:hover{background:rgba(255,255,255,0.28)}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:10px}
+.topbar-title .icon{width:22px;height:22px;color:white}
 
-.page{flex:1;padding:30px;animation:fadeUp .25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
-.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
-.card-title{font-size:.9rem;font-weight:700}
-.card-body{padding:22px}
+.page{flex:1;padding:26px 30px 60px}
+.card{background:white;border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px;border:1px solid var(--border-soft)}
+.card-head{padding:18px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:.95rem;font-weight:700}
 
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:10px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
 .btn-primary{background:var(--blue);color:white}
 .btn-primary:hover{background:var(--blue-deep)}
-.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline{background:white;color:var(--blue);border:1.5px solid var(--blue)}
 .btn-outline:hover{background:var(--blue-tint)}
 .btn-danger{background:var(--danger);color:white}
-.btn-sm{padding:6px 12px;font-size:.76rem}
+.btn-sm{padding:7px 14px;font-size:.78rem}
+.btn:disabled{opacity:.55;cursor:not-allowed}
 
-.form-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%}
+.form-input{padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;width:100%;background:white;color:var(--text)}
 .form-input:focus{border-color:var(--blue)}
 .form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
 .form-group{margin-bottom:14px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 
-.inv-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px 20px;margin-bottom:12px;transition:all .2s}
+.inv-card{background:white;border:1px solid var(--border-soft);border-radius:12px;padding:18px 20px;margin-bottom:12px;transition:all .2s}
 .inv-card:hover{box-shadow:var(--shadow-md);border-color:var(--blue)}
 .inv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .inv-number{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.85rem;color:var(--blue)}
 .inv-client{font-weight:700;font-size:.95rem;margin:4px 0 2px}
 .inv-amount{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.2rem}
 .inv-meta{font-size:.76rem;color:var(--muted);margin-top:6px}
-.inv-actions{display:flex;gap:8px;flex-wrap:wrap}
+.inv-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
-.b-draft{background:var(--muted-tint);color:var(--muted)}
+.b-draft{background:#F0F1F8;color:var(--muted)}
 .b-sent{background:var(--blue-tint);color:var(--blue)}
 .b-paid{background:var(--green-tint);color:#0A7A50}
 .b-cancelled{background:var(--danger-tint);color:#B3271A}
 
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
 .modal-bg.show{display:flex}
-.modal{background:var(--surface);border-radius:20px;padding:28px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
-.modal h3{font-size:1.08rem;font-weight:800;margin-bottom:18px}
+.modal{background:white;border-radius:20px;padding:28px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.08rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px}
 .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
 
-.items-box{border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:14px}
+.items-box{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px}
 .item-row{display:grid;grid-template-columns:1fr 70px 100px 32px;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border-soft);align-items:center}
 .item-row:last-child{border-bottom:none}
 .item-row input{padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:.82rem;outline:none;width:100%}
 .item-row input:focus{border-color:var(--blue)}
 .item-remove{background:var(--danger-tint);color:#B3271A;border:none;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:.9rem}
 .items-total{padding:12px;text-align:right;font-weight:700;background:var(--bg);font-family:'Space Grotesk',sans-serif}
-.add-item-btn{background:var(--blue-tint);color:var(--blue);border:none;border-radius:var(--r-sm);padding:9px 14px;font-size:.82rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:14px}
+.add-item-btn{background:var(--blue-tint);color:var(--blue);border:none;border-radius:10px;padding:9px 14px;font-size:.82rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:14px}
 
-.link-box{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:10px}
+.link-box{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:10px}
 .link-box input{border:none;background:none;flex:1;font-family:'JetBrains Mono',monospace;font-size:.76rem;outline:none;color:var(--muted)}
 
 .empty{text-align:center;padding:42px 20px;color:var(--muted)}
 .empty-icon{font-size:2.3rem;margin-bottom:10px;opacity:.7}
 .empty-text{font-size:.85rem;line-height:1.65}
 
-#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateY(0);opacity:1}
 
 @media(max-width:900px){
@@ -130,6 +134,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   .page{padding:16px}
   .form-grid{grid-template-columns:1fr}
   .item-row{grid-template-columns:1fr;gap:6px}
+  .topbar{padding:16px 20px}
 }
 </style>
 </head>
@@ -156,7 +161,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   </defs>
 </svg>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="overlay" id="overlay"></div>
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
@@ -164,16 +169,12 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
       <div class="plan-badge-pill">🚀 Starter</div>
     </div>
-    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+    <button class="close-sidebar" id="close-sidebar">✕</button>
   </div>
-
   <div class="corridor">
     <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-    <div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">
-      🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦
-    </div>
+    <div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
   </div>
-
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
     <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
@@ -181,19 +182,16 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     <a class="nav-link" href="/payouts"><span class="icon"><svg><use href="#ic-send"/></svg></span> Payouts</a>
     <a class="nav-link" href="/payment-links"><span class="icon"><svg><use href="#ic-link"/></svg></span> Liens de paiement</a>
     <a class="nav-link active" href="/invoices"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</a>
-
     <div class="nav-group">Développeur</div>
     <a class="nav-link" href="/api-keys"><span class="icon"><svg><use href="#ic-key"/></svg></span> Clés API</a>
     <a class="nav-link" href="/webhooks"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</a>
     <a class="nav-link" href="/sandbox"><span class="icon"><svg><use href="#ic-flask"/></svg></span> Sandbox</a>
-
     <div class="nav-group">Compte</div>
     <a class="nav-link" href="/profile"><span class="icon"><svg><use href="#ic-user"/></svg></span> Profil</a>
     <a class="nav-link" href="/kyc"><span class="icon"><svg><use href="#ic-shield-check"/></svg></span> Vérification</a>
     <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
     <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
-
   <div class="sidebar-user">
     <div class="user-row">
       <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
@@ -209,10 +207,10 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+      <button class="burger-btn" id="burger-btn"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
       <div class="topbar-title"><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Factures</div>
     </div>
-    <button class="btn btn-primary btn-sm" onclick="openCreateModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Nouvelle facture</button>
+    <button class="btn btn-primary btn-sm" id="btn-open-create"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Nouvelle facture</button>
   </div>
 
   <div class="page">
@@ -220,18 +218,16 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <div class="card-head">
         <div class="card-title">Mes factures <span id="inv-count" style="color:var(--muted);font-weight:400"></span></div>
       </div>
-      <div class="card-body" id="inv-list">
+      <div class="card-body" id="inv-list" style="padding:16px">
         <div class="empty"><div class="empty-text">Chargement...</div></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- MODAL CRÉATION -->
 <div class="modal-bg" id="create-modal">
   <div class="modal">
     <h3><span class="icon"><svg><use href="#ic-invoice"/></svg></span> Nouvelle facture</h3>
-
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">Nom du client *</label>
@@ -250,85 +246,92 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
         <input class="form-input" id="inv-due-date" type="date">
       </div>
     </div>
-
     <label class="form-label">Articles</label>
     <div class="items-box" id="items-box"></div>
-    <button type="button" class="add-item-btn" onclick="addItemRow()">+ Ajouter un article</button>
-
+    <button type="button" class="add-item-btn" id="btn-add-item">+ Ajouter un article</button>
     <div class="form-group">
       <label class="form-label">Notes (optionnel)</label>
       <input class="form-input" id="inv-notes" placeholder="Conditions de paiement, remerciements...">
     </div>
-
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeCreateModal()">Annuler</button>
-      <button class="btn btn-primary" id="btn-create-inv" onclick="createInvoice()">Créer la facture</button>
+      <button class="btn btn-outline" id="btn-cancel-create">Annuler</button>
+      <button class="btn btn-primary" id="btn-create-inv">Créer la facture</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL PARTAGE -->
 <div class="modal-bg" id="share-modal">
   <div class="modal" style="max-width:440px">
     <h3><span class="icon"><svg><use href="#ic-link"/></svg></span> Facture créée</h3>
     <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Partagez ce lien avec votre client pour qu'il puisse consulter et payer la facture.</p>
     <div class="link-box">
       <input type="text" id="share-link-input" readonly>
-      <button class="btn btn-outline btn-sm" onclick="copyShareLink()">📋 Copier</button>
+      <button class="btn btn-outline btn-sm" id="btn-copy-share">📋 Copier</button>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-primary" style="width:100%" onclick="closeShareModal()">Terminé</button>
+      <button class="btn btn-primary" id="btn-close-share" style="width:100%">Terminé</button>
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
-<script>
+
+<script nonce="{{ csp_nonce }}">
+"use strict";
+
+function getCsrfToken(){const m=document.querySelector('meta[name="csrf-token"]');return m?m.getAttribute('content'):''}
+async function apiFetch(url, options={}){
+  const opts={...options}; opts.headers={...(opts.headers||{})};
+  const method=(opts.method||'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){
+    const t=getCsrfToken(); if(t) opts.headers['X-CSRF-Token']=t;
+  }
+  if(opts.body && typeof opts.body === 'string'){
+    opts.headers['Content-Type']=opts.headers['Content-Type']||'application/json';
+  }
+  return fetch(url, opts);
+}
+
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML}
 function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');clearTimeout(t._hideTimer);t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000)}
 
-// ── PROFIL ─────────────────────────────────────────
 async function loadProfile(){
   try{
-    const r=await fetch('/api/me');
+    const r=await apiFetch('/api/me');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     const data=await r.json();
     if(!data.ok) return;
-    const user=data.user;
-    document.getElementById('user-av').textContent=(user.firstname||'U')[0].toUpperCase();
-    document.getElementById('user-name').textContent=(user.firstname||'')+' '+(user.lastname||'');
-    document.getElementById('user-email').textContent=user.email||'';
+    const u=data.user;
+    document.getElementById('user-av').textContent=(u.firstname||'U')[0].toUpperCase();
+    document.getElementById('user-name').textContent=(u.firstname||'')+' '+(u.lastname||'');
+    document.getElementById('user-email').textContent=u.email||'';
   }catch(e){}
 }
 
-// ── ARTICLES (formulaire dynamique) ────────────────
+// ── ITEMS ────────────────────────────────────
 let itemCounter=0;
-function addItemRow(desc='', qty=1, price=''){
+function addItemRow(desc='',qty=1,price=''){
   itemCounter++;
   const id='item-'+itemCounter;
   const box=document.getElementById('items-box');
   const row=document.createElement('div');
-  row.className='item-row';
-  row.id=id;
+  row.className='item-row'; row.id=id;
   row.innerHTML=`
-    <input type="text" placeholder="Description" class="item-desc" value="${desc}" oninput="updateItemsTotal()">
-    <input type="number" placeholder="Qté" class="item-qty" value="${qty}" min="1" oninput="updateItemsTotal()">
-    <input type="number" placeholder="Prix unit." class="item-price" value="${price}" min="0" oninput="updateItemsTotal()">
-    <button type="button" class="item-remove" onclick="removeItemRow('${id}')">✕</button>
+    <input type="text" placeholder="Description" class="item-desc" value="${escapeHtml(desc)}">
+    <input type="number" placeholder="Qté" class="item-qty" value="${qty}" min="1">
+    <input type="number" placeholder="Prix unit." class="item-price" value="${price}" min="0">
+    <button type="button" class="item-remove" data-remove="${id}">✕</button>
   `;
+  row.querySelectorAll('input').forEach(i=>i.addEventListener('input', updateItemsTotal));
+  row.querySelector('.item-remove').addEventListener('click', () => { row.remove(); updateItemsTotal(); });
   box.appendChild(row);
   updateItemsTotal();
 }
-function removeItemRow(id){
-  const el=document.getElementById(id);
-  if(el) el.remove();
-  updateItemsTotal();
-}
 function getItemsFromForm(){
-  const rows=document.querySelectorAll('#items-box .item-row');
   const items=[];
-  rows.forEach(row=>{
+  document.querySelectorAll('#items-box .item-row').forEach(row=>{
     const desc=row.querySelector('.item-desc').value.trim();
     const qty=parseFloat(row.querySelector('.item-qty').value)||0;
     const price=parseFloat(row.querySelector('.item-price').value)||0;
@@ -339,19 +342,15 @@ function getItemsFromForm(){
 function updateItemsTotal(){
   const items=getItemsFromForm();
   const total=items.reduce((s,it)=>s+(it.quantity*it.unit_price),0);
-  let totalEl=document.getElementById('items-total-display');
-  if(!totalEl){
-    totalEl=document.createElement('div');
-    totalEl.id='items-total-display';
-    totalEl.className='items-total';
-    document.getElementById('items-box').appendChild(totalEl);
-  }else{
-    document.getElementById('items-box').appendChild(totalEl); // garde en bas
+  let el=document.getElementById('items-total-display');
+  if(!el){
+    el=document.createElement('div'); el.id='items-total-display'; el.className='items-total';
+    document.getElementById('items-box').appendChild(el);
   }
-  totalEl.textContent='Total : '+total.toLocaleString()+' XOF';
+  el.textContent='Total : '+total.toLocaleString('fr-FR')+' XOF';
 }
 
-// ── MODALES ─────────────────────────────────────────
+// ── MODALES ───────────────────────────────────
 function openCreateModal(){
   document.getElementById('inv-client-name').value='';
   document.getElementById('inv-client-phone').value='';
@@ -359,11 +358,11 @@ function openCreateModal(){
   document.getElementById('inv-due-date').value='';
   document.getElementById('inv-notes').value='';
   document.getElementById('items-box').innerHTML='';
+  itemCounter=0;
   addItemRow();
   document.getElementById('create-modal').classList.add('show');
 }
 function closeCreateModal(){document.getElementById('create-modal').classList.remove('show')}
-document.getElementById('create-modal').addEventListener('click',e=>{if(e.target===document.getElementById('create-modal'))closeCreateModal()});
 
 let lastShareUrl='';
 function openShareModal(url){
@@ -375,12 +374,11 @@ function closeShareModal(){
   document.getElementById('share-modal').classList.remove('show');
   loadInvoices();
 }
-document.getElementById('share-modal').addEventListener('click',e=>{if(e.target===document.getElementById('share-modal'))closeShareModal()});
 function copyShareLink(){
-  navigator.clipboard.writeText(lastShareUrl).then(()=>toast('Lien copié !'));
+  navigator.clipboard.writeText(lastShareUrl).then(()=>toast('Lien copié !')).catch(()=>toast('Impossible de copier',false));
 }
 
-// ── CRÉATION ─────────────────────────────────────────
+// ── CRÉATION ──────────────────────────────────
 async function createInvoice(){
   const clientName=document.getElementById('inv-client-name').value.trim();
   const items=getItemsFromForm();
@@ -400,7 +398,7 @@ async function createInvoice(){
   };
 
   try{
-    const r=await fetch('/api/invoices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await apiFetch('/api/invoices',{method:'POST',body:JSON.stringify(payload)});
     const data=await r.json();
     if(data.ok){
       closeCreateModal();
@@ -409,27 +407,24 @@ async function createInvoice(){
     }else{
       toast(data.error||'Erreur lors de la création',false);
     }
-  }catch(e){
-    toast('Erreur de connexion',false);
-  }
+  }catch(e){ toast('Erreur de connexion',false); }
   btn.disabled=false; btn.textContent='Créer la facture';
 }
 
-// ── LISTE ─────────────────────────────────────────
+// ── LISTE ─────────────────────────────────────
 let invoices=[];
 async function loadInvoices(){
   const el=document.getElementById('inv-list');
   try{
-    const r=await fetch('/api/invoices');
+    const r=await apiFetch('/api/invoices');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     const data=await r.json();
     if(!data.ok){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; return; }
     invoices=data.invoices||[];
     renderInvoices();
-  }catch(e){
-    el.innerHTML='<div class="empty">Erreur de chargement.</div>';
-  }
+  }catch(e){ el.innerHTML='<div class="empty">Erreur de chargement.</div>'; }
 }
+
 const STATUS_LABELS={draft:['Brouillon','b-draft'],sent:['Envoyée','b-sent'],paid:['Payée','b-paid'],cancelled:['Annulée','b-cancelled']};
 function renderInvoices(){
   const el=document.getElementById('inv-list');
@@ -445,23 +440,23 @@ function renderInvoices(){
     <div class="inv-card">
       <div class="inv-top">
         <div>
-          <div class="inv-number">${inv.invoice_number}</div>
-          <div class="inv-client">${inv.client_name}</div>
+          <div class="inv-number">${escapeHtml(inv.invoice_number||'')}</div>
+          <div class="inv-client">${escapeHtml(inv.client_name||'')}</div>
           <div class="inv-meta">
-            ${inv.due_date?`Échéance : ${inv.due_date} · `:''}
+            ${inv.due_date?`Échéance : ${escapeHtml(inv.due_date)} · `:''}
             Créée le ${inv.created_at?new Date(inv.created_at).toLocaleDateString('fr-FR'):''}
             ${inv.paid_at?` · Payée le ${new Date(inv.paid_at).toLocaleDateString('fr-FR')}`:''}
           </div>
         </div>
         <div style="text-align:right">
           <span class="badge ${cls}">${label}</span>
-          <div class="inv-amount" style="margin-top:6px">${Number(inv.amount).toLocaleString()} XOF</div>
+          <div class="inv-amount" style="margin-top:6px">${Number(inv.amount).toLocaleString('fr-FR')} XOF</div>
         </div>
       </div>
-      <div class="inv-actions" style="margin-top:12px">
-        <button class="btn btn-outline btn-sm" onclick="openShareModal('${url}')"><span class="icon"><svg><use href="#ic-link"/></svg></span> Lien</button>
-        ${inv.status==='draft'?`<button class="btn btn-outline btn-sm" onclick="markSent('${inv.token}')">✉️ Marquer envoyée</button>`:''}
-        ${inv.status!=='paid'?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.token}')"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>`:''}
+      <div class="inv-actions">
+        <button class="btn btn-outline btn-sm" data-action="share" data-url="${escapeHtml(url)}"><span class="icon"><svg><use href="#ic-link"/></svg></span> Lien</button>
+        ${inv.status==='draft'?`<button class="btn btn-outline btn-sm" data-action="sent" data-token="${inv.token}">✉️ Marquer envoyée</button>`:''}
+        ${inv.status!=='paid'?`<button class="btn btn-danger btn-sm" data-action="delete" data-token="${inv.token}"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -469,25 +464,43 @@ function renderInvoices(){
 
 async function markSent(token){
   try{
-    const r=await fetch('/api/invoices/'+token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'sent'})});
+    const r=await apiFetch('/api/invoices/'+token,{method:'PUT',body:JSON.stringify({status:'sent'})});
     const data=await r.json();
     if(data.ok){ toast('Facture marquée comme envoyée'); loadInvoices(); }
-    else{ toast(data.error||'Erreur',false); }
+    else toast(data.error||'Erreur',false);
   }catch(e){ toast('Erreur de connexion',false); }
 }
 async function deleteInvoice(token){
   if(!confirm('Supprimer cette facture ?')) return;
   try{
-    const r=await fetch('/api/invoices/'+token,{method:'DELETE'});
+    const r=await apiFetch('/api/invoices/'+token,{method:'DELETE'});
     const data=await r.json();
     if(data.ok){ toast('Facture supprimée'); loadInvoices(); }
-    else{ toast(data.error||'Erreur',false); }
+    else toast(data.error||'Erreur',false);
   }catch(e){ toast('Erreur de connexion',false); }
 }
 
-// ── INIT ─────────────────────────────────────────
-loadProfile();
-loadInvoices();
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('burger-btn').addEventListener('click', openSidebar);
+  document.getElementById('close-sidebar').addEventListener('click', closeSidebar);
+  document.getElementById('overlay').addEventListener('click', closeSidebar);
+  document.getElementById('btn-open-create').addEventListener('click', openCreateModal);
+  document.getElementById('btn-cancel-create').addEventListener('click', closeCreateModal);
+  document.getElementById('btn-add-item').addEventListener('click', () => addItemRow());
+  document.getElementById('btn-create-inv').addEventListener('click', createInvoice);
+  document.getElementById('btn-copy-share').addEventListener('click', copyShareLink);
+  document.getElementById('btn-close-share').addEventListener('click', closeShareModal);
+  document.getElementById('create-modal').addEventListener('click', e => { if(e.target.id==='create-modal') closeCreateModal(); });
+  document.getElementById('share-modal').addEventListener('click', e => { if(e.target.id==='share-modal') closeShareModal(); });
+  document.getElementById('inv-list').addEventListener('click', e => {
+    const btn=e.target.closest('button[data-action]'); if(!btn) return;
+    if(btn.dataset.action==='share') openShareModal(btn.dataset.url);
+    if(btn.dataset.action==='sent') markSent(btn.dataset.token);
+    if(btn.dataset.action==='delete') deleteInvoice(btn.dataset.token);
+  });
+  loadProfile();
+  loadInvoices();
+});
 </script>
 </body>
 </html>
