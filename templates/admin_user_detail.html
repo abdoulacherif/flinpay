@@ -4,15 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay Admin — Fiche marchand</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
---ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;--border:#E7E9F3;--border-soft:#F0F1F8;
---blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
---gold:#FFB400;--gold-tint:#FFF6E0;--green:#00C48C;--green-tint:#E3FBF3;
---danger:#FF4D4D;--danger-tint:#FFEAEA;--orange:#FF8A3D;--orange-tint:#FFF1E5;
---text:#12131C;--muted:#767A94;--r-lg:16px;--r-md:12px
+  --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;--border:#E7E9F3;--border-soft:#F0F1F8;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;--orange:#FF8A3D;--orange-tint:#FFF1E5;
+  --text:#12131C;--muted:#767A94;--r-lg:16px;--r-md:12px;
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
 }
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
@@ -20,34 +23,35 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 .topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:8px}
-.topbar-logo span{color:#5B7CFF}
+.topbar-logo span{color:var(--cyan)}
 .topbar-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem}
 .topbar-right a:hover{color:white}
 
 .page{padding:26px;max-width:1100px;margin:0 auto}
-.hero{background:linear-gradient(135deg,var(--ink) 0%,#1a1d33 100%);border-radius:20px;padding:24px 26px;color:white;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
-.hero-name{font-size:1.3rem;font-weight:800}
-.hero-email{color:rgba(255,255,255,.5);font-size:.85rem;font-family:'JetBrains Mono',monospace;margin-top:2px}
-.hero-badges{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+.hero{background:var(--gradient);border-radius:20px;padding:24px 26px;color:white;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.hero-name{font-size:1.3rem;font-weight:800;position:relative;z-index:1}
+.hero-email{color:rgba(255,255,255,.8);font-size:.85rem;font-family:'JetBrains Mono',monospace;margin-top:2px;position:relative;z-index:1}
+.hero-badges{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;position:relative;z-index:1}
+.hero-actions{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
 
 .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap}
 .b-success{background:var(--green-tint);color:#0A7A50}
 .b-pending{background:var(--gold-tint);color:#8A5B00}
 .b-failed{background:var(--danger-tint);color:#B3271A}
-.b-none{background:rgba(255,255,255,.12);color:rgba(255,255,255,.75)}
-.b-no_withdrawal{background:rgba(255,138,61,.2);color:#FFB27A}
-.b-no_login{background:rgba(255,77,77,.2);color:#FF9C9C}
+.b-none{background:rgba(255,255,255,.15);color:rgba(255,255,255,.9)}
+.b-no_withdrawal{background:var(--orange);color:white}
+.b-no_login{background:var(--danger);color:white}
 .b-banned{background:white;color:var(--ink)}
-.b-online{background:rgba(0,196,140,.2);color:#5FE8C0}
-.b-offline{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
+.b-online{background:var(--green);color:white}
+.b-offline{background:rgba(255,255,255,.15);color:rgba(255,255,255,.6)}
 
 .btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.8rem;padding:8px 15px;border-radius:9px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;text-decoration:none}
 .btn-primary{background:var(--blue);color:white}
 .btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
-.btn-outline-light{background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2)}
-.btn-outline-light:hover{background:rgba(255,255,255,.18)}
+.btn-outline-light{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3)}
+.btn-outline-light:hover{background:rgba(255,255,255,.25)}
 .btn-warn{background:var(--orange);color:white}
 .btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
 .btn-outline:hover{background:var(--blue-tint)}
@@ -56,18 +60,18 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .balances-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
-.balance-chip{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 18px;box-shadow:0 1px 2px rgba(15,17,32,.04)}
+.balance-chip{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--r-md);padding:12px 18px;box-shadow:0 4px 16px rgba(10,50,150,.05)}
 .balance-chip .cur{font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase}
 .balance-chip .amt{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;margin-top:2px}
 
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:0 1px 2px rgba(15,17,32,.04);overflow:hidden;margin-bottom:16px}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border-soft);box-shadow:0 4px 16px rgba(10,50,150,.05);overflow:hidden;margin-bottom:16px}
 .card-head{padding:14px 20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .card-title{font-size:.85rem;font-weight:700}
 .card-body{padding:18px 20px}
 
 .field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
 .field-label{font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block}
-.field-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.field-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;background:white;color:var(--text)}
 .field-input:focus{border-color:var(--blue)}
 .checkbox-field{display:flex;align-items:center;gap:8px;font-size:.83rem;font-weight:600}
 
@@ -106,9 +110,9 @@ textarea.field-input{min-height:64px;resize:vertical}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
 @media print{
-.topbar,.hero-actions,.btn,.tabs{display:none !important}
-.tab-content{display:block !important}
-body{background:white}
+  .topbar,.hero-actions,.btn,.tabs{display:none !important}
+  .tab-content{display:block !important}
+  body{background:white}
 }
 @media(max-width:700px){ .grid-2{grid-template-columns:1fr} }
 </style>
@@ -116,321 +120,384 @@ body{background:white}
 <body>
 
 <div class="topbar">
-<div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
-<div class="topbar-right"><a href="/admin">← Retour à l'admin</a></div>
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
+  <div class="topbar-right"><a href="/admin">← Retour à l'admin</a></div>
 </div>
 
 <div class="page">
 
 <div class="hero" id="hero">
-<div>
-<div class="hero-name" id="hero-name">Chargement…</div>
-<div class="hero-email" id="hero-email"></div>
-<div class="hero-badges" id="hero-badges"></div>
-</div>
-<div class="hero-actions">
-<button class="btn btn-outline-light btn-sm" onclick="window.print()">🖨️ Exporter / Imprimer</button>
-</div>
+  <div>
+    <div class="hero-name" id="hero-name">Chargement…</div>
+    <div class="hero-email" id="hero-email"></div>
+    <div class="hero-badges" id="hero-badges"></div>
+  </div>
+  <div class="hero-actions">
+    <button class="btn btn-outline-light btn-sm" id="btn-print">🖨️ Exporter / Imprimer</button>
+  </div>
 </div>
 
 <div class="balances-row" id="balances-row"></div>
 
 <div class="grid-2">
-<div class="card">
-<div class="card-head"><div class="card-title">Profil</div></div>
-<div class="card-body" id="profile-form"><div class="skeleton"></div></div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">Profil</div></div>
+    <div class="card-body" id="profile-form"><div class="skeleton"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">🛡️ Restriction &amp; sécurité</div></div>
+    <div class="card-body" id="restriction-form"><div class="skeleton"></div></div>
+  </div>
 </div>
 
 <div class="card">
-<div class="card-head"><div class="card-title">🛡️ Restriction &amp; sécurité</div></div>
-<div class="card-body" id="restriction-form"><div class="skeleton"></div></div>
-</div>
-</div>
-
-<div class="card">
-<div class="card-head"><div class="card-title">Historique complet</div></div>
-<div class="card-body">
-<div class="tabs">
-<button class="tab-btn active" data-tab="activity" onclick="showTab('activity')">Activité</button>
-<button class="tab-btn" data-tab="tx" onclick="showTab('tx')">Transactions</button>
-<button class="tab-btn" data-tab="payouts" onclick="showTab('payouts')">Retraits</button>
-<button class="tab-btn" data-tab="links" onclick="showTab('links')">Liens de paiement</button>
-<button class="tab-btn" data-tab="invoices" onclick="showTab('invoices')">Factures</button>
-<button class="tab-btn" data-tab="keys" onclick="showTab('keys')">Clés API</button>
-<button class="tab-btn" data-tab="webhooks" onclick="showTab('webhooks')">Webhooks</button>
-<button class="tab-btn" data-tab="referrals" onclick="showTab('referrals')">Filleuls</button>
-</div>
-<div class="tab-content active" id="tab-activity"><div class="skeleton"></div></div>
-<div class="tab-content" id="tab-tx"><div class="skeleton"></div></div>
-<div class="tab-content" id="tab-payouts"><div class="skeleton"></div></div>
-<div class="tab-content" id="tab-links"><div class="skeleton"></div></div>
-<div class="tab-content" id="tab-invoices"><div class="skeleton"></div></div>
-<div class="tab-content" id="tab-keys"><div class="skeleton"></div></div>
-<div class="tab-content" id="tab-webhooks"><div class="skeleton"></div></div>
-<div class="tab-content" id="tab-referrals"><div class="skeleton"></div></div>
-</div>
+  <div class="card-head"><div class="card-title">Historique complet</div></div>
+  <div class="card-body">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="activity">Activité</button>
+      <button class="tab-btn" data-tab="tx">Transactions</button>
+      <button class="tab-btn" data-tab="payouts">Retraits</button>
+      <button class="tab-btn" data-tab="links">Liens de paiement</button>
+      <button class="tab-btn" data-tab="invoices">Factures</button>
+      <button class="tab-btn" data-tab="keys">Clés API</button>
+      <button class="tab-btn" data-tab="webhooks">Webhooks</button>
+      <button class="tab-btn" data-tab="referrals">Filleuls</button>
+    </div>
+    <div class="tab-content active" id="tab-activity"><div class="skeleton"></div></div>
+    <div class="tab-content" id="tab-tx"><div class="skeleton"></div></div>
+    <div class="tab-content" id="tab-payouts"><div class="skeleton"></div></div>
+    <div class="tab-content" id="tab-links"><div class="skeleton"></div></div>
+    <div class="tab-content" id="tab-invoices"><div class="skeleton"></div></div>
+    <div class="tab-content" id="tab-keys"><div class="skeleton"></div></div>
+    <div class="tab-content" id="tab-webhooks"><div class="skeleton"></div></div>
+    <div class="tab-content" id="tab-referrals"><div class="skeleton"></div></div>
+  </div>
 </div>
 
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 const USER_ID = {{ target_user_id | tojson }};
-const RESTRICTION_LABELS={none:'Normal', no_withdrawal:'Retraits bloqués', no_login:'Connexion bloquée', banned:'Banni'};
-const COUNTRIES_LIST=[{code:'CM',flag:'🇨🇲',name:'Cameroun'},{code:'CI',flag:'🇨🇮',name:"Côte d'Ivoire"},{code:'BF',flag:'🇧🇫',name:'Burkina Faso'},{code:'BJ',flag:'🇧🇯',name:'Bénin'},{code:'TG',flag:'🇹🇬',name:'Togo'},{code:'CD',flag:'🇨🇩',name:'RDC'},{code:'GA',flag:'🇬🇦',name:'Gabon'}];
-const OPERATORS_LIST=['mtn','orange','om','moov','wave','tmoney','vodacom','airtel'];
+const RESTRICTION_LABELS = {none:'Normal', no_withdrawal:'Retraits bloqués', no_login:'Connexion bloquée', banned:'Banni'};
+const COUNTRIES_LIST = [
+  {code:'CM',flag:'🇨🇲',name:'Cameroun'},
+  {code:'CI',flag:'🇨🇮',name:"Côte d'Ivoire"},
+  {code:'BF',flag:'🇧🇫',name:'Burkina Faso'},
+  {code:'BJ',flag:'🇧🇯',name:'Bénin'},
+  {code:'TG',flag:'🇹🇬',name:'Togo'},
+  {code:'CD',flag:'🇨🇩',name:'RDC'},
+  {code:'GA',flag:'🇬🇦',name:'Gabon'},
+];
+const OPERATORS_LIST = ['mtn','orange','om','moov','wave','tmoney','vodacom','airtel'];
 
 function getCsrfToken(){
-const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
-return m ? decodeURIComponent(m[1]) : '';
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if(meta && meta.getAttribute('content')) return meta.getAttribute('content');
+  const m = document.cookie.match(/(?:^|;\s*)fp_csrf_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
 }
-async function apiFetch(url, options={}){
-const headers = Object.assign({}, options.headers || {});
-if(options.method && options.method !== 'GET'){ headers['X-CSRF-Token'] = getCsrfToken(); }
-return fetch(url, Object.assign({}, options, {headers}));
+async function apiFetch(url, options = {}){
+  const opts = { ...options };
+  opts.headers = { ...(opts.headers || {}) };
+  const method = (opts.method || 'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){
+    const t = getCsrfToken();
+    if(t) opts.headers['X-CSRF-Token'] = t;
+  }
+  if(opts.body && typeof opts.body === 'string'){
+    opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+  }
+  return fetch(url, opts);
 }
-function esc(str){
-if(str===null||str===undefined) return '';
-return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function escapeHtml(str){
+  if(str === null || str === undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function fmtAmount(n){ return (Number(n)||0).toLocaleString('fr-FR'); }
 function fmtDate(iso){
-if(!iso) return '—';
-try{ return new Date(iso).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
-catch(e){ return iso; }
+  if(!iso) return '—';
+  try { return new Date(iso).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+  catch(e){ return iso; }
 }
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),3000)}
+function toast(msg, ok=true){
+  const t = document.getElementById('toast');
+  t.textContent = (ok?'✅ ':'❌ ') + msg;
+  t.style.borderLeftColor = ok ? 'var(--green)' : 'var(--danger)';
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 3000);
+}
 
 function showTab(name){
-document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-document.getElementById('tab-'+name).classList.add('active');
-document.querySelector(`.tab-btn[data-tab="${name}"]`).classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('tab-'+name);
+  const btn = document.querySelector(`.tab-btn[data-tab="${name}"]`);
+  if(panel) panel.classList.add('active');
+  if(btn) btn.classList.add('active');
 }
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
-let fullData=null;
-let activityData=null;
-let editingRestriction=false;
+let fullData = null;
+let activityData = null;
+let editingRestriction = false;
 
 async function loadFull(){
-try{
-const r=await fetch('/api/admin/users/'+USER_ID+'/full');
-const data=await r.json();
-if(!data.ok){ toast(data.error||'Utilisateur introuvable', false); return; }
-fullData=data;
-renderHero(data.user);
-renderBalances(data.user);
-renderProfileForm(data.user);
-if(!editingRestriction) renderRestrictionForm(data.user);
-renderTx(data.transactions||[]);
-renderPayouts(data.payouts||[]);
-renderLinks(data.payment_links||[]);
-renderInvoices(data.invoices||[]);
-renderKeys(data.api_keys||[]);
-renderWebhooks(data.webhooks||[]);
-renderReferrals(data.referred_users||[]);
-}catch(e){ toast('Erreur de connexion', false); }
+  try{
+    const r = await fetch('/api/admin/users/'+USER_ID+'/full');
+    const data = await r.json();
+    if(!data.ok){ toast(data.error || 'Utilisateur introuvable', false); return; }
+    fullData = data;
+    renderHero(data.user);
+    renderBalances(data.user);
+    renderProfileForm(data.user);
+    if(!editingRestriction) renderRestrictionForm(data.user);
+    renderTx(data.transactions || []);
+    renderPayouts(data.payouts || []);
+    renderLinks(data.payment_links || []);
+    renderInvoices(data.invoices || []);
+    renderKeys(data.api_keys || []);
+    renderWebhooks(data.webhooks || []);
+    renderReferrals(data.referred_users || []);
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
 async function loadActivity(){
-try{
-const r=await fetch('/api/admin/users/'+USER_ID+'/activity');
-const data=await r.json();
-if(!data.ok) return;
-activityData=data.activity||[];
-renderActivity(activityData);
-}catch(e){}
+  try{
+    const r = await fetch('/api/admin/users/'+USER_ID+'/activity');
+    const data = await r.json();
+    if(!data.ok) return;
+    activityData = data.activity || [];
+    renderActivity(activityData);
+  }catch(e){}
 }
 
 function renderHero(u){
-document.getElementById('hero-name').textContent=(u.firstname||'')+' '+(u.lastname||'');
-document.getElementById('hero-email').textContent=u.email||'';
-const level=u.restriction_level||'none';
-const kyc=u.kyc_status||'unverified';
-document.getElementById('hero-badges').innerHTML=`
-<span class="badge ${u.is_online?'b-online':'b-offline'}">${u.is_online?'🟢 En ligne':'⚪ Hors ligne'}</span>
-<span class="badge ${kyc==='verified'?'b-success':kyc==='pending'?'b-pending':'b-failed'}">KYC : ${esc(kyc)}</span>
-<span class="badge b-${esc(level)}">${esc(RESTRICTION_LABELS[level]||level)}</span>
-<span class="badge b-none">Plan : ${esc(u.plan||'starter')}</span>
-<span class="badge b-none">📍 ${esc(u.country||'—')}</span>
-`;
+  document.getElementById('hero-name').textContent = (u.firstname||'')+' '+(u.lastname||'');
+  document.getElementById('hero-email').textContent = u.email || '';
+  const level = u.restriction_level || 'none';
+  const kyc = u.kyc_status || 'unverified';
+  document.getElementById('hero-badges').innerHTML = `
+    <span class="badge ${u.is_online?'b-online':'b-offline'}">${u.is_online?'🟢 En ligne':'⚪ Hors ligne'}</span>
+    <span class="badge ${kyc==='verified'?'b-success':kyc==='pending'?'b-pending':'b-failed'}">KYC : ${escapeHtml(kyc)}</span>
+    <span class="badge b-${escapeHtml(level)}">${escapeHtml(RESTRICTION_LABELS[level] || level)}</span>
+    <span class="badge b-none">Plan : ${escapeHtml(u.plan||'starter')}</span>
+    <span class="badge b-none">📍 ${escapeHtml(u.country||'—')}</span>
+  `;
 }
 
 function renderBalances(u){
-const entries=Object.entries(u.balances||{});
-const el=document.getElementById('balances-row');
-el.innerHTML = entries.length
-? entries.map(([c,v])=>`<div class="balance-chip"><div class="cur">${esc(c)}</div><div class="amt">${fmtAmount(v)}</div></div>`).join('')
-: '<div class="empty">Aucun solde.</div>';
+  const entries = Object.entries(u.balances || {});
+  const el = document.getElementById('balances-row');
+  el.innerHTML = entries.length
+    ? entries.map(([c,v]) => `<div class="balance-chip"><div class="cur">${escapeHtml(c)}</div><div class="amt">${fmtAmount(v)}</div></div>`).join('')
+    : '<div class="empty">Aucun solde.</div>';
 }
 
 function renderProfileForm(u){
-document.getElementById('profile-form').innerHTML=`
-<div class="field-grid">
-<div><label class="field-label">Prénom</label><input class="field-input" id="pf-firstname" value="${esc(u.firstname)}"></div>
-<div><label class="field-label">Nom</label><input class="field-input" id="pf-lastname" value="${esc(u.lastname)}"></div>
-<div><label class="field-label">Téléphone</label><input class="field-input" id="pf-phone" value="${esc(u.phone)}"></div>
-<div><label class="field-label">Entreprise</label><input class="field-input" id="pf-company" value="${esc(u.company)}"></div>
-<div><label class="field-label">Plan</label><input class="field-input" id="pf-plan" value="${esc(u.plan)}"></div>
-</div>
-<div style="display:flex;gap:16px;margin-bottom:14px">
-<label class="checkbox-field"><input type="checkbox" id="pf-active" ${u.is_active!==false?'checked':''}> Compte actif</label>
-<label class="checkbox-field"><input type="checkbox" id="pf-admin" ${u.is_admin?'checked':''}> Administrateur</label>
-</div>
-<button class="btn btn-primary btn-sm" onclick="saveProfile()">💾 Enregistrer le profil</button>
-`;
+  const el = document.getElementById('profile-form');
+  el.innerHTML = `
+    <div class="field-grid">
+      <div><label class="field-label">Prénom</label><input class="field-input" id="pf-firstname" value="${escapeHtml(u.firstname)}"></div>
+      <div><label class="field-label">Nom</label><input class="field-input" id="pf-lastname" value="${escapeHtml(u.lastname)}"></div>
+      <div><label class="field-label">Téléphone</label><input class="field-input" id="pf-phone" value="${escapeHtml(u.phone)}"></div>
+      <div><label class="field-label">Entreprise</label><input class="field-input" id="pf-company" value="${escapeHtml(u.company)}"></div>
+      <div><label class="field-label">Plan</label><input class="field-input" id="pf-plan" value="${escapeHtml(u.plan)}"></div>
+    </div>
+    <div style="display:flex;gap:16px;margin-bottom:14px">
+      <label class="checkbox-field"><input type="checkbox" id="pf-active" ${u.is_active!==false?'checked':''}> Compte actif</label>
+      <label class="checkbox-field"><input type="checkbox" id="pf-admin" ${u.is_admin?'checked':''}> Administrateur</label>
+    </div>
+    <button class="btn btn-primary btn-sm" id="btn-save-profile">💾 Enregistrer le profil</button>
+  `;
+  document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
 }
+
 async function saveProfile(){
-const payload={
-firstname: document.getElementById('pf-firstname').value.trim(),
-lastname: document.getElementById('pf-lastname').value.trim(),
-phone: document.getElementById('pf-phone').value.trim(),
-company: document.getElementById('pf-company').value.trim(),
-plan: document.getElementById('pf-plan').value.trim(),
-is_active: document.getElementById('pf-active').checked,
-is_admin: document.getElementById('pf-admin').checked,
-};
-try{
-const r=await apiFetch('/api/admin/users/'+USER_ID,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-const data=await r.json();
-toast(data.ok?'Profil mis à jour':(data.error||'Erreur'),data.ok);
-if(data.ok) loadFull();
-}catch(e){ toast('Erreur de connexion', false); }
+  const payload = {
+    firstname: document.getElementById('pf-firstname').value.trim(),
+    lastname: document.getElementById('pf-lastname').value.trim(),
+    phone: document.getElementById('pf-phone').value.trim(),
+    company: document.getElementById('pf-company').value.trim(),
+    plan: document.getElementById('pf-plan').value.trim(),
+    is_active: document.getElementById('pf-active').checked,
+    is_admin: document.getElementById('pf-admin').checked,
+  };
+  try{
+    const r = await apiFetch('/api/admin/users/'+USER_ID, {method:'PUT', body: JSON.stringify(payload)});
+    const data = await r.json();
+    toast(data.ok ? 'Profil mis à jour' : (data.error || 'Erreur'), data.ok);
+    if(data.ok) loadFull();
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
 function renderRestrictionForm(u){
-const level=u.restriction_level||'none';
-const blockedCountries=new Set((u.restricted_countries||[]).map(c=>c.toUpperCase()));
-const blockedOps=new Set((u.restricted_operators||[]).map(o=>o.toLowerCase()));
+  const level = u.restriction_level || 'none';
+  const blockedCountries = new Set((u.restricted_countries || []).map(c => String(c).toUpperCase()));
+  const blockedOps = new Set((u.restricted_operators || []).map(o => String(o).toLowerCase()));
 
-const levels=[
-{v:'none',t:'Aucune restriction',d:'Compte normal.'},
-{v:'no_withdrawal',t:'Retraits bloqués',d:'Compte utilisable, retraits impossibles. Peut être temporaire.'},
-{v:'no_login',t:'Connexion bloquée',d:'Coupé immédiatement, même session ouverte.'},
-{v:'banned',t:'Banni',d:'Blocage définitif.'},
-];
+  const levels = [
+    {v:'none', t:'Aucune restriction', d:'Compte normal.'},
+    {v:'no_withdrawal', t:'Retraits bloqués', d:'Compte utilisable, retraits impossibles. Peut être temporaire.'},
+    {v:'no_login', t:'Connexion bloquée', d:'Coupé immédiatement, même session ouverte.'},
+    {v:'banned', t:'Banni', d:'Blocage définitif.'},
+  ];
 
-document.getElementById('restriction-form').innerHTML=`
-<div class="level-options" id="level-options">
-${levels.map(l=>`
-<label class="level-opt ${l.v===level?'selected':''}" data-level="${l.v}">
-<input type="radio" name="restrict-level" value="${l.v}" ${l.v===level?'checked':''}>
-<div><div class="level-opt-title">${l.t}</div><div class="level-opt-desc">${l.d}</div></div>
-</label>`).join('')}
-</div>
-<div id="duration-field" style="display:${level==='no_withdrawal'?'block':'none'};margin-bottom:12px">
-<label class="field-label">Durée (heures, optionnel)</label>
-<input class="field-input" id="restrict-duration" type="number" min="1" placeholder="Vide = pas d'expiration">
-</div>
-<div id="reason-field" style="display:${level!=='none'?'block':'none'};margin-bottom:12px">
-<label class="field-label">Motif *</label>
-<textarea class="field-input" id="restrict-reason">${esc(u.restriction_reason||'')}</textarea>
-</div>
-<div class="section-sep">Pays bloqués</div>
-<div class="chip-group">
-${COUNTRIES_LIST.map(c=>`<input type="checkbox" class="chip-check" id="ctry-${c.code}" value="${c.code}" ${blockedCountries.has(c.code)?'checked':''}><label class="chip-label" for="ctry-${c.code}">${c.flag} ${c.code}</label>`).join('')}
-</div>
-<div class="section-sep">Opérateurs bloqués</div>
-<div class="chip-group">
-${OPERATORS_LIST.map(o=>`<input type="checkbox" class="chip-check" id="op-${o}" value="${o}" ${blockedOps.has(o)?'checked':''}><label class="chip-label" for="op-${o}">${o.toUpperCase()}</label>`).join('')}
-</div>
-<button class="btn btn-warn btn-sm" style="margin-top:8px" onclick="saveRestriction()">🛡️ Enregistrer les restrictions</button>
-`;
+  const el = document.getElementById('restriction-form');
+  el.innerHTML = `
+    <div class="level-options">
+      ${levels.map(l => `
+        <label class="level-opt ${l.v===level?'selected':''}" data-level="${l.v}">
+          <input type="radio" name="restrict-level" value="${l.v}" ${l.v===level?'checked':''}>
+          <div><div class="level-opt-title">${l.t}</div><div class="level-opt-desc">${l.d}</div></div>
+        </label>`).join('')}
+    </div>
+    <div id="duration-field" style="display:${level==='no_withdrawal'?'block':'none'};margin-bottom:12px">
+      <label class="field-label">Durée (heures, optionnel)</label>
+      <input class="field-input" id="restrict-duration" type="number" min="1" placeholder="Vide = pas d'expiration">
+    </div>
+    <div id="reason-field" style="display:${level!=='none'?'block':'none'};margin-bottom:12px">
+      <label class="field-label">Motif *</label>
+      <textarea class="field-input" id="restrict-reason">${escapeHtml(u.restriction_reason || '')}</textarea>
+    </div>
+    <div class="section-sep">Pays bloqués</div>
+    <div class="chip-group">
+      ${COUNTRIES_LIST.map(c => `<input type="checkbox" class="chip-check" id="ctry-${c.code}" value="${c.code}" ${blockedCountries.has(c.code)?'checked':''}><label class="chip-label" for="ctry-${c.code}">${c.flag} ${c.code}</label>`).join('')}
+    </div>
+    <div class="section-sep">Opérateurs bloqués</div>
+    <div class="chip-group">
+      ${OPERATORS_LIST.map(o => `<input type="checkbox" class="chip-check" id="op-${o}" value="${o}" ${blockedOps.has(o)?'checked':''}><label class="chip-label" for="op-${o}">${o.toUpperCase()}</label>`).join('')}
+    </div>
+    <button class="btn btn-warn btn-sm" id="btn-save-restriction" style="margin-top:8px">🛡️ Enregistrer les restrictions</button>
+  `;
 
-document.querySelectorAll('#restriction-form .level-opt input').forEach(inp=>{
-inp.addEventListener('change', ()=>{
-editingRestriction=true;
-document.querySelectorAll('#restriction-form .level-opt').forEach(o=>o.classList.remove('selected'));
-inp.closest('.level-opt').classList.add('selected');
-document.getElementById('duration-field').style.display = inp.value==='no_withdrawal' ? 'block' : 'none';
-document.getElementById('reason-field').style.display = inp.value==='none' ? 'none' : 'block';
-});
-});
-document.querySelectorAll('#restriction-form input, #restriction-form textarea').forEach(f=>{
-f.addEventListener('input', ()=>{ editingRestriction=true; });
-});
+  document.querySelectorAll('#restriction-form .level-opt input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      editingRestriction = true;
+      document.querySelectorAll('#restriction-form .level-opt').forEach(o => o.classList.remove('selected'));
+      inp.closest('.level-opt').classList.add('selected');
+      document.getElementById('duration-field').style.display = inp.value === 'no_withdrawal' ? 'block' : 'none';
+      document.getElementById('reason-field').style.display = inp.value === 'none' ? 'none' : 'block';
+    });
+  });
+  document.querySelectorAll('#restriction-form input, #restriction-form textarea').forEach(f => {
+    f.addEventListener('input', () => { editingRestriction = true; });
+  });
+  document.getElementById('btn-save-restriction').addEventListener('click', saveRestriction);
 }
 
 async function saveRestriction(){
-const levelInput=document.querySelector('#restriction-form input[name="restrict-level"]:checked');
-if(!levelInput){ toast('Sélectionnez un niveau', false); return; }
-const level=levelInput.value;
-const reasonField=document.getElementById('restrict-reason');
-const reason= reasonField ? reasonField.value.trim() : '';
-const durationField=document.getElementById('restrict-duration');
-const duration= durationField ? (durationField.value || null) : null;
-if(level!=='none' && !reason){ toast('Un motif est requis', false); return; }
+  const levelInput = document.querySelector('#restriction-form input[name="restrict-level"]:checked');
+  if(!levelInput){ toast('Sélectionnez un niveau', false); return; }
+  const level = levelInput.value;
+  const reasonField = document.getElementById('restrict-reason');
+  const reason = reasonField ? reasonField.value.trim() : '';
+  const durationField = document.getElementById('restrict-duration');
+  const duration = durationField ? (durationField.value || null) : null;
+  if(level !== 'none' && !reason){ toast('Un motif est requis', false); return; }
 
-try{
-const r1=await apiFetch('/api/admin/users/'+USER_ID+'/restriction',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({level,reason,duration_hours:duration})});
-const d1=await r1.json();
-if(!d1.ok){ toast(d1.error||'Erreur', false); return; }
+  try{
+    const r1 = await apiFetch('/api/admin/users/'+USER_ID+'/restriction', {
+      method:'PUT', body: JSON.stringify({level, reason, duration_hours: duration}),
+    });
+    const d1 = await r1.json();
+    if(!d1.ok){ toast(d1.error || 'Erreur', false); return; }
 
-const countries=[...document.querySelectorAll('#restriction-form [id^="ctry-"]:checked')].map(c=>c.value);
-await apiFetch('/api/admin/users/'+USER_ID+'/country-restrictions',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({countries})});
+    const countries = [...document.querySelectorAll('#restriction-form [id^="ctry-"]:checked')].map(c => c.value);
+    await apiFetch('/api/admin/users/'+USER_ID+'/country-restrictions', {
+      method:'PUT', body: JSON.stringify({countries}),
+    });
 
-const allOps=OPERATORS_LIST;
-const checkedOps=[...document.querySelectorAll('#restriction-form [id^="op-"]:checked')].map(c=>c.value);
-const uncheckedOps=allOps.filter(o=>!checkedOps.includes(o));
-if(checkedOps.length) await apiFetch('/api/admin/users/operator-restrictions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:[USER_ID],operators:checkedOps,blocked:true})});
-if(uncheckedOps.length) await apiFetch('/api/admin/users/operator-restrictions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_ids:[USER_ID],operators:uncheckedOps,blocked:false})});
+    const allOps = OPERATORS_LIST;
+    const checkedOps = [...document.querySelectorAll('#restriction-form [id^="op-"]:checked')].map(c => c.value);
+    const uncheckedOps = allOps.filter(o => !checkedOps.includes(o));
+    if(checkedOps.length){
+      await apiFetch('/api/admin/users/operator-restrictions', {
+        method:'POST', body: JSON.stringify({user_ids:[USER_ID], operators: checkedOps, blocked: true}),
+      });
+    }
+    if(uncheckedOps.length){
+      await apiFetch('/api/admin/users/operator-restrictions', {
+        method:'POST', body: JSON.stringify({user_ids:[USER_ID], operators: uncheckedOps, blocked: false}),
+      });
+    }
 
-toast('Restrictions mises à jour');
-editingRestriction=false;
-loadFull();
-}catch(e){ toast('Erreur de connexion', false); }
+    toast('Restrictions mises à jour');
+    editingRestriction = false;
+    loadFull();
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
 function renderActivity(items){
-const el=document.getElementById('tab-activity');
-el.innerHTML = items.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Événement</th><th>Détails</th><th>IP</th><th>Date</th></tr></thead><tbody>
-${items.map(a=>`<tr><td><strong>${esc(a.event_type)}</strong></td><td class="details-mono">${esc(JSON.stringify(a.details||{}))}</td><td class="mono">${esc(a.ip_address)}</td><td class="mono">${fmtDate(a.created_at)}</td></tr>`).join('')}
-</tbody></table></div>` : '<div class="empty">Aucune activité enregistrée.</div>';
+  const el = document.getElementById('tab-activity');
+  el.innerHTML = items.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Événement</th><th>Détails</th><th>IP</th><th>Date</th></tr></thead><tbody>
+      ${items.map(a => `<tr><td><strong>${escapeHtml(a.event_type)}</strong></td><td class="details-mono">${escapeHtml(JSON.stringify(a.details || {}))}</td><td class="mono">${escapeHtml(a.ip_address)}</td><td class="mono">${fmtDate(a.created_at)}</td></tr>`).join('')}
+    </tbody></table></div>`
+    : '<div class="empty">Aucune activité enregistrée.</div>';
 }
 function renderTx(items){
-const el=document.getElementById('tab-tx');
-el.innerHTML = items.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Token</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>
-${items.map(t=>`<tr><td class="mono">${esc((t.token||'').slice(0,14))}...</td><td>${esc(t.client_name)}</td><td>${fmtAmount(t.amount)} ${esc(t.currency)}</td><td><span class="badge ${t.status==='paid'?'b-success':t.status==='pending'?'b-pending':'b-failed'}">${esc(t.status)}</span></td><td class="mono">${fmtDate(t.created_at)}</td></tr>`).join('')}
-</tbody></table></div>` : '<div class="empty">Aucune transaction.</div>';
+  const el = document.getElementById('tab-tx');
+  el.innerHTML = items.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Token</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>
+      ${items.map(t => `<tr><td class="mono">${escapeHtml((t.token||'').slice(0,14))}...</td><td>${escapeHtml(t.client_name)}</td><td>${fmtAmount(t.amount)} ${escapeHtml(t.currency)}</td><td><span class="badge ${t.status==='paid'?'b-success':t.status==='pending'?'b-pending':'b-failed'}">${escapeHtml(t.status)}</span></td><td class="mono">${fmtDate(t.created_at)}</td></tr>`).join('')}
+    </tbody></table></div>`
+    : '<div class="empty">Aucune transaction.</div>';
 }
 function renderPayouts(items){
-const el=document.getElementById('tab-payouts');
-el.innerHTML = items.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Montant</th><th>Téléphone</th><th>Statut</th><th>Date</th></tr></thead><tbody>
-${items.map(p=>`<tr><td>${fmtAmount(p.amount)} ${esc(p.currency)}</td><td>${esc(p.phone)}</td><td><span class="badge ${p.status==='paid'?'b-success':p.status==='pending'?'b-pending':'b-failed'}">${esc(p.status)}</span></td><td class="mono">${fmtDate(p.created_at)}</td></tr>`).join('')}
-</tbody></table></div>` : '<div class="empty">Aucun retrait.</div>';
+  const el = document.getElementById('tab-payouts');
+  el.innerHTML = items.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Montant</th><th>Téléphone</th><th>Statut</th><th>Date</th></tr></thead><tbody>
+      ${items.map(p => `<tr><td>${fmtAmount(p.amount)} ${escapeHtml(p.currency)}</td><td>${escapeHtml(p.phone)}</td><td><span class="badge ${p.status==='paid'?'b-success':p.status==='pending'?'b-pending':'b-failed'}">${escapeHtml(p.status)}</span></td><td class="mono">${fmtDate(p.created_at)}</td></tr>`).join('')}
+    </tbody></table></div>`
+    : '<div class="empty">Aucun retrait.</div>';
 }
 function renderLinks(items){
-const el=document.getElementById('tab-links');
-el.innerHTML = items.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>Montant</th><th>Vues</th><th>Paiements</th><th>Actif</th></tr></thead><tbody>
-${items.map(l=>`<tr><td>${esc(l.name)}</td><td>${l.amount?fmtAmount(l.amount):'Libre'}</td><td>${fmtAmount(l.views)}</td><td>${fmtAmount(l.paid_count)}</td><td>${l.active!==false?'✅':'⛔'}</td></tr>`).join('')}
-</tbody></table></div>` : '<div class="empty">Aucun lien de paiement.</div>';
+  const el = document.getElementById('tab-links');
+  el.innerHTML = items.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>Montant</th><th>Vues</th><th>Paiements</th><th>Actif</th></tr></thead><tbody>
+      ${items.map(l => `<tr><td>${escapeHtml(l.name)}</td><td>${l.amount?fmtAmount(l.amount):'Libre'}</td><td>${fmtAmount(l.views)}</td><td>${fmtAmount(l.paid_count)}</td><td>${l.active!==false?'✅':'⛔'}</td></tr>`).join('')}
+    </tbody></table></div>`
+    : '<div class="empty">Aucun lien de paiement.</div>';
 }
 function renderInvoices(items){
-const el=document.getElementById('tab-invoices');
-el.innerHTML = items.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>N°</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>
-${items.map(i=>`<tr><td class="mono">${esc(i.invoice_number)}</td><td>${esc(i.client_name)}</td><td>${fmtAmount(i.amount)} ${esc(i.currency)}</td><td><span class="badge ${i.status==='paid'?'b-success':'b-pending'}">${esc(i.status)}</span></td><td class="mono">${fmtDate(i.created_at)}</td></tr>`).join('')}
-</tbody></table></div>` : '<div class="empty">Aucune facture.</div>';
+  const el = document.getElementById('tab-invoices');
+  el.innerHTML = items.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>N°</th><th>Client</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead><tbody>
+      ${items.map(i => `<tr><td class="mono">${escapeHtml(i.invoice_number)}</td><td>${escapeHtml(i.client_name)}</td><td>${fmtAmount(i.amount)} ${escapeHtml(i.currency)}</td><td><span class="badge ${i.status==='paid'?'b-success':'b-pending'}">${escapeHtml(i.status)}</span></td><td class="mono">${fmtDate(i.created_at)}</td></tr>`).join('')}
+    </tbody></table></div>`
+    : '<div class="empty">Aucune facture.</div>';
 }
 function renderKeys(items){
-const el=document.getElementById('tab-keys');
-el.innerHTML = items.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Préfixe</th><th>Environnement</th><th>Label</th><th>Active</th><th>Dernière utilisation</th></tr></thead><tbody>
-${items.map(k=>`<tr><td class="mono">${esc(k.key_prefix)}</td><td>${esc(k.environment)}</td><td>${esc(k.label)||'—'}</td><td>${k.active?'✅':'⛔'}</td><td class="mono">${fmtDate(k.last_used_at)}</td></tr>`).join('')}
-</tbody></table></div>` : '<div class="empty">Aucune clé API.</div>';
+  const el = document.getElementById('tab-keys');
+  el.innerHTML = items.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Préfixe</th><th>Environnement</th><th>Label</th><th>Active</th><th>Dernière utilisation</th></tr></thead><tbody>
+      ${items.map(k => `<tr><td class="mono">${escapeHtml(k.key_prefix)}</td><td>${escapeHtml(k.environment)}</td><td>${escapeHtml(k.label)||'—'}</td><td>${k.active?'✅':'⛔'}</td><td class="mono">${fmtDate(k.last_used_at)}</td></tr>`).join('')}
+    </tbody></table></div>`
+    : '<div class="empty">Aucune clé API.</div>';
 }
 function renderWebhooks(items){
-const el=document.getElementById('tab-webhooks');
-el.innerHTML = items.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>URL</th><th>Événements</th><th>Actif</th></tr></thead><tbody>
-${items.map(w=>`<tr><td class="mono">${esc(w.url)}</td><td>${esc((w.events||[]).join(', '))}</td><td>${w.active?'✅':'⛔'}</td></tr>`).join('')}
-</tbody></table></div>` : '<div class="empty">Aucun webhook.</div>';
+  const el = document.getElementById('tab-webhooks');
+  el.innerHTML = items.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>URL</th><th>Événements</th><th>Actif</th></tr></thead><tbody>
+      ${items.map(w => `<tr><td class="mono">${escapeHtml(w.url)}</td><td>${escapeHtml((w.events||[]).join(', '))}</td><td>${w.active?'✅':'⛔'}</td></tr>`).join('')}
+    </tbody></table></div>`
+    : '<div class="empty">Aucun webhook.</div>';
 }
 function renderReferrals(items){
-const el=document.getElementById('tab-referrals');
-el.innerHTML = items.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>Email</th><th>Plan</th><th>Inscrit le</th></tr></thead><tbody>
-${items.map(r=>`<tr><td>${esc(r.firstname)} ${esc(r.lastname)}</td><td class="mono">${esc(r.email)}</td><td>${esc(r.plan)}</td><td class="mono">${fmtDate(r.created_at)}</td></tr>`).join('')}
-</tbody></table></div>` : '<div class="empty">Aucun filleul.</div>';
+  const el = document.getElementById('tab-referrals');
+  el.innerHTML = items.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Nom</th><th>Email</th><th>Plan</th><th>Inscrit le</th></tr></thead><tbody>
+      ${items.map(r => `<tr><td>${escapeHtml(r.firstname)} ${escapeHtml(r.lastname)}</td><td class="mono">${escapeHtml(r.email)}</td><td>${escapeHtml(r.plan)}</td><td class="mono">${fmtDate(r.created_at)}</td></tr>`).join('')}
+    </tbody></table></div>`
+    : '<div class="empty">Aucun filleul.</div>';
 }
+
+document.getElementById('btn-print').addEventListener('click', () => window.print());
 
 loadFull();
 loadActivity();
