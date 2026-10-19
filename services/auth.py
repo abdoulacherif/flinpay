@@ -1,4 +1,6 @@
 import logging
+import secrets
+import hashlib
 from functools import wraps
 from datetime import datetime, timedelta
 
@@ -14,8 +16,6 @@ logger = logging.getLogger('flinpay.auth')
 
 # ── CSRF (manuel, compatible X-CSRF-Token) ──────
 def csrf_protect(f):
-    """Décorateur CSRF qui lit le token depuis le header X-CSRF-Token
-    ou depuis le form (_csrf_token). Compatible avec apiFetch() côté client."""
     @wraps(f)
     def decorated(*args, **kwargs):
         from flask_wtf.csrf import validate_csrf, CSRFError
@@ -72,6 +72,29 @@ def user_required(f):
             return redirect('/login')
         if not user.get('is_active', True):
             return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
+        g.current_user = user
+        request.user_id = user['id']
+        return f(*args, **kwargs)
+    return decorated
+
+
+def admin_required(f):
+    """Protège une route admin. Vérifie :
+    - session valide (comme user_required)
+    - flag is_admin=True sur l'utilisateur
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            if request.path.startswith('/api/'):
+                return jsonify({'ok': False, 'error': 'Non autorisé'}), 401
+            return redirect('/login')
+        if not user.get('is_active', True):
+            return jsonify({'ok': False, 'error': 'Compte désactivé'}), 403
+        if not user.get('is_admin', False):
+            logger.warning(f"[admin_required] accès refusé user={user['id']} path={request.path}")
+            return jsonify({'ok': False, 'error': 'Accès refusé'}), 403
         g.current_user = user
         request.user_id = user['id']
         return f(*args, **kwargs)
@@ -155,11 +178,7 @@ def _login_success_response(user):
 
 
 # ── API key generation ───────────────────────────
-import secrets
-import hashlib
-
 def generate_api_key(environment='live'):
-    """Génère une clé API. Retourne (full_key, key_hash, display_prefix)."""
     prefix = 'fp_live_' if environment == 'live' else 'fp_test_'
     random_part = secrets.token_urlsafe(32)
     full_key = f"{prefix}{random_part}"
