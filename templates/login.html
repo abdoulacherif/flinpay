@@ -7,52 +7,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:'Inter',sans-serif;
-  background:#0D0D0D;
-  min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden
-}
-body::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.2) 0%,transparent 70%);
-  pointer-events:none
-}
-.box{
-  background:#141420;
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:24px;
-  padding:52px 44px;
-  width:100%;max-width:400px;
-  position:relative;z-index:1;
-  box-shadow:0 32px 64px rgba(0,0,0,0.4)
-}
-.logo{
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:800;font-size:2rem;
-  color:white;text-align:center;margin-bottom:6px
-}
+body{font-family:'Inter',sans-serif;background:#0D0D0D;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+body::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.2) 0%,transparent 70%);pointer-events:none}
+.box{background:#141420;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:52px 44px;width:100%;max-width:400px;position:relative;z-index:1;box-shadow:0 32px 64px rgba(0,0,0,0.4)}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2rem;color:white;text-align:center;margin-bottom:6px}
 .logo span{color:#1A3CFF}
-.subtitle{
-  text-align:center;color:rgba(255,255,255,0.3);
-  font-size:0.82rem;margin-bottom:40px;
-  letter-spacing:0.05em;text-transform:uppercase
-}
+.subtitle{text-align:center;color:rgba(255,255,255,0.3);font-size:0.82rem;margin-bottom:40px;letter-spacing:0.05em;text-transform:uppercase}
 .field{margin-bottom:16px}
-label{
-  display:block;font-size:0.75rem;font-weight:600;
-  color:rgba(255,255,255,0.35);letter-spacing:0.1em;
-  text-transform:uppercase;margin-bottom:8px
-}
-input{
-  width:100%;padding:13px 16px;
-  background:rgba(255,255,255,0.05);
-  border:1.5px solid rgba(255,255,255,0.1);
-  border-radius:10px;color:white;
-  font-size:0.92rem;font-family:'Inter',sans-serif;
-  outline:none;transition:border-color .2s
-}
+label{display:block;font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.35);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+input{width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:white;font-size:0.92rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
 input:focus{border-color:#1A3CFF}
 input::placeholder{color:rgba(255,255,255,0.2)}
 .code-input{letter-spacing:.5em;text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.15rem}
@@ -61,49 +24,17 @@ input::placeholder{color:rgba(255,255,255,0.2)}
 .forgot-row a:hover{color:white}
 .link-btn{background:none;border:none;color:rgba(255,255,255,0.4);font-size:.78rem;cursor:pointer;text-decoration:underline;padding:0}
 .link-btn:hover{color:white}
-.btn-login{
-  width:100%;padding:14px;
-  background:#1A3CFF;color:white;
-  border:none;border-radius:10px;
-  font-family:'Space Grotesk',sans-serif;
-  font-weight:700;font-size:0.95rem;
-  cursor:pointer;margin-top:8px;
-  transition:all .2s;letter-spacing:0.02em
-}
+.btn-login{width:100%;padding:14px;background:#1A3CFF;color:white;border:none;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;margin-top:8px;transition:all .2s;letter-spacing:0.02em}
 .btn-login:hover{background:#1430e0;transform:translateY(-1px)}
 .btn-login:active{transform:translateY(0)}
-.btn-back-step{
-  width:100%;padding:12px;
-  background:transparent;color:rgba(255,255,255,0.5);
-  border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;
-  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.85rem;
-  cursor:pointer;margin-top:10px
-}
+.btn-back-step{width:100%;padding:12px;background:transparent;color:rgba(255,255,255,0.5);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;margin-top:10px}
 .btn-back-step:hover{color:white;border-color:rgba(255,255,255,0.25)}
-.error{
-  background:rgba(255,68,68,0.1);
-  border:1px solid rgba(255,68,68,0.3);
-  color:#ff7070;border-radius:8px;
-  padding:10px 14px;font-size:0.83rem;
-  margin-top:14px;display:none;text-align:center
-}
-.success{
-  background:rgba(0,196,140,0.1);
-  border:1px solid rgba(0,196,140,0.3);
-  color:#00C48C;border-radius:8px;
-  padding:10px 14px;font-size:0.83rem;
-  margin-top:14px;display:none;text-align:center
-}
-.back{
-  text-align:center;margin-top:24px;
-  font-size:0.82rem;color:rgba(255,255,255,0.2)
-}
+.error{background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.3);color:#ff7070;border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-top:14px;display:none;text-align:center}
+.success{background:rgba(0,196,140,0.1);border:1px solid rgba(0,196,140,0.3);color:#00C48C;border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-top:14px;display:none;text-align:center}
+.back{text-align:center;margin-top:24px;font-size:0.82rem;color:rgba(255,255,255,0.2)}
 .back a{color:rgba(255,255,255,0.4);text-decoration:none}
 .back a:hover{color:white}
-.signup-link{
-  text-align:center;margin-top:16px;
-  font-size:0.85rem;color:rgba(255,255,255,0.3)
-}
+.signup-link{text-align:center;margin-top:16px;font-size:0.85rem;color:rgba(255,255,255,0.3)}
 .signup-link a{color:#1A3CFF;text-decoration:none;font-weight:600}
 .signup-link a:hover{text-decoration:underline}
 .loading{opacity:0.6;pointer-events:none}
@@ -187,7 +118,6 @@ function backToStep1(){
   document.getElementById('password').value='';
 }
 
-// --- Connexion classique ---
 async function doLogin() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
@@ -203,24 +133,27 @@ async function doLogin() {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({email, password})
     });
-    const data = await r.json();
     
-    if (data.ok && data.requires_2fa) {
+    let data = null;
+    try { data = await r.json(); } catch(err) { /* Réponse non-JSON */ }
+
+    if (data && data.ok && data.requires_2fa) {
       pendingToken = data.pending_token; 
       goToStep2('Vérification en deux étapes', 'Entrez le code à 6 chiffres généré par votre application d\'authentification.');
-    } else if (data.ok) {
+    } else if (data && data.ok) {
       window.location.href = '/dashboard';
-    } else { 
+    } else if (data) { 
       showError(data.error || 'Identifiants incorrects'); 
+    } else {
+      showError('Erreur serveur (' + r.status + ')');
     }
   } catch(e) { 
-    showError('Erreur de connexion.'); 
+    showError('Erreur de connexion réseau.'); 
   }
 
   btn.textContent = 'Se connecter →'; btn.classList.remove('loading');
 }
 
-// --- Demande de lien magique ---
 async function doMagicLink() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -237,15 +170,18 @@ async function doMagicLink() {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email, password})
         });
-        const data = await r.json();
-        if (data.ok) { showSuccess("Lien envoyé ! Vérifiez votre boîte mail."); }
-        else { showError(data.error); }
+        
+        let data = null;
+        try { data = await r.json(); } catch(err) { /* Réponse non-JSON */ }
+
+        if (data && data.ok) { showSuccess("Lien envoyé ! Vérifiez votre boîte mail."); }
+        else if (data) { showError(data.error || "Erreur serveur."); }
+        else { showError('Erreur serveur (' + r.status + ')'); }
     } catch(e) { showError("Erreur réseau."); }
     
     btn.textContent = 'Recevoir un lien de connexion'; btn.classList.remove('loading');
 }
 
-// --- Vérification (2FA ou Magic Link) ---
 async function doVerify() {
   const code = document.getElementById('twofa-code').value.trim();
   const btn = document.getElementById('btn-verify');
@@ -273,42 +209,35 @@ async function doVerify() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(payload)
     });
-    const data = await r.json();
-    if(data.ok) { window.location.href='/dashboard'; }
-    else { showError(data.error || 'Code invalide'); }
+    
+    let data = null;
+    try { data = await r.json(); } catch(err) {}
+
+    if(data && data.ok) { window.location.href='/dashboard'; }
+    else if (data) { showError(data.error || 'Code invalide'); }
+    else { showError('Erreur serveur (' + r.status + ')'); }
   } catch(e) { showError('Erreur de connexion.'); }
 
   btn.textContent='Vérifier →'; btn.classList.remove('loading');
 }
 
-// --- Initialisation des événements ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Vérification du lien magique dans l'URL
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('link_token');
     if (token) {
         magicLinkToken = token;
         goToStep2('Vérification par lien', 'Entrez le code de secours reçu dans votre email.');
-        
         const urlCode = urlParams.get('code'); 
         if(urlCode) {
             document.getElementById('twofa-code').value = urlCode;
         }
     }
 
-    // 2. Bouton "Se connecter"
     document.getElementById('btn-login').addEventListener('click', doLogin);
-    
-    // 3. Bouton "Recevoir un lien"
     document.getElementById('btn-magic').addEventListener('click', doMagicLink);
-    
-    // 4. Bouton "Vérifier"
     document.getElementById('btn-verify').addEventListener('click', doVerify);
-    
-    // 5. Bouton "Retour"
     document.getElementById('btn-back').addEventListener('click', backToStep1);
 
-    // 6. Soumission au clavier (touche Entrée)
     document.getElementById('email').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
     document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
     document.getElementById('twofa-code').addEventListener('keydown', e => { if(e.key==='Enter') doVerify(); });
