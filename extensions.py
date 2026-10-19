@@ -2,6 +2,7 @@ import logging
 import re
 import secrets
 import uuid
+import os
 from datetime import datetime
 
 from flask import Flask, g, request
@@ -52,9 +53,6 @@ logger = logging.getLogger('flinpay')
 
 
 def get_client_ip() -> str:
-    # Ne jamais lire X-Forwarded-For ici : ProxyFix réécrit déjà remote_addr
-    # de façon sûre. Lire le header brut permet à un client de forger son IP
-    # et de contourner rate-limit et lockout.
     return request.remote_addr or 'unknown'
 
 
@@ -70,25 +68,21 @@ def init_cors(app):
     )
 
 
+# Instance CSRF globale (réutilisable dans app.py)
 csrf = CSRFProtect()
 
 
 def init_csrf(app):
-    import os
     app.config['WTF_CSRF_SECRET_KEY'] = os.getenv('WTF_CSRF_SECRET_KEY', config.SECRET_KEY)
     app.config['WTF_CSRF_TIME_LIMIT'] = 3600
     app.config['WTF_CSRF_SSL_STRICT'] = config.IS_PRODUCTION
     app.config['WTF_CSRF_HEADERS'] = ['X-CSRF-Token', 'X-CSRFToken']
-    # On désactive la vérification automatique de Flask-WTF : il s'exécuterait
-    # AVANT nos before_request et bloquerait les routes publiques (login,
-    # register, webhooks). La vérification est faite manuellement dans app.py
-    # via csrf.protect() uniquement pour les routes non exemptées.
+    # Vérification manuelle dans app.py pour pouvoir exempter les routes publiques
     app.config['WTF_CSRF_CHECK_DEFAULT'] = False
     csrf.init_app(app)
 
 
 def _rate_limit_key():
-    # Clé composite pour ne pas bloquer 1000 utilisateurs d'un NAT à cause d'un seul attaquant.
     try:
         from services.auth import get_current_user_optional
         user = get_current_user_optional()
