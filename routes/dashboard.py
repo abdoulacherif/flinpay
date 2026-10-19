@@ -1,22 +1,13 @@
-"""
-routes/dashboard.py — espace connecté du marchand : dashboard, profil, mot de
-passe, suppression de compte, conversion entre devises, abonnement Pro,
-parrainage.
-
-Toutes les routes qui déplacent de l'argent ou affaiblissent la sécurité du
-compte (mot de passe, suppression de compte, conversion de solde) sont
-protégées par @csrf_protect en plus de @user_required — voir services/auth.py
-pour le détail du mécanisme.
-"""
 import logging
 import uuid as uuid_lib
+from datetime import datetime
 
 import bcrypt
 from flask import Blueprint, request, jsonify, render_template, make_response
 
 from config import config
 from extensions import limiter
-from db.supabase import sb_patch, sb_delete
+from db.supabase import sb_patch, sb_patch_multi, sb_get_eq
 from services.auth import user_required, get_current_user, csrf_protect
 from services.billing import (
     get_balance_for_currency, credit_user_balance, debit_user_balance,
@@ -26,18 +17,15 @@ from services.restrictions import is_login_blocked
 from services.activity_log import log_user_activity
 from services import gateway
 from services import fx
-from db.supabase import sb_get_eq
 
 logger = logging.getLogger('flinpay.routes.dashboard')
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
-
 @dashboard_bp.route('/dashboard')
 @user_required
 def dashboard():
     return render_template('dashboard.html', user=get_current_user())
-
 
 @dashboard_bp.route('/api/profile', methods=['PUT'])
 @user_required
@@ -56,7 +44,6 @@ def api_update_profile():
     if not ok:
         return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour du profil'}), 500
     return jsonify({'ok': True, 'message': 'Profil mis à jour'})
-
 
 @dashboard_bp.route('/api/password', methods=['PUT'])
 @user_required
@@ -78,29 +65,41 @@ def api_change_password():
     new_hash = bcrypt.hashpw(data['new_password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     ok = sb_patch('users', 'id', request.user_id, {'password_hash': new_hash})
     if not ok:
-        return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour du mot de passe'}), 500
+        return jsonify({'ok': False, 'error': 'Erreur lors de la mise à jour'}), 500
     return jsonify({'ok': True, 'message': 'Mot de passe mis à jour'})
-
 
 @dashboard_bp.route('/api/account', methods=['DELETE'])
 @user_required
 @csrf_protect
+@limiter.limit('3 per hour')
 def api_delete_account():
-    ok = sb_delete('users', 'id', request.user_id)
+    data = request.get_json() or {}
+    password = data.get('password')
+    if not password:
+        return jsonify({'ok': False, 'error': 'Mot de passe requis pour confirmer la suppression'}), 400
+    
+    user = get_current_user()
+    if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+        return jsonify({'ok': False, 'error': 'Mot de passe incorrect'}), 401
+
+    # Soft delete : on ne supprime jamais les données financières
+    ok = sb_patch('users', 'id', request.user_id, {
+        'is_active': False, 
+        'deleted_at': datetime.utcnow().isoformat()
+    })
     if not ok:
         return jsonify({'ok': False, 'error': 'Erreur lors de la suppression du compte'}), 500
+        
     resp = make_response(jsonify({'ok': True}))
-    resp.delete_cookie('fp_user_token')
+    resp.delete_cookie('__Host-fp_session')
     resp.delete_cookie('fp_csrf_token')
     return resp
-
 
 # ── Conversion entre devises ──────────────────────────
 @dashboard_bp.route('/convert')
 @user_required
 def convert_page():
     return render_template('convert.html', user=get_current_user())
-
 
 @dashboard_bp.route('/api/fx-preview', methods=['GET'])
 @user_required
@@ -120,9 +119,8 @@ def api_fx_preview():
     amount_after_fee = round(amount - fee, 2)
     converted = fx.convert(amount_after_fee, from_currency, to_currency)
     if converted is None:
-        return jsonify({'ok': False, 'error': f'Conversion {from_currency} → {to_currency} non disponible pour le moment'}), 400
+        return jsonify({'ok': False, 'error': f'Conversion non disponible'}), 400
     return jsonify({'ok': True, 'fee': fee, 'amount_after_fee': amount_after_fee, 'converted_amount': converted})
-
 
 @dashboard_bp.route('/api/convert-balance', methods=['POST'])
 @user_required
@@ -146,39 +144,29 @@ def api_convert_balance():
     user = get_current_user()
     available = get_balance_for_currency(user, from_currency)
     if amount > available:
-        return jsonify({'ok': False, 'error': f'Solde insuffisant en {from_currency} (disponible : {available:,.0f} {from_currency})'}), 400
+        return jsonify({'ok': False, 'error': f'Solde insuffisant (disponible : {available:,.0f})'}), 400
 
     fee = round(amount * config.CONVERSION_FEE_PERCENT / 100, 2)
     amount_after_fee = round(amount - fee, 2)
     converted_amount = fx.convert(amount_after_fee, from_currency, to_currency)
     if converted_amount is None:
-        return jsonify({'ok': False, 'error': f'Conversion {from_currency} → {to_currency} non disponible pour le moment'}), 400
+        return jsonify({'ok': False, 'error': f'Conversion non disponible'}), 400
 
-    # Remarque : ces deux opérations ne sont pas atomiques entre elles (voir
-    # l'avertissement en tête de services/billing.py). Dans le pire cas, un
-    # crash serveur entre les deux lignes ferait perdre le montant débité
-    # sans créditer l'autre devise. Risque faible en pratique (fenêtre de
-    # quelques millisecondes) mais réel — à corriger avec une fonction
-    # Postgres atomique côté Supabase (les deux mouvements dans la même
-    # transaction SQL).
+    # ATTENTION : Idéalement, ces deux opérations doivent être dans une seule transaction SQL atomique.
+    # Avec PostgREST, si le serveur crash entre les deux, l'argent est perdu.
     debit_user_balance(request.user_id, from_currency, amount)
     credit_user_balance(request.user_id, to_currency, converted_amount)
+    
     log_user_activity(request.user_id, 'balance_converted', {
         'from_currency': from_currency, 'to_currency': to_currency, 'amount': amount
     })
 
     return jsonify({
-        'ok': True,
-        'from_currency': from_currency,
-        'to_currency': to_currency,
-        'amount': amount,
-        'fee': fee,
-        'converted_amount': converted_amount,
+        'ok': True, 'from_currency': from_currency, 'to_currency': to_currency,
+        'amount': amount, 'fee': fee, 'converted_amount': converted_amount,
         'message': f'{amount:,.0f} {from_currency} converti en {converted_amount:,.0f} {to_currency}'
     })
 
-
-# ── Abonnement Pro ────────────────────────────────────
 @dashboard_bp.route('/api/billing/subscribe', methods=['POST'])
 @user_required
 @csrf_protect
@@ -204,21 +192,14 @@ def api_billing_subscribe():
     merchant_currency = next((c['currency'] for c in config.COUNTRIES if c['code'] == user.get('country')), 'XOF')
     base_price = price if merchant_currency == service['currency'] else fx.convert(price, merchant_currency, service['currency'])
     if base_price is None:
-        return jsonify({'ok': False, 'error': f"Cet opérateur ({service['currency']}) n'est pas compatible avec votre devise ({merchant_currency}) pour le moment"}), 400
+        return jsonify({'ok': False, 'error': f"Opérateur incompatible avec votre devise"}), 400
     total = amount_with_markup(base_price)
 
-    # La souscription est désormais un vrai abonnement récurrent côté
-    # passerelle (fréquence mensuelle), pas un paiement unique déguisé comme
-    # avant — voir services/gateway.subscription_create. La clé d'idempotence
-    # empêche la création de deux abonnements si la requête est rejouée.
     idempotency_key = f"sub-{request.user_id}-{uuid_lib.uuid4().hex[:10]}"
     try:
         sub = gateway.subscription_create(
-            customer_email=user.get('email', ''),
-            customer_phone=phone,
-            amount=total,
-            currency=service['currency'],
-            frequency='MONTHLY',
+            customer_email=user.get('email', ''), customer_phone=phone, amount=total,
+            currency=service['currency'], frequency='MONTHLY',
             description='Abonnement Flinpay Pro (mensuel)',
             metadata={'user_id': request.user_id, 'plan': 'pro'},
             idempotency_key=idempotency_key,
@@ -228,50 +209,36 @@ def api_billing_subscribe():
 
     subscription_reference = sub.get('reference') or sub.get('subscription_reference')
     if not subscription_reference:
-        return jsonify({'ok': False, 'error': "Réponse inattendue du prestataire de paiement"}), 502
+        return jsonify({'ok': False, 'error': "Réponse inattendue de la passerelle"}), 502
 
     sb_patch('users', 'id', request.user_id, {
         'pending_upgrade_checkout_id': subscription_reference,
         'pending_upgrade_currency': service['currency'],
     })
     log_user_activity(request.user_id, 'subscription_requested', {'reference': subscription_reference})
-    return jsonify({'ok': True, 'message': 'Une confirmation de paiement a été envoyée sur votre téléphone.'})
-
+    return jsonify({'ok': True, 'message': 'Une confirmation a été envoyée.'})
 
 @dashboard_bp.route('/billing')
 @user_required
 def billing():
     return render_template('billing.html', user=get_current_user())
 
-
-# ── Parrainage ────────────────────────────────────────
 @dashboard_bp.route('/api/referral')
 @user_required
 def api_referral():
     user = get_current_user()
     code = ensure_referral_code(user)
-
     referred = sb_get_eq('users', 'referred_by', request.user_id, extra_query='order=created_at.desc')
-    referred_list = [{
-        'firstname': u.get('firstname', ''),
-        'lastname': u.get('lastname', ''),
-        'plan': u.get('plan', 'starter'),
-        'created_at': u.get('created_at')
-    } for u in referred]
-
+    referred_list = [{'firstname': u.get('firstname', ''), 'lastname': u.get('lastname', ''), 'plan': u.get('plan', 'starter'), 'created_at': u.get('created_at')} for u in referred]
     earnings = sb_get_eq('referral_earnings', 'referrer_id', request.user_id, extra_query='order=created_at.desc&limit=50')
 
     return jsonify({
-        'ok': True,
-        'referral_code': code,
+        'ok': True, 'referral_code': code,
         'referral_link': f'https://www.flinpay.cfd/register?ref={code}',
-        'referred_count': len(referred_list),
-        'referred_users': referred_list,
-        'balance': user.get('referral_balance', 0),
-        'earnings_history': earnings,
+        'referred_count': len(referred_list), 'referred_users': referred_list,
+        'balance': user.get('referral_balance', 0), 'earnings_history': earnings,
         'commission_rate': config.REFERRAL_COMMISSION_RATE
     })
-
 
 @dashboard_bp.route('/referral')
 @user_required
