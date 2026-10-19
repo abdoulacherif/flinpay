@@ -389,7 +389,8 @@ async function apiFetch(url, options = {}) {
   opts.headers = { ...(opts.headers || {}) };
   const method = (opts.method || 'GET').toUpperCase();
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-    opts.headers['X-CSRF-Token'] = getCsrfToken();
+    const token = getCsrfToken();
+    if (token) opts.headers['X-CSRF-Token'] = token;
   }
   if (opts.body && typeof opts.body === 'string') {
     opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
@@ -490,16 +491,17 @@ async function toggleEmailLink(enabled){
       method:'POST',
       body:JSON.stringify({enabled})
     });
-    const data=await r.json();
-    if(data.ok){
+    let data=null;
+    try { data = await r.json(); } catch(err) {}
+    if(data && data.ok){
       toast(enabled?'Connexion par lien email activée':'Connexion par lien email désactivée');
       emailLinkEnabled=enabled;
     }else{
-      toast(data.error||'Erreur',false);
+      toast((data && data.error) || ('Erreur ' + r.status), false);
       document.getElementById('email-link-toggle').checked=!enabled;
     }
   }catch(e){
-    toast('Erreur de connexion',false);
+    toast('Erreur de connexion', false);
     document.getElementById('email-link-toggle').checked=!enabled;
   }
 }
@@ -513,10 +515,11 @@ async function saveProfile(){
   };
   try{
     const r=await apiFetch('/api/profile',{method:'PUT',body:JSON.stringify(payload)});
-    const data=await r.json();
-    if(data.ok){ toast('Profil mis à jour avec succès !'); loadProfile(); }
-    else{ toast(data.error||'Erreur lors de la mise à jour',false); }
-  }catch(e){ toast('Erreur de connexion',false); }
+    let data=null;
+    try { data = await r.json(); } catch(err) {}
+    if(data && data.ok){ toast('Profil mis à jour avec succès !'); loadProfile(); }
+    else{ toast((data && data.error) || ('Erreur ' + r.status), false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
 async function changePass(){
@@ -528,17 +531,18 @@ async function changePass(){
   if(np!==np2){toast('Les mots de passe ne correspondent pas',false);return}
   try{
     const r=await apiFetch('/api/password',{method:'PUT',body:JSON.stringify({old_password:op,new_password:np})});
-    const data=await r.json();
-    if(data.ok){
+    let data=null;
+    try { data = await r.json(); } catch(err) {}
+    if(data && data.ok){
       toast('Mot de passe mis à jour !');
       document.getElementById('p-oldpass').value='';
       document.getElementById('p-newpass').value='';
       document.getElementById('p-newpass2').value='';
       document.getElementById('str-fill').style.width='0%';
     }else{
-      toast(data.error||'Erreur lors de la mise à jour',false);
+      toast((data && data.error) || ('Erreur ' + r.status), false);
     }
-  }catch(e){ toast('Erreur de connexion',false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
 function openDeleteAccountModal(){
@@ -556,10 +560,11 @@ async function deleteAccount(){
       method:'DELETE',
       body:JSON.stringify({password})
     });
-    const data=await r.json();
-    if(data.ok){ toast('Compte supprimé',false); setTimeout(()=>window.location.href='/',1500); }
-    else{ toast(data.error||'Erreur lors de la suppression',false); }
-  }catch(e){ toast('Erreur de connexion',false); }
+    let data=null;
+    try { data = await r.json(); } catch(err) {}
+    if(data && data.ok){ toast('Compte supprimé',false); setTimeout(()=>window.location.href='/',1500); }
+    else{ toast((data && data.error) || ('Erreur ' + r.status), false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 
 async function startTwofaSetup(){
@@ -568,8 +573,9 @@ async function startTwofaSetup(){
   document.getElementById('twofa-setup-code').value='';
   try{
     const r=await apiFetch('/api/2fa/setup',{method:'POST'});
-    const data=await r.json();
-    if(!data.ok){ toast(data.error||'Erreur',false); return; }
+    let data=null;
+    try { data = await r.json(); } catch(err) {}
+    if(!data || !data.ok){ toast((data && data.error) || ('Erreur ' + r.status), false); return; }
     document.getElementById('twofa-secret').textContent=data.secret;
     const qrBox=document.getElementById('twofa-qr');
     qrBox.innerHTML='';
@@ -577,7 +583,7 @@ async function startTwofaSetup(){
       new QRCode(qrBox, { text: data.otpauth_url, width: 190, height: 190 });
     }
     document.getElementById('twofa-setup-modal').classList.add('show');
-  }catch(e){ toast('Erreur de connexion',false); }
+  }catch(e){ toast('Erreur de connexion', false); }
 }
 function closeTwofaSetupModal(){ document.getElementById('twofa-setup-modal').classList.remove('show'); }
 async function confirmTwofaSetup(){
@@ -589,9 +595,10 @@ async function confirmTwofaSetup(){
   btn.disabled=true; btn.textContent='Vérification...';
   try{
     const r=await apiFetch('/api/2fa/verify',{method:'POST',body:JSON.stringify({code})});
-    const data=await r.json();
-    if(data.ok){ closeTwofaSetupModal(); toast('2FA activée'); twofaEnabled=true; renderTwofaStatus(); }
-    else{ errEl.textContent=data.error||'Code invalide'; errEl.style.display='block'; }
+    let data=null;
+    try { data = await r.json(); } catch(err) {}
+    if(data && data.ok){ closeTwofaSetupModal(); toast('2FA activée'); twofaEnabled=true; renderTwofaStatus(); }
+    else{ errEl.textContent=(data && data.error) || ('Erreur ' + r.status); errEl.style.display='block'; }
   }catch(e){ errEl.textContent='Erreur de connexion'; errEl.style.display='block'; }
   btn.disabled=false; btn.textContent='Confirmer et activer';
 }
@@ -613,9 +620,10 @@ async function confirmTwofaDisable(){
   btn.disabled=true; btn.textContent='Vérification...';
   try{
     const r=await apiFetch('/api/2fa/disable',{method:'POST',body:JSON.stringify({password,code})});
-    const data=await r.json();
-    if(data.ok){ closeTwofaDisableModal(); toast('2FA désactivée'); twofaEnabled=false; renderTwofaStatus(); }
-    else{ errEl.textContent=data.error||'Erreur'; errEl.style.display='block'; }
+    let data=null;
+    try { data = await r.json(); } catch(err) {}
+    if(data && data.ok){ closeTwofaDisableModal(); toast('2FA désactivée'); twofaEnabled=false; renderTwofaStatus(); }
+    else{ errEl.textContent=(data && data.error) || ('Erreur ' + r.status); errEl.style.display='block'; }
   }catch(e){ errEl.textContent='Erreur de connexion'; errEl.style.display='block'; }
   btn.disabled=false; btn.textContent='Désactiver';
 }
