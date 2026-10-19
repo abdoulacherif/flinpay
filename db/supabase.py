@@ -1,4 +1,5 @@
 import logging
+import unicodedata
 from urllib.parse import quote
 import requests
 
@@ -18,23 +19,85 @@ STORAGE_TIMEOUT = 20
 
 ALLOWED_STORAGE_BUCKETS = {'kyc-documents', 'payment-link-images'}
 
-# Liste blanche des colonnes autorisées pour les filtres.
-# Empêche un attaquant d'injecter des noms de colonnes malveillants ou des opérateurs PostgREST.
+# ── Whitelist complète des colonnes utilisées par l'application ──────
+# IMPORTANT : ne jamais utiliser de valeur utilisateur comme nom de colonne.
+# Cette whitelist est une défense en profondeur. Ajouter '*' ici désactive
+# la protection (déconseillé en production).
 ALLOWED_FILTER_COLUMNS = {
-    'id', 'token', 'email', 'user_id', 'status', 'key_hash', 'referred_by',
-    'referral_code', 'payment_link_token', 'gateway_reference', 'ip_address',
-    'pending_upgrade_checkout_id', 'guard_field', 'email_verify_token_hash'
+    # Identifiants génériques
+    'id', 'token', 'user_id', 'email', 'ip_address', 'key_hash', 'wid',
+    'order_id', 'gateway_reference', 'invoice_token', 'payment_link_token',
+    'key_prefix', 'environment',
+    'referral_code', 'referred_by', 'referred_id', 'referrer_id',
+    'pending_upgrade_checkout_id', 'pending_upgrade_currency',
+
+    # Statuts / flags
+    'status', 'active', 'is_active', 'is_admin', 'email_verified',
+    'totp_enabled', 'email_link_enabled', 'kyc_status', 'restriction_level',
+    'is_visible', 'is_popular',
+
+    # Tokens / sécurité
+    'email_verify_token_hash', 'email_verify_token_expires_at',
+    'login_link_token_hash', 'login_link_code_hash', 'login_link_expires_at',
+    'kyc_id_number_hash', 'password_hash', 'locked_until', 'login_attempts',
+
+    # 2FA
+    'totp_secret',
+
+    # KYC
+    'kyc_full_name', 'kyc_id_type', 'kyc_id_number',
+    'kyc_document_front_path', 'kyc_document_back_path', 'kyc_selfie_path',
+    'kyc_submitted_at', 'kyc_rejection_reason',
+
+    # Soldes / plan
+    'available_balance', 'referral_balance',
+    'plan', 'plan_expires_at', 'monthly_limit',
+    'balance_xof', 'balance_xaf', 'balance_cdf',
+
+    # Transactions / paiements
+    'amount', 'currency', 'country', 'operator',
+    'client_name', 'client_email', 'client_phone',
+    'client_amount', 'fee_amount', 'gateway_status',
+    'paid_at', 'sent_at', 'due_date', 'items', 'notes',
+    'invoice_number', 'payment_link_token', 'gateway_reference',
+    'user_agent', 'referer_url',
+
+    # Payouts
+    'payout_id', 'net_amount', 'phone', 'note',
+
+    # Factures
+    'invoice_number',
+
+    # Webhooks / API keys
+    'url', 'events', 'description', 'label', 'last_used_at', 'key_hash',
+
+    # Site config / pricing
+    'key', 'value', 'price', 'period', 'cta_text', 'features',
+    'order_index', 'paid_count', 'views',
+
+    # Divers
+    'source', 'created_at', 'updated_at', 'deleted_at', 'guard_field',
+    'country_code', 'last4', 'name', 'role', 'company', 'firstname', 'lastname',
 }
 
+# Si tu veux autoriser toutes les colonnes (NON RECOMMANDÉ en production) :
+# ALLOWED_FILTER_COLUMNS = {'*'}
+
+
+# ── Helpers sécurité ──────────────────────────────────────────────
 def eq(value) -> str:
     """Échappe une valeur pour un filtre PostgREST."""
     return quote(str(value), safe='')
 
+
 def _safe_filter_field(field: str) -> str:
     """Vérifie que le nom du champ est dans la liste blanche."""
+    if not ALLOWED_FILTER_COLUMNS or '*' in ALLOWED_FILTER_COLUMNS:
+        return field
     if field not in ALLOWED_FILTER_COLUMNS:
         raise ValueError(f"Colonne de filtre non autorisée: {field!r}")
     return field
+
 
 def _build_filter_qs(filters: dict) -> str:
     """Construit la query string de manière sûre (colonnes whitelistées)."""
@@ -44,27 +107,37 @@ def _build_filter_qs(filters: dict) -> str:
         parts.append(f'{safe_k}=eq.{eq(v)}')
     return '&'.join(parts)
 
+
 def _safe_storage_path(bucket: str, path: str) -> str:
     if bucket not in ALLOWED_STORAGE_BUCKETS:
         raise ValueError(f"Bucket de storage non autorisé : {bucket!r}")
-    
-    path = str(path).strip()
-    
-    # Bloque les traversées de répertoire et les encodages URL malveillants
-    if '..' in path or path.startswith('/') or '%2e' in path.lower() or '%2f' in path.lower() or '\x00' in path:
+
+    path = unicodedata.normalize('NFC', str(path)).strip()
+
+    # Bloque traversées de répertoire et encodages dangereux
+    if ('..' in path
+            or path.startswith('/')
+            or '%2e' in path.lower()
+            or '%2f' in path.lower()
+            or '\x00' in path
+            or '\\' in path):
         raise ValueError(f"Chemin de storage invalide (sécurité) : {path!r}")
-        
+
     # Validation stricte du format attendu : user_id/nom_fichier.extension
-    if not path.replace('/', '').replace('.', '').replace('_', '').replace('-', '').isalnum():
+    allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./-")
+    if not set(path).issubset(allowed_chars):
         raise ValueError(f"Caractères invalides dans le chemin : {path!r}")
-        
+
     return path
 
 
-# ── Lecture / écriture génériques (table REST) ─────
+# ── Lecture / écriture génériques (table REST) ─────────────────────
 def sb_get(table, query=''):
     try:
-        r = requests.get(f'{config.SUPABASE_URL}/rest/v1/{table}?{query}', headers=SUPA_HEADERS, timeout=DEFAULT_TIMEOUT)
+        r = requests.get(
+            f'{config.SUPABASE_URL}/rest/v1/{table}?{query}',
+            headers=SUPA_HEADERS, timeout=DEFAULT_TIMEOUT
+        )
         return r.json() if r.ok else []
     except requests.RequestException as e:
         logger.error(f"[sb_get] {table} error: {e}")
@@ -73,6 +146,7 @@ def sb_get(table, query=''):
         logger.error(f"[sb_get] {table} invalid JSON response: {e}")
         return []
 
+
 def sb_get_eq(table, field, value, extra_query=''):
     safe_field = _safe_filter_field(field)
     query = f'{safe_field}=eq.{eq(value)}'
@@ -80,13 +154,18 @@ def sb_get_eq(table, field, value, extra_query=''):
         query += f'&{extra_query}'
     return sb_get(table, query)
 
+
 def sb_get_one(table, field, value):
     rows = sb_get_eq(table, field, value)
     return rows[0] if rows else None
 
+
 def sb_post(table, data):
     try:
-        r = requests.post(f'{config.SUPABASE_URL}/rest/v1/{table}', headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT)
+        r = requests.post(
+            f'{config.SUPABASE_URL}/rest/v1/{table}',
+            headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT
+        )
         if r.ok:
             return r.json()
         logger.error(f"[sb_post] {table} failed: status={r.status_code}")
@@ -95,6 +174,7 @@ def sb_post(table, data):
     except requests.RequestException as e:
         logger.error(f"[sb_post] {table} error: {e}")
         return {'_error': True, '_status': 0}
+
 
 def sb_patch(table, field, value, data):
     try:
@@ -110,6 +190,7 @@ def sb_patch(table, field, value, data):
         logger.error(f"[sb_patch] {table} error: {e}")
         return False
 
+
 def sb_delete(table, field, value):
     try:
         safe_field = _safe_filter_field(field)
@@ -124,10 +205,14 @@ def sb_delete(table, field, value):
         logger.error(f"[sb_delete] {table} error: {e}")
         return False
 
+
 def sb_patch_multi(table, filters: dict, data):
     try:
         qs = _build_filter_qs(filters)
-        r = requests.patch(f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}', headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT)
+        r = requests.patch(
+            f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}',
+            headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT
+        )
         if not r.ok:
             logger.error(f"[sb_patch_multi] {table} failed: status={r.status_code}")
         return r.ok
@@ -135,11 +220,15 @@ def sb_patch_multi(table, filters: dict, data):
         logger.error(f"[sb_patch_multi] {table} error: {e}")
         return False
 
+
 def sb_patch_if_pending(table, token_field, token_value, data):
     try:
         safe_field = _safe_filter_field(token_field)
         qs = f'{safe_field}=eq.{eq(token_value)}&status=eq.pending'
-        r = requests.patch(f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}', headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT)
+        r = requests.patch(
+            f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}',
+            headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT
+        )
         if not r.ok:
             logger.error(f"[sb_patch_if_pending] {table} failed: status={r.status_code}")
             return False
@@ -148,12 +237,16 @@ def sb_patch_if_pending(table, token_field, token_value, data):
         logger.error(f"[sb_patch_if_pending] {table} error: {e}")
         return False
 
+
 def sb_patch_if_field_equals(table, id_field, id_value, guard_field, guard_value, data):
     try:
-        safe_id_field = _safe_filter_field(id_field)
-        safe_guard_field = _safe_filter_field(guard_field)
-        qs = f'{safe_id_field}=eq.{eq(id_value)}&{safe_guard_field}=eq.{eq(guard_value)}'
-        r = requests.patch(f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}', headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT)
+        safe_id = _safe_filter_field(id_field)
+        safe_guard = _safe_filter_field(guard_field)
+        qs = f'{safe_id}=eq.{eq(id_value)}&{safe_guard}=eq.{eq(guard_value)}'
+        r = requests.patch(
+            f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}',
+            headers=SUPA_HEADERS, json=data, timeout=DEFAULT_TIMEOUT
+        )
         if not r.ok:
             logger.error(f"[sb_patch_if_field_equals] {table} failed: status={r.status_code}")
             return False
@@ -162,10 +255,14 @@ def sb_patch_if_field_equals(table, id_field, id_value, guard_field, guard_value
         logger.error(f"[sb_patch_if_field_equals] {table} error: {e}")
         return False
 
+
 def sb_delete_multi(table, filters: dict):
     try:
         qs = _build_filter_qs(filters)
-        r = requests.delete(f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}', headers=SUPA_HEADERS, timeout=DEFAULT_TIMEOUT)
+        r = requests.delete(
+            f'{config.SUPABASE_URL}/rest/v1/{table}?{qs}',
+            headers=SUPA_HEADERS, timeout=DEFAULT_TIMEOUT
+        )
         if not r.ok:
             logger.error(f"[sb_delete_multi] {table} failed: status={r.status_code}")
         return r.ok
@@ -173,12 +270,16 @@ def sb_delete_multi(table, filters: dict):
         logger.error(f"[sb_delete_multi] {table} error: {e}")
         return False
 
+
 def sb_count(table, query=''):
     try:
         headers = dict(SUPA_HEADERS)
         headers['Prefer'] = 'count=exact'
         sep = '&' if query else ''
-        r = requests.get(f'{config.SUPABASE_URL}/rest/v1/{table}?{query}{sep}limit=1', headers=headers, timeout=DEFAULT_TIMEOUT)
+        r = requests.get(
+            f'{config.SUPABASE_URL}/rest/v1/{table}?{query}{sep}limit=1',
+            headers=headers, timeout=DEFAULT_TIMEOUT
+        )
         cr = r.headers.get('Content-Range', '')
         return int(cr.split('/')[-1]) if '/' in cr else 0
     except (requests.RequestException, ValueError) as e:
@@ -186,20 +287,21 @@ def sb_count(table, query=''):
         return 0
 
 
-# ── Storage (documents KYC, images de liens de paiement) ──
+# ── Storage ──────────────────────────────────────────────────────
 def sb_storage_upload(bucket, path, file_bytes, content_type):
     try:
         path = _safe_storage_path(bucket, path)
     except ValueError as e:
         logger.error(f"[sb_storage_upload] {e}")
         return {'ok': False, 'detail': 'Chemin de fichier invalide'}
+
     try:
         url = f'{config.SUPABASE_URL}/storage/v1/object/{bucket}/{path}'
         headers = {
             'apikey': config.SUPABASE_KEY,
             'Authorization': f'Bearer {config.SUPABASE_KEY}',
             'Content-Type': content_type or 'application/octet-stream',
-            'x-upsert': 'false'  # Sécurité : interdit d'écraser un fichier existant
+            'x-upsert': 'false',
         }
         r = requests.post(url, headers=headers, data=file_bytes, timeout=STORAGE_TIMEOUT)
         if r.ok:
@@ -210,15 +312,16 @@ def sb_storage_upload(bucket, path, file_bytes, content_type):
         logger.error(f"[sb_storage_upload] error: {e}")
         return {'ok': False, 'detail': "Erreur réseau"}
 
+
 def sb_storage_sign(bucket, path, expires_in=3600):
     try:
         path = _safe_storage_path(bucket, path)
     except ValueError as e:
         logger.error(f"[sb_storage_sign] {e}")
         return None
-        
+
     try:
-        # SÉCURITÉ : borne basse (60s) et haute (3600s) pour empêcher un expires_in négatif (éternel)
+        # Borne basse (60s) et haute (3600s)
         expires_in = max(60, min(int(expires_in or 3600), 3600))
     except (ValueError, TypeError):
         expires_in = 3600
@@ -234,6 +337,7 @@ def sb_storage_sign(bucket, path, expires_in=3600):
     except (requests.RequestException, ValueError) as e:
         logger.error(f"[sb_storage_sign] error: {e}")
         return None
+
 
 def sb_storage_public_url(bucket, path):
     if bucket == 'kyc-documents':
