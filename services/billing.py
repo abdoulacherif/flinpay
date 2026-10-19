@@ -1,9 +1,168 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from db.supabase import sb_get_eq, sb_get_one, sb_post, sb_patch
 
+from config import config
+
 logger = logging.getLogger('flinpay.billing')
+
+
+# ── Utilisateur ─────────────────────────────────────
+def get_user_by_id(user_id):
+    if not user_id:
+        return None
+    return sb_get_one('users', 'id', user_id)
+
+
+# ── Devises / pays ──────────────────────────────────
+def get_currency_for_country(country_code: str) -> str:
+    for c in config.COUNTRIES:
+        if c['code'] == country_code:
+            return c['currency']
+    return 'XOF'
+
+
+# ── Soldes par devise ───────────────────────────────
+def get_balances(user: dict) -> dict:
+    """Retourne un dict {devise: montant} à partir des colonnes balance_* de users."""
+    if not user:
+        return {}
+    balances = {}
+    for currency in {'XOF', 'XAF', 'CDF'}:
+        col = f'balance_{currency.lower()}'
+        val = user.get(col)
+        if val is not None:
+            balances[currency] = float(val)
+    return balances
+
+
+def get_balance_for_currency(user: dict, currency: str) -> float:
+    if not user:
+        return 0.0
+    col = f'balance_{currency.lower()}'
+    return float(user.get(col) or 0)
+
+
+def credit_user_balance(user_id: str, currency: str, amount: float):
+    """Crédite le solde du marchand dans la devise donnée."""
+    try:
+        user = sb_get_one('users', 'id', user_id)
+        if not user:
+            return False
+        col = f'balance_{currency.lower()}'
+        current = float(user.get(col) or 0)
+        return sb_patch('users', 'id', user_id, {col: round(current + float(amount), 2)})
+    except Exception as e:
+        logger.error(f"[credit_user_balance] {e}")
+        return False
+
+
+def debit_user_balance(user_id: str, currency: str, amount: float):
+    """Débite le solde du marchand dans la devise donnée."""
+    try:
+        user = sb_get_one('users', 'id', user_id)
+        if not user:
+            return False
+        col = f'balance_{currency.lower()}'
+        current = float(user.get(col) or 0)
+        new_val = round(current - float(amount), 2)
+        if new_val < 0:
+            new_val = 0
+        return sb_patch('users', 'id', user_id, {col: new_val})
+    except Exception as e:
+        logger.error(f"[debit_user_balance] {e}")
+        return False
+
+
+# ── Quotas mensuels ─────────────────────────────────
+def get_monthly_transaction_count(user_id: str) -> int:
+    """Compte les transactions du mois courant pour le marchand."""
+    try:
+        start_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+        rows = sb_get_eq(
+            'transactions', 'user_id', user_id,
+            extra_query=f'created_at=gte.{start_of_month}&status=eq.paid'
+        )
+        return len(rows)
+    except Exception as e:
+        logger.error(f"[get_monthly_transaction_count] {e}")
+        return 0
+
+
+def check_quota(user_id: str) -> tuple:
+    """Vérifie si le marchand a encore du quota. Retourne (ok: bool, erreur: str|None)."""
+    try:
+        user = sb_get_one('users', 'id', user_id)
+        if not user:
+            return False, 'Compte introuvable'
+        if user.get('plan') == 'pro':
+            return True, None
+        count = get_monthly_transaction_count(user_id)
+        limit = config.FREE_PLAN_MONTHLY_LIMIT
+        if count >= limit:
+            return False, f'Quota mensuel atteint ({count}/{limit}). Passez au plan Pro pour continuer.'
+        return True, None
+    except Exception as e:
+        logger.error(f"[check_quota] {e}")
+        return True, None
+
+
+# ── Marges (liens de paiement / API) ────────────────
+def _apply_markup(base_amount: float, operator: str, percent_map: dict, flat_map: dict, default_percent: float, default_flat: float) -> float:
+    percent = percent_map.get(operator, default_percent)
+    flat = flat_map.get(operator, default_flat)
+    return round(float(base_amount) * (1 + percent / 100.0) + flat, 2)
+
+
+def amount_with_markup(base_amount: float, operator: str = '') -> float:
+    """Marge appliquée aux paiements d'abonnement / factures."""
+    return _apply_markup(
+        base_amount, operator,
+        config.LINK_MARKUP_BY_OPERATOR, config.LINK_MARKUP_FLAT_FEE_BY_OPERATOR,
+        config.LINK_MARKUP_DEFAULT_PERCENT, config.LINK_MARKUP_DEFAULT_FLAT_FEE,
+    )
+
+
+def link_amount_with_markup(base_amount: float, operator: str = '') -> float:
+    return _apply_markup(
+        base_amount, operator,
+        config.LINK_MARKUP_BY_OPERATOR, config.LINK_MARKUP_FLAT_FEE_BY_OPERATOR,
+        config.LINK_MARKUP_DEFAULT_PERCENT, config.LINK_MARKUP_DEFAULT_FLAT_FEE,
+    )
+
+
+def api_amount_with_markup(base_amount: float, operator: str = '') -> float:
+    return _apply_markup(
+        base_amount, operator,
+        config.API_MARKUP_BY_OPERATOR, config.API_MARKUP_FLAT_FEE_BY_OPERATOR,
+        config.API_MARKUP_DEFAULT_PERCENT, config.API_MARKUP_DEFAULT_FLAT_FEE,
+    )
+
+
+# ── Abonnement Pro ──────────────────────────────────
+def get_subscription_price() -> float:
+    """Prix de base de l'abonnement Pro en FCFA (XOF)."""
+    return 8500.0
+
+
+# ── Parrainage ──────────────────────────────────────
+def ensure_referral_code(user: dict) -> str:
+    """Génère un code de parrainage unique pour l'utilisateur si absent."""
+    if not user:
+        return ''
+    existing = user.get('referral_code')
+    if existing:
+        return existing
+
+    import secrets
+    for _ in range(5):
+        code = 'FP' + secrets.token_hex(3).upper()
+        if not sb_get_eq('users', 'referral_code', code):
+            if sb_patch('users', 'id', user['id'], {'referral_code': code}):
+                return code
+    return ''
+
 
 # ── Récompenses FP ──────────────────────────────────
 # Règle : 500 000 XOF collectés = 2 000 FP.
