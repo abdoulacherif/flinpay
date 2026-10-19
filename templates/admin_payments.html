@@ -5,16 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay Admin — Paiements & marges</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1A3CFF;--blue-tint:#EEF1FF;--gold:#FFB400;--gold-tint:#FFF6E0;--green:#00C48C;--green-tint:#E3FBF3;--ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;--danger:#FF4D4D;--danger-tint:#FFEAEA;--border:#E7E9F3;--border-soft:#F0F1F8}
+:root{
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
+  --green:#00C48C;--green-tint:#E3FBF3;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;
+  --ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
+}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:10px}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
 .topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:8px}
-.topbar-logo span{color:#5B7CFF}
+.topbar-logo span{color:var(--cyan)}
 .topbar-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem}
 .topbar-right a:hover{color:white}
 
@@ -23,18 +31,18 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;disp
 .count-badge{color:var(--muted);font-weight:400;font-size:1rem}
 
 .fees-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
-.fee-card{background:linear-gradient(135deg,var(--blue) 0%,#0F2ADB 100%);color:white;border-radius:16px;padding:18px 22px;min-width:170px;box-shadow:0 12px 26px -10px rgba(26,60,255,.4)}
-.fee-card .lbl{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:6px}
+.fee-card{background:var(--gradient);color:white;border-radius:16px;padding:18px 22px;min-width:170px;box-shadow:0 12px 26px -10px rgba(10,108,255,.4)}
+.fee-card .lbl{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:6px}
 .fee-card .val{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem}
 .fee-empty{color:var(--muted);font-size:.85rem;padding:18px 4px}
 
 .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.field-input{padding:9px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;font-family:'Inter',sans-serif;outline:none;background:white;transition:border-color .15s}
+.field-input{padding:9px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;font-family:'Inter',sans-serif;outline:none;background:white;transition:border-color .15s;color:var(--text)}
 .field-input:focus{border-color:var(--blue)}
 #search{flex:1;min-width:180px}
 #source-filter{min-width:160px}
 
-.card{background:white;border-radius:16px;border:1px solid var(--border);box-shadow:0 1px 2px rgba(15,17,32,.04);overflow:hidden}
+.card{background:white;border-radius:16px;border:1px solid var(--border-soft);box-shadow:0 4px 16px rgba(10,50,150,.05);overflow:hidden}
 .tbl-wrap{overflow-x:auto}
 .tbl{width:100%;border-collapse:collapse;font-size:.82rem}
 .tbl th{padding:9px 12px;text-align:left;font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFBFF;border-bottom:1px solid var(--border-soft);white-space:nowrap}
@@ -60,116 +68,110 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;disp
 <body>
 
 <div class="topbar">
-<div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
-<div class="topbar-right"><a href="/admin">← Retour à l'admin</a></div>
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
+  <div class="topbar-right"><a href="/admin">← Retour à l'admin</a></div>
 </div>
 
 <div class="page">
-<div class="page-head">
-<h1>💰 Paiements &amp; marges <span class="count-badge" id="count-badge"></span></h1>
+  <div class="page-head">
+    <h1>💰 Paiements &amp; marges <span class="count-badge" id="count-badge"></span></h1>
+  </div>
+
+  <div class="fees-row" id="fees-row">
+    <div class="skeleton" style="width:170px;margin:0"></div>
+  </div>
+
+  <div class="toolbar">
+    <input class="field-input" id="search" placeholder="🔍 Client, marchand, token...">
+    <select class="field-input" id="source-filter">
+      <option value="">Toutes les sources</option>
+      <option value="Lien">Lien de paiement</option>
+      <option value="Facture">Facture</option>
+      <option value="API">API directe</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="tbl-wrap" id="tbl-wrap"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  </div>
 </div>
 
-<!--
-Les frais sont affichés PAR DEVISE, jamais additionnés ensemble : un
-marchand payé en XAF et un autre en CDF n'utilisent pas la même monnaie,
-les sommer donnerait un chiffre sans aucun sens (c'est ce que faisait
-l'ancienne version de cette page).
--->
-<div class="fees-row" id="fees-row">
-<div class="skeleton" style="width:170px;margin:0"></div>
-</div>
-
-<div class="toolbar">
-<input class="field-input" id="search" placeholder="🔍 Client, marchand, token..." oninput="render()">
-<select class="field-input" id="source-filter" onchange="render()">
-<option value="">Toutes les sources</option>
-<option value="Lien">Lien de paiement</option>
-<option value="Facture">Facture</option>
-<option value="API">API directe</option>
-</select>
-</div>
-
-<div class="card">
-<div class="tbl-wrap" id="tbl-wrap"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
-</div>
-</div>
-
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
-// Lecture seule : pas de jeton CSRF nécessaire sur cette page.
-
-function esc(str){
-if(str===null||str===undefined) return '';
-return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function escapeHtml(str){
+  if(str === null || str === undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function fmtAmount(n){ return (Number(n)||0).toLocaleString('fr-FR'); }
 function fmtDate(iso){
-if(!iso) return '—';
-try{ return new Date(iso).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
-catch(e){ return iso; }
+  if(!iso) return '—';
+  try { return new Date(iso).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+  catch(e){ return iso; }
 }
 
-let allItems=[];
+let allItems = [];
 
 async function load(){
-try{
-const r=await fetch('/api/admin/payments');
-if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-const data=await r.json();
-allItems=data.items||[];
-renderFees(data.total_fees_by_currency||{});
-render();
-}catch(e){
-document.getElementById('tbl-wrap').innerHTML='<div class="empty">Erreur de chargement.</div>';
-}
+  try{
+    const r = await fetch('/api/admin/payments');
+    if(r.status === 401 || r.redirected){ window.location.href = '/login'; return; }
+    const data = await r.json();
+    allItems = data.items || [];
+    renderFees(data.total_fees_by_currency || {});
+    render();
+  }catch(e){
+    document.getElementById('tbl-wrap').innerHTML = '<div class="empty">Erreur de chargement.</div>';
+  }
 }
 
 function renderFees(byCurrency){
-const el=document.getElementById('fees-row');
-const entries=Object.entries(byCurrency);
-if(!entries.length){ el.innerHTML='<div class="fee-empty">Aucun frais collecté pour le moment.</div>'; return; }
-el.innerHTML=entries.map(([cur,val])=>`
-<div class="fee-card"><div class="lbl">Marge totale · ${esc(cur)}</div><div class="val">${fmtAmount(val)} ${esc(cur)}</div></div>
-`).join('');
+  const el = document.getElementById('fees-row');
+  const entries = Object.entries(byCurrency);
+  if(!entries.length){ el.innerHTML = '<div class="fee-empty">Aucun frais collecté pour le moment.</div>'; return; }
+  el.innerHTML = entries.map(([cur, val]) => `
+    <div class="fee-card"><div class="lbl">Marge totale · ${escapeHtml(cur)}</div><div class="val">${fmtAmount(val)} ${escapeHtml(cur)}</div></div>
+  `).join('');
 }
 
 function render(){
-const q=document.getElementById('search').value.toLowerCase();
-const source=document.getElementById('source-filter').value;
-const filtered=allItems.filter(it=>{
-if(source && it.source!==source) return false;
-if(!q) return true;
-return (it.client_name||'').toLowerCase().includes(q)
-|| (it.merchant_name||'').toLowerCase().includes(q)
-|| (it.merchant_email||'').toLowerCase().includes(q)
-|| (it.token||'').toLowerCase().includes(q);
-});
+  const q = document.getElementById('search').value.toLowerCase();
+  const source = document.getElementById('source-filter').value;
+  const filtered = allItems.filter(it => {
+    if(source && it.source !== source) return false;
+    if(!q) return true;
+    return (it.client_name||'').toLowerCase().includes(q)
+      || (it.merchant_name||'').toLowerCase().includes(q)
+      || (it.merchant_email||'').toLowerCase().includes(q)
+      || (it.token||'').toLowerCase().includes(q);
+  });
 
-document.getElementById('count-badge').textContent = `(${filtered.length}${filtered.length!==allItems.length ? ' / '+allItems.length : ''})`;
+  document.getElementById('count-badge').textContent = `(${filtered.length}${filtered.length !== allItems.length ? ' / '+allItems.length : ''})`;
 
-const el=document.getElementById('tbl-wrap');
-if(!filtered.length){ el.innerHTML='<div class="empty">Aucune transaction trouvée.</div>'; return; }
+  const el = document.getElementById('tbl-wrap');
+  if(!filtered.length){ el.innerHTML = '<div class="empty">Aucune transaction trouvée.</div>'; return; }
 
-el.innerHTML=`<table class="tbl"><thead><tr>
-<th>Marchand</th><th>Client</th><th>Source</th><th>Montant client</th><th>Reçu marchand</th><th>Marge Flinpay</th><th>Statut</th><th>Opérateur</th><th>Date</th>
-</tr></thead><tbody>
-${filtered.map(it=>{
-const cur=it.currency||'';
-return `<tr>
-<td><div class="merchant-name">${esc(it.merchant_name)||'—'}</div><div class="merchant-email">${esc(it.merchant_email)||''}</div></td>
-<td>${esc(it.client_name)}</td>
-<td><span class="badge b-source">${esc(it.source)}</span></td>
-<td class="amt">${fmtAmount(it.client_amount)} ${esc(cur)}</td>
-<td class="amt">${fmtAmount(it.merchant_amount)} ${esc(cur)}</td>
-<td class="fee-amt">${fmtAmount(it.fee_amount)} ${esc(cur)}</td>
-<td><span class="badge ${it.status==='paid'?'b-success':it.status==='pending'?'b-pending':'b-failed'}">${esc(it.status)}</span></td>
-<td class="mono">${esc(it.operator)||'—'}</td>
-<td class="date-cell">${fmtDate(it.created_at)}</td>
-</tr>`;
-}).join('')}
-</tbody></table>`;
+  el.innerHTML = `<table class="tbl"><thead><tr>
+    <th>Marchand</th><th>Client</th><th>Source</th><th>Montant client</th><th>Reçu marchand</th><th>Marge Flinpay</th><th>Statut</th><th>Opérateur</th><th>Date</th>
+  </tr></thead><tbody>
+  ${filtered.map(it => {
+    const cur = it.currency || '';
+    return `<tr>
+      <td><div class="merchant-name">${escapeHtml(it.merchant_name)||'—'}</div><div class="merchant-email">${escapeHtml(it.merchant_email)||''}</div></td>
+      <td>${escapeHtml(it.client_name)}</td>
+      <td><span class="badge b-source">${escapeHtml(it.source)}</span></td>
+      <td class="amt">${fmtAmount(it.client_amount)} ${escapeHtml(cur)}</td>
+      <td class="amt">${fmtAmount(it.merchant_amount)} ${escapeHtml(cur)}</td>
+      <td class="fee-amt">${fmtAmount(it.fee_amount)} ${escapeHtml(cur)}</td>
+      <td><span class="badge ${it.status==='paid'?'b-success':it.status==='pending'?'b-pending':'b-failed'}">${escapeHtml(it.status)}</span></td>
+      <td class="mono">${escapeHtml(it.operator)||'—'}</td>
+      <td class="date-cell">${fmtDate(it.created_at)}</td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
 }
 
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('source-filter').addEventListener('change', render);
 load();
 </script>
 </body>
