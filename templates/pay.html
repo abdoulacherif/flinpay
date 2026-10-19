@@ -5,24 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if valid %}Payer {{ link.name }}{% else %}Lien indisponible{% endif %} — Flinpay</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--ink:#0B0D17;--ink-soft:#161829;--blue:#1A3CFF;--blue-deep:#1430E0;--gold:#FFB400;--green:#00C48C;--danger:#FF4D4D;--muted:#8A8FA8;--border:rgba(255,255,255,0.1)}
+:root{--ink:#0B0D17;--ink-soft:#161829;--blue:#0A6CFF;--blue-deep:#0052CC;--cyan:#00C4FF;--gold:#FFB400;--green:#00C48C;--danger:#FF4D4D;--muted:#8A8FA8;--border:rgba(255,255,255,0.1);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%)}
 html{height:100%;-webkit-text-size-adjust:100%}
 body{
-font-family:'Inter',sans-serif;background:var(--ink);min-height:100%;
-display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-padding:32px 16px;position:relative;overflow-x:hidden;overflow-y:auto;color:white
+  font-family:'Inter',sans-serif;background:var(--ink);min-height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:32px 16px;position:relative;overflow-x:hidden;overflow-y:auto;color:white
 }
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(26,60,255,0.2) 0%,transparent 70%);pointer-events:none;animation:glowPulse 6s ease-in-out infinite}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(10,108,255,0.25) 0%,transparent 70%);pointer-events:none;animation:glowPulse 6s ease-in-out infinite}
 @keyframes glowPulse{0%,100%{opacity:.8}50%{opacity:1}}
 @media (min-height:640px){ body{justify-content:center} }
 
 .box{background:var(--ink-soft);border:1px solid var(--border);border-radius:24px;padding:36px 32px;width:100%;max-width:440px;position:relative;z-index:1;box-shadow:0 32px 64px rgba(0,0,0,0.4);text-align:center;margin:auto;animation:boxIn .45s cubic-bezier(.16,1,.3,1)}
 @keyframes boxIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;color:white;margin-bottom:20px}
-.logo span{color:var(--blue)}
+.logo span{color:var(--cyan)}
 
 .icon-big{font-size:2.6rem;margin-bottom:14px;display:inline-block;animation:iconFloat 2.4s ease-in-out infinite}
 @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
@@ -40,18 +41,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .product-img{width:100%;max-height:170px;object-fit:cover;border-radius:14px;margin-bottom:18px}
 label{display:block;font-size:0.71rem;font-weight:600;color:rgba(255,255,255,0.4);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:7px}
 input,select{width:100%;padding:12px 15px;background:rgba(255,255,255,0.05);border:1.5px solid var(--border);border-radius:10px;color:white;font-size:0.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s,background .2s}
-input:focus,select:focus{border-color:var(--blue);background:rgba(255,255,255,0.08)}
+input:focus,select:focus{border-color:var(--cyan);background:rgba(255,255,255,0.08)}
 input::placeholder{color:rgba(255,255,255,0.22)}
 select option{background:#1a1c30;color:white}
 .field-hint{font-size:.73rem;color:rgba(255,255,255,0.35);margin-top:6px;line-height:1.5}
 
-.btn-pay{width:100%;padding:14px;background:var(--blue);color:white;border:none;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all .2s;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
-.btn-pay:hover:not(:disabled){background:var(--blue-deep);transform:translateY(-1px);box-shadow:0 8px 20px rgba(26,60,255,0.35)}
-.btn-pay:active:not(:disabled){transform:translateY(0)}
+.btn-pay{width:100%;padding:14px;background:var(--gradient);color:white;border:none;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all .2s;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(10,108,255,.35)}
+.btn-pay:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 24px rgba(10,108,255,.45)}
 .btn-pay:disabled{opacity:0.5;pointer-events:none}
 .spinner-sm{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:white;animation:spin .7s linear infinite;display:none}
 .btn-pay.loading .spinner-sm{display:inline-block}
-.secure-note{color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:16px}
+.secure-note{color:rgba(255,255,255,0.3);font-size:0.72rem;margin-top:16px}
 
 .error-msg{background:rgba(255,77,77,0.1);border:1px solid rgba(255,77,77,0.3);color:#ff8f8f;border-radius:8px;padding:10px 14px;font-size:0.83rem;margin-bottom:14px;display:none;text-align:left;animation:shake .35s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
@@ -64,7 +64,7 @@ select option{background:#1a1c30;color:white}
 .op-toggle{display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .op-btn{flex:1;min-width:90px;padding:10px 8px;border:1.5px solid var(--border);border-radius:10px;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.55);cursor:pointer;font-size:0.8rem;font-weight:600;text-align:center;transition:all .15s}
 .op-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.85)}
-.op-btn.active{border-color:var(--blue);background:rgba(26,60,255,0.16);color:white}
+.op-btn.active{border-color:var(--cyan);background:rgba(0,196,255,0.15);color:white}
 .op-empty{font-size:.8rem;color:rgba(255,255,255,0.35);padding:8px 2px}
 
 .check-note{color:rgba(255,255,255,0.4);font-size:0.8rem;margin-top:14px;line-height:1.6;min-height:1.2em}
@@ -84,18 +84,10 @@ select option{background:#1a1c30;color:white}
 .helper-box{background:rgba(255,180,0,0.08);border:1px solid rgba(255,180,0,0.25);border-radius:10px;padding:12px 14px;margin-top:16px;font-size:.82rem;color:#FFD98A;line-height:1.55;text-align:left}
 
 @media(prefers-reduced-motion:reduce){
-*{animation-duration:.001ms !important;transition-duration:.001ms !important}
-.field,#success-view,#pay-view{opacity:1;transform:none}
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
+  .field,#success-view,#pay-view{opacity:1;transform:none}
 }
 </style>
-<script>
-if(new URLSearchParams(window.location.search).get('embed')==='1'){
-document.addEventListener('DOMContentLoaded', function(){
-var back=document.querySelector('.back');
-if(back) back.style.display='none';
-});
-}
-</script>
 </head>
 <body>
 <div class="box">
@@ -141,7 +133,7 @@ if(back) back.style.display='none';
 
 <div class="field">
 <label for="pay-country">Pays du numéro mobile money</label>
-<select id="pay-country" onchange="onCountryChange()">
+<select id="pay-country">
 <option value="">— Sélectionnez —</option>
 {% for c in available_countries %}
 <option value="{{ c.code }}">{{ c.flag }} {{ c.name }}</option>
@@ -170,7 +162,7 @@ if(back) back.style.display='none';
 <input type="tel" id="pay-phone" placeholder="+225 0700000000" autocomplete="tel">
 </div>
 
-<button class="btn-pay" id="btn-pay" onclick="doPay()"><span class="spinner-sm"></span><span id="btn-pay-label">💳 Payer maintenant</span></button>
+<button class="btn-pay" id="btn-pay"><span class="spinner-sm"></span><span id="btn-pay-label">💳 Payer maintenant</span></button>
 <div class="secure-note">🔒 Paiement sécurisé via Flinpay</div>
 </div>
 
@@ -179,7 +171,7 @@ if(back) back.style.display='none';
 <div class="state-title">Vérifiez votre téléphone</div>
 <div class="state-text">Une demande de confirmation a été envoyée sur votre mobile money. Composez votre code pour valider le paiement.</div>
 <div class="helper-box" id="helper-box" style="display:none"></div>
-<button class="btn-verify" id="btn-verify" onclick="checkStatus(true)">🔄 J'ai confirmé, vérifier</button>
+<button class="btn-verify" id="btn-verify">🔄 J'ai confirmé, vérifier</button>
 <div class="check-note" id="check-note"><span class="pulse-dot"></span>Vérification automatique en cours…</div>
 </div>
 {% endif %}
@@ -188,11 +180,9 @@ if(back) back.style.display='none';
 </div>
 
 {% if valid %}
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 
-// Catalogue en direct : { code_pays: [ {code, provider, currency, is_can_collect,
-// is_need_otp, confirmation_helper, ...}, ... ] } — voir services/gateway.py.
 const COUNTRY_OPERATORS = {{ countries_operators | tojson }};
 let currentOperator = '';
 let currentService = null;
@@ -200,154 +190,145 @@ let currentTxToken = null;
 let autoPollTimer = null;
 
 function operatorLabel(service){
-if(service.provider) return service.provider;
-const key = (service.code || '').split('_')[0];
-const names = {mtn:'MTN Mobile Money', orange:'Orange Money', om:'Orange Money', moov:'Moov Money', wave:'Wave', tmoney:'T-Money', vodacom:'Vodacom M-Pesa', airtel:'Airtel Money'};
-return names[key] || key.toUpperCase() || 'Opérateur';
+  if(service.provider) return service.provider;
+  const key = (service.code || '').split('_')[0];
+  const names = {mtn:'MTN Mobile Money', orange:'Orange Money', om:'Orange Money', moov:'Moov Money', wave:'Wave', tmoney:'T-Money', vodacom:'Vodacom M-Pesa', airtel:'Airtel Money'};
+  return names[key] || key.toUpperCase() || 'Opérateur';
 }
 
 function onCountryChange(){
-const country = document.getElementById('pay-country').value;
-const services = (COUNTRY_OPERATORS[country] || []).filter(s => s.is_can_collect);
-const wrap = document.getElementById('op-toggle');
-const field = document.getElementById('op-field');
-currentOperator = '';
-currentService = null;
-document.getElementById('otp-field').style.display = 'none';
+  const country = document.getElementById('pay-country').value;
+  const services = (COUNTRY_OPERATORS[country] || []).filter(s => s.is_can_collect);
+  const wrap = document.getElementById('op-toggle');
+  const field = document.getElementById('op-field');
+  currentOperator = ''; currentService = null;
+  document.getElementById('otp-field').style.display = 'none';
 
-if(!services.length){
-field.style.display = 'block';
-wrap.innerHTML = '<div class="op-empty">Aucun opérateur disponible pour ce pays actuellement.</div>';
-return;
-}
-
-field.style.display = 'block';
-wrap.innerHTML = services.map((s, i) => {
-const key = (s.code || '').split('_')[0];
-return `<button type="button" class="op-btn${i===0?' active':''}" data-op="${key}" data-idx="${i}">${operatorLabel(s)}</button>`;
-}).join('');
-selectOperator(services, 0);
-
-wrap.querySelectorAll('.op-btn').forEach(btn => {
-btn.addEventListener('click', () => selectOperator(services, Number(btn.dataset.idx)));
-});
+  if(!services.length){
+    field.style.display = 'block';
+    wrap.innerHTML = '<div class="op-empty">Aucun opérateur disponible pour ce pays.</div>';
+    return;
+  }
+  field.style.display = 'block';
+  wrap.innerHTML = services.map((s, i) => {
+    const key = (s.code || '').split('_')[0];
+    return `<button type="button" class="op-btn${i===0?' active':''}" data-op="${key}" data-idx="${i}">${operatorLabel(s)}</button>`;
+  }).join('');
+  selectOperator(services, 0);
+  wrap.querySelectorAll('.op-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectOperator(services, Number(btn.dataset.idx)));
+  });
 }
 
 function selectOperator(services, idx){
-const service = services[idx];
-currentService = service;
-currentOperator = (service.code || '').split('_')[0];
-document.querySelectorAll('.op-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
-document.getElementById('otp-field').style.display = service.is_need_otp ? 'block' : 'none';
-const hint = document.getElementById('op-hint');
-hint.textContent = service.confirmation_helper || '';
+  const service = services[idx];
+  currentService = service;
+  currentOperator = (service.code || '').split('_')[0];
+  document.querySelectorAll('.op-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  document.getElementById('otp-field').style.display = service.is_need_otp ? 'block' : 'none';
+  document.getElementById('op-hint').textContent = service.confirmation_helper || '';
 }
 
 async function doPay(){
-const name = document.getElementById('pay-name').value.trim();
-const phone = document.getElementById('pay-phone').value.trim();
-const country = document.getElementById('pay-country').value;
-const otp = document.getElementById('pay-otp').value.trim();
-const amountInput = document.getElementById('pay-amount');
-const err = document.getElementById('error-msg');
-const btn = document.getElementById('btn-pay');
-const btnLabel = document.getElementById('btn-pay-label');
+  const name = document.getElementById('pay-name').value.trim();
+  const phone = document.getElementById('pay-phone').value.trim();
+  const country = document.getElementById('pay-country').value;
+  const otp = document.getElementById('pay-otp').value.trim();
+  const amountInput = document.getElementById('pay-amount');
+  const err = document.getElementById('error-msg');
+  const btn = document.getElementById('btn-pay');
+  const btnLabel = document.getElementById('btn-pay-label');
 
-err.style.display = 'none';
+  err.style.display = 'none';
+  if(!country){ err.textContent = '⚠ Sélectionnez le pays.'; err.style.display = 'block'; return; }
+  if(!currentOperator || !currentService){ err.textContent = '⚠ Sélectionnez un opérateur.'; err.style.display = 'block'; return; }
+  if(!phone){ err.textContent = '⚠ Le numéro est requis.'; err.style.display = 'block'; return; }
+  if(currentService.is_need_otp && !otp){ err.textContent = '⚠ Le code OTP est requis.'; err.style.display = 'block'; return; }
+  if(amountInput && !amountInput.value){ err.textContent = '⚠ Le montant est requis.'; err.style.display = 'block'; return; }
 
-if(!country){ err.textContent = '⚠ Sélectionnez le pays de votre numéro.'; err.style.display = 'block'; return; }
-if(!currentOperator || !currentService){ err.textContent = '⚠ Sélectionnez un opérateur.'; err.style.display = 'block'; return; }
-if(!phone){ err.textContent = '⚠ Le numéro mobile money est requis.'; err.style.display = 'block'; return; }
-if(currentService.is_need_otp && !otp){ err.textContent = '⚠ Le code de confirmation (OTP) est requis pour cet opérateur.'; err.style.display = 'block'; return; }
-if(amountInput && !amountInput.value){ err.textContent = '⚠ Le montant est requis.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.classList.add('loading');
+  btnLabel.textContent = 'Envoi en cours...';
 
-btn.disabled = true;
-btn.classList.add('loading');
-btnLabel.textContent = 'Envoi en cours...';
+  try{
+    const payload = { name, phone, operator: currentOperator, country };
+    if(amountInput) payload.amount = amountInput.value;
+    if(otp) payload.otp = otp;
 
-try{
-const payload = { name, phone, operator: currentOperator, country };
-if(amountInput) payload.amount = amountInput.value;
-if(otp) payload.otp = otp;
+    const r = await fetch('/api/pay-link/{{ token }}', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+    });
+    const data = await r.json();
 
-const r = await fetch('/api/pay-link/{{ token }}', {
-method: 'POST',
-headers: {'Content-Type': 'application/json'},
-body: JSON.stringify(payload)
-});
-const data = await r.json();
-
-if(data.ok){
-currentTxToken = data.tx_token;
-document.getElementById('pay-view').style.display = 'none';
-const successView = document.getElementById('success-view');
-successView.style.display = 'block';
-if(data.confirmation_helper){
-const box = document.getElementById('helper-box');
-box.textContent = 'ℹ️ ' + data.confirmation_helper;
-box.style.display = 'block';
-}
-startAutoPoll();
-}else{
-err.textContent = '⚠ ' + (data.error || 'Erreur lors du paiement.');
-err.style.display = 'block';
-}
-}catch(e){
-err.textContent = '⚠ Erreur de connexion. Réessayez.';
-err.style.display = 'block';
-}
-btn.disabled = false;
-btn.classList.remove('loading');
-btnLabel.textContent = '💳 Payer maintenant';
+    if(data.ok){
+      currentTxToken = data.tx_token;
+      document.getElementById('pay-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
+      if(data.confirmation_helper){
+        const box = document.getElementById('helper-box');
+        box.textContent = 'ℹ️ ' + data.confirmation_helper;
+        box.style.display = 'block';
+      }
+      startAutoPoll();
+    }else{
+      err.textContent = '⚠ ' + (data.error || 'Erreur lors du paiement.');
+      err.style.display = 'block';
+    }
+  }catch(e){
+    err.textContent = '⚠ Erreur de connexion. Réessayez.';
+    err.style.display = 'block';
+  }
+  btn.disabled = false; btn.classList.remove('loading');
+  btnLabel.textContent = '💳 Payer maintenant';
 }
 
 function startAutoPoll(){
-if(autoPollTimer) clearInterval(autoPollTimer);
-autoPollTimer = setInterval(() => checkStatus(false), 4000);
+  if(autoPollTimer) clearInterval(autoPollTimer);
+  autoPollTimer = setInterval(() => checkStatus(false), 4000);
 }
-function stopAutoPoll(){
-if(autoPollTimer){ clearInterval(autoPollTimer); autoPollTimer = null; }
-}
+function stopAutoPoll(){ if(autoPollTimer){ clearInterval(autoPollTimer); autoPollTimer = null; } }
 
 async function checkStatus(manual){
-if(!currentTxToken) return;
-const btn = document.getElementById('btn-verify');
-const note = document.getElementById('check-note');
-if(manual){ btn.disabled = true; btn.textContent = 'Vérification...'; }
+  if(!currentTxToken) return;
+  const btn = document.getElementById('btn-verify');
+  const note = document.getElementById('check-note');
+  if(manual){ btn.disabled = true; btn.textContent = 'Vérification...'; }
 
-try{
-const r = await fetch('/api/pay-status/' + currentTxToken);
-const data = await r.json();
+  try{
+    const r = await fetch('/api/pay-status/' + currentTxToken);
+    const data = await r.json();
+    if(data.ok && data.status === 'paid'){
+      stopAutoPoll();
+      document.getElementById('success-view').innerHTML = `
+      <div class="success-check"><svg viewBox="0 0 24 24" fill="none" stroke="#00C48C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="state-title">Paiement confirmé</div>
+      <div class="state-text">${(data.message || 'Merci pour votre paiement !').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>`;
+      try{
+        if(window.parent && window.parent !== window){
+          window.parent.postMessage({flinpay:'payment_success', tx_token: currentTxToken}, '*');
+        }
+      }catch(e){}
+      if(data.redirect_url){ setTimeout(() => { window.location.href = data.redirect_url; }, 2000); }
+    }else if(data.ok && data.status === 'failed'){
+      stopAutoPoll();
+      note.textContent = '❌ Le paiement a échoué ou a été annulé.';
+      if(manual){ btn.disabled = false; btn.textContent = "🔄 J'ai confirmé, vérifier"; }
+    }else{
+      note.innerHTML = '<span class="pulse-dot"></span>Toujours en attente…';
+      if(manual){ btn.disabled = false; btn.textContent = "🔄 J'ai confirmé, vérifier"; }
+    }
+  }catch(e){
+    if(manual){ note.textContent = '⚠ Erreur de connexion.'; btn.disabled = false; btn.textContent = "🔄 J'ai confirmé, vérifier"; }
+  }
+}
 
-if(data.ok && data.status === 'paid'){
-stopAutoPoll();
-document.getElementById('success-view').innerHTML = `
-<div class="success-check"><svg viewBox="0 0 24 24" fill="none" stroke="#00C48C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-<div class="state-title">Paiement confirmé</div>
-<div class="state-text">${(data.message || 'Merci pour votre paiement !').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>`;
-try{
-if(window.parent && window.parent !== window){
-window.parent.postMessage({flinpay: 'payment_success', tx_token: currentTxToken}, '*');
-}
-}catch(e){}
-if(data.redirect_url){
-setTimeout(() => { window.location.href = data.redirect_url; }, 2000);
-}
-}else if(data.ok && data.status === 'failed'){
-stopAutoPoll();
-note.textContent = '❌ Le paiement a échoué ou a été annulé.';
-if(manual){ btn.disabled = false; btn.textContent = "🔄 J'ai confirmé, vérifier"; }
-}else{
-note.innerHTML = '<span class="pulse-dot"></span>Toujours en attente…';
-if(manual){ btn.disabled = false; btn.textContent = "🔄 J'ai confirmé, vérifier"; }
-}
-}catch(e){
-if(manual){
-note.textContent = '⚠ Erreur de connexion.';
-btn.disabled = false; btn.textContent = "🔄 J'ai confirmé, vérifier";
-}
-}
-}
+document.addEventListener('DOMContentLoaded', () => {
+  if(new URLSearchParams(window.location.search).get('embed') === '1'){
+    const back = document.querySelector('.back'); if(back) back.style.display = 'none';
+  }
+  document.getElementById('pay-country').addEventListener('change', onCountryChange);
+  document.getElementById('btn-pay').addEventListener('click', doPay);
+  document.getElementById('btn-verify').addEventListener('click', () => checkStatus(true));
+});
 </script>
 {% endif %}
 </body>
