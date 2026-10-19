@@ -73,7 +73,6 @@ def api_login():
     return _login_success_response(user)
 
 
-# ── Vérification 2FA ────────────────────────────────
 @auth_bp.route('/api/login/2fa', methods=['POST'])
 @limiter.limit('5 per minute')
 def api_login_2fa():
@@ -178,7 +177,6 @@ def api_login_verify_link():
     return _login_success_response(user)
 
 
-# ── Toggle connexion par email ──────────────────────
 @auth_bp.route('/api/settings/toggle-email-link', methods=['POST'])
 @user_required
 def api_toggle_email_link():
@@ -189,7 +187,7 @@ def api_toggle_email_link():
     return jsonify({'ok': True, 'enabled': enabled})
 
 
-# ── Logout et compte ────────────────────────────────
+# ── Logout / compte ────────────────────────────────
 @auth_bp.route('/api/logout')
 def api_logout():
     resp = make_response(redirect(url_for('public.login_page')))
@@ -216,11 +214,13 @@ def api_me():
         'monthly_limit': config.FREE_PLAN_MONTHLY_LIMIT,
         'available_balance': total_balance, 'balances': balances,
         'totp_enabled': user.get('totp_enabled', False),
-        'email_link_enabled': user.get('email_link_enabled', False)
+        'email_link_enabled': user.get('email_link_enabled', False),
+        'fp_balance': float(user.get('fp_balance') or 0),
+        'fp_rate': 0.004,
     }})
 
 
-# ── Inscription et vérification ─────────────────────
+# ── Inscription / vérification email ────────────────
 @auth_bp.route('/api/register', methods=['POST'])
 @limiter.limit('3 per hour')
 def api_register():
