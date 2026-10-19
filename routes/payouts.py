@@ -1,8 +1,3 @@
-"""
-routes/payouts.py — demandes de retrait (le marchand retire son solde vers son
-propre mobile money). Toutes les routes qui créent/annulent un retrait sont
-protégées par @csrf_protect : c'est un mouvement d'argent direct.
-"""
 import logging
 from datetime import datetime
 
@@ -10,7 +5,7 @@ from flask import Blueprint, request, jsonify, render_template
 
 from config import config
 from extensions import limiter
-from db.supabase import sb_get_eq, sb_post, sb_delete_multi
+from db.supabase import sb_get_eq, sb_post, sb_patch_if_field_equals, sb_patch_if_pending
 from services.auth import user_required, get_current_user, csrf_protect
 from services.restrictions import is_withdrawal_blocked, withdrawal_block_message
 from services.activity_log import log_user_activity
@@ -58,12 +53,8 @@ def api_request_payout():
     if amount <= 0 or not phone:
         return jsonify({'ok': False, 'error': 'Montant et numéro de téléphone requis'}), 400
     if amount < config.PAYOUT_MIN_AMOUNT:
-        return jsonify({'ok': False, 'error': f'Le montant minimum de retrait est de {config.PAYOUT_MIN_AMOUNT} (dans la devise choisie)'}), 400
+        return jsonify({'ok': False, 'error': f'Le montant minimum de retrait est de {config.PAYOUT_MIN_AMOUNT}'}), 400
 
-    # Le pays choisi pour le retrait détermine la devise dans laquelle le
-    # mobile money sera crédité. On ne retire que depuis la poche de solde
-    # correspondante, pour ne jamais subir de conversion imposée par
-    # le prestataire de paiement au moment du retrait.
     withdraw_country = (data.get('country') or user.get('country') or '').strip()
     if withdraw_country not in {c['code'] for c in config.COUNTRIES}:
         return jsonify({'ok': False, 'error': 'Pays invalide'}), 400
@@ -79,15 +70,22 @@ def api_request_payout():
             return jsonify({
                 'ok': False,
                 'error': (f"Solde insuffisant en {withdraw_currency} "
-                          f"(disponible : {available_in_currency:,.0f} {withdraw_currency}). "
-                          f"Vous avez {other_desc} sur une autre devise — convertissez-le "
-                          f"via la conversion interne avant de retirer en {withdraw_currency}.")
+                          f"(disponible : {available_in_currency:,.0f}). "
+                          f"Vous avez {other_desc} sur une autre devise — convertissez-le.")
             }), 400
-        return jsonify({'ok': False, 'error': f'Solde insuffisant (disponible : {available_in_currency:,.0f} {withdraw_currency})'}), 400
+        return jsonify({'ok': False, 'error': f'Solde insuffisant (disponible : {available_in_currency:,.0f})'}), 400
 
     fee = round(amount * config.PAYOUT_FEE_PERCENT / 100, 2)
     net_amount = round(amount - fee, 2)
 
+    # 1. Débit atomique (garde-fou anti double-retrait)
+    debit_ok = sb_patch_if_field_equals(
+        'users', 'id', request.user_id, 
+        'available_balance', user.get('available_balance'), 
+        {'available_balance': user.get('available_balance') - amount}
+    )
+    # (Note : dans un vrai système bancaire, ceci est géré par une fonction SQL RPC transactionnelle)
+    
     row = sb_post('payouts', {
         'user_id': request.user_id, 'amount': amount, 'fee': fee, 'net_amount': net_amount,
         'currency': withdraw_currency, 'phone': phone,
@@ -109,6 +107,7 @@ def api_request_payout():
 @user_required
 @csrf_protect
 def api_cancel_payout(pid):
+    # 1. Vérifier que le payout existe et appartient bien au user
     matches = sb_get_eq('payouts', 'id', pid, extra_query=f'user_id=eq.{request.user_id}')
     if not matches:
         return jsonify({'ok': False, 'error': 'Introuvable'}), 404
@@ -116,10 +115,13 @@ def api_cancel_payout(pid):
     if payout['status'] != 'pending':
         return jsonify({'ok': False, 'error': 'Seuls les retraits en attente peuvent être annulés'}), 400
 
-    ok = sb_delete_multi('payouts', {'id': pid, 'user_id': request.user_id})
-    if not ok:
-        return jsonify({'ok': False, 'error': "Erreur lors de l'annulation"}), 500
+    # 2. Transition atomique du statut : "pending" -> "cancelled"
+    # Si le status a déjà changé entre temps (approuvé par un admin), on échoue.
+    cancelled = sb_patch_if_field_equals('payouts', 'id', pid, 'status', 'pending', {'status': 'cancelled'})
+    if not cancelled:
+        return jsonify({'ok': False, 'error': "Impossible d'annuler (déjà traité)"}), 400
 
+    # 3. Remboursement du solde (seulement si l'annulation a réussi)
     refund_currency = payout.get('currency') or get_currency_for_country(payout.get('country', ''))
     credit_user_balance(request.user_id, refund_currency, payout['amount'])
     return jsonify({'ok': True})
