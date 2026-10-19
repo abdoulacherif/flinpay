@@ -5,16 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay Admin — Journal d'audit</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1A3CFF;--blue-tint:#EEF1FF;--gold:#FFB400;--gold-tint:#FFF6E0;--green:#00C48C;--green-tint:#E3FBF3;--ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;--danger:#FF4D4D;--danger-tint:#FFEAEA;--orange:#FF8A3D;--orange-tint:#FFF1E5;--border:#E7E9F3;--border-soft:#F0F1F8}
+:root{
+  --blue:#0A6CFF;--blue-tint:#E8F0FF;--cyan:#00C4FF;
+  --gold:#FFB400;--gold-tint:#FFF6E0;--green:#00C48C;--green-tint:#E3FBF3;
+  --ink:#0B0D17;--bg:#F5F6FB;--text:#12131C;--muted:#767A94;
+  --danger:#FF4D4D;--danger-tint:#FFEAEA;--orange:#FF8A3D;--orange-tint:#FFF1E5;
+  --border:#E7E9F3;--border-soft:#F0F1F8;
+}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:10px}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
 .topbar{background:var(--ink);color:white;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .topbar-logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:8px}
-.topbar-logo span{color:#5B7CFF}
+.topbar-logo span{color:var(--cyan)}
 .topbar-right a{color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem}
 .topbar-right a:hover{color:white}
 
@@ -23,12 +29,12 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;disp
 .count-badge{color:var(--muted);font-weight:400;font-size:1rem}
 
 .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.field-input{padding:9px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;font-family:'Inter',sans-serif;outline:none;background:white;transition:border-color .15s}
+.field-input{padding:9px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;font-family:'Inter',sans-serif;outline:none;background:white;transition:border-color .15s;color:var(--text)}
 .field-input:focus{border-color:var(--blue)}
 #search{flex:1;min-width:180px}
 #action-filter{min-width:200px}
 
-.card{background:white;border-radius:16px;border:1px solid var(--border);box-shadow:0 1px 2px rgba(15,17,32,.04);overflow:hidden}
+.card{background:white;border-radius:16px;border:1px solid var(--border-soft);box-shadow:0 4px 16px rgba(10,50,150,.05);overflow:hidden}
 .tbl-wrap{overflow-x:auto}
 .tbl{width:100%;border-collapse:collapse;font-size:.83rem}
 .tbl th{padding:10px 14px;text-align:left;font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#FAFBFF;border-bottom:1px solid var(--border-soft);white-space:nowrap}
@@ -54,36 +60,32 @@ h1{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:800;disp
 <body>
 
 <div class="topbar">
-<div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
-<div class="topbar-right"><a href="/admin">← Retour à l'admin</a></div>
+  <div class="topbar-logo">Flin<span>pay</span> <span style="font-weight:500;font-size:.72rem;color:rgba(255,255,255,.4);margin-left:4px">Admin</span></div>
+  <div class="topbar-right"><a href="/admin">← Retour à l'admin</a></div>
 </div>
 
 <div class="page">
-<div class="page-head">
-<h1>📋 Journal d'audit <span class="count-badge" id="count-badge"></span></h1>
+  <div class="page-head">
+    <h1>📋 Journal d'audit <span class="count-badge" id="count-badge"></span></h1>
+  </div>
+
+  <div class="toolbar">
+    <input class="field-input" id="search" placeholder="🔍 Admin, action, IP...">
+    <select class="field-input" id="action-filter">
+      <option value="">Toutes les actions</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="tbl-wrap" id="tbl-wrap">
+      <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+    </div>
+  </div>
 </div>
 
-<div class="toolbar">
-<input class="field-input" id="search" placeholder="🔍 Admin, action, IP..." oninput="render()">
-<select class="field-input" id="action-filter" onchange="render()">
-<option value="">Toutes les actions</option>
-</select>
-</div>
-
-<div class="card">
-<div class="tbl-wrap" id="tbl-wrap">
-<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
-</div>
-</div>
-</div>
-
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 
-// Lecture seule (GET uniquement) : pas de jeton CSRF nécessaire sur cette page.
-
-// Regroupées par gravité pour un repérage visuel immédiat dans un journal
-// qui sert potentiellement de preuve en cas de litige.
 const ACTION_LABELS = {
   kyc_approve: {label:'✅ KYC approuvé', cls:'a-success'},
   kyc_reject: {label:'❌ KYC rejeté', cls:'a-warn'},
@@ -105,86 +107,89 @@ const ACTION_LABELS = {
   site_config_update: {label:'⚙️ Configuration modifiée', cls:'a-neutral'},
 };
 function labelFor(action){
-if(ACTION_LABELS[action]) return ACTION_LABELS[action];
-// Actions génériques créées par le CRUD admin (stats/features/pricing_plans/testimonials)
-const m = /^(.+)_(create|update|delete)$/.exec(action || '');
-if(m){
-const table = m[1].replace(/_/g,' ');
-const verb = {create:'ajouté', update:'modifié', delete:'supprimé'}[m[2]];
-const cls = m[2]==='delete' ? 'a-danger' : m[2]==='create' ? 'a-success' : 'a-info';
-return {label: `${verb[0].toUpperCase()+verb.slice(1)} — ${table}`, cls};
-}
-return {label: action || '—', cls:'a-neutral'};
+  if(ACTION_LABELS[action]) return ACTION_LABELS[action];
+  const m = /^(.+)_(create|update|delete)$/.exec(action || '');
+  if(m){
+    const table = m[1].replace(/_/g, ' ');
+    const verb = {create:'ajouté', update:'modifié', delete:'supprimé'}[m[2]];
+    const cls = m[2] === 'delete' ? 'a-danger' : m[2] === 'create' ? 'a-success' : 'a-info';
+    return {label: `${verb[0].toUpperCase()+verb.slice(1)} — ${table}`, cls};
+  }
+  return {label: action || '—', cls: 'a-neutral'};
 }
 
-function esc(str){
-if(str===null||str===undefined) return '';
-return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function escapeHtml(str){
+  if(str === null || str === undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function fmtDate(iso){
-if(!iso) return '—';
-try{ return new Date(iso).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
-catch(e){ return iso; }
+  if(!iso) return '—';
+  try { return new Date(iso).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+  catch(e){ return iso; }
 }
 
-let allLogs=[];
+let allLogs = [];
 
 async function load(){
-try{
-const r=await fetch('/api/admin/audit-log');
-if(r.status===401||r.redirected){ window.location.href='/login'; return; }
-const data=await r.json();
-allLogs=data.items||[];
-buildActionFilter();
-render();
-}catch(e){
-document.getElementById('tbl-wrap').innerHTML='<div class="empty">Erreur de chargement.</div>';
-}
+  try{
+    const r = await fetch('/api/admin/audit-log');
+    if(r.status === 401 || r.redirected){ window.location.href = '/login'; return; }
+    const data = await r.json();
+    allLogs = data.items || [];
+    buildActionFilter();
+    render();
+  }catch(e){
+    document.getElementById('tbl-wrap').innerHTML = '<div class="empty">Erreur de chargement.</div>';
+  }
 }
 
 function buildActionFilter(){
-const actions=[...new Set(allLogs.map(l=>l.action))].sort();
-const sel=document.getElementById('action-filter');
-actions.forEach(a=>{
-const opt=document.createElement('option');
-opt.value=a; opt.textContent=labelFor(a).label;
-sel.appendChild(opt);
-});
+  const actions = [...new Set(allLogs.map(l => l.action))].sort();
+  const sel = document.getElementById('action-filter');
+  actions.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a;
+    opt.textContent = labelFor(a).label;
+    sel.appendChild(opt);
+  });
 }
 
 function render(){
-const q=document.getElementById('search').value.toLowerCase();
-const actionFilter=document.getElementById('action-filter').value;
-const filtered=allLogs.filter(l=>{
-if(actionFilter && l.action!==actionFilter) return false;
-if(!q) return true;
-return (l.admin_name||'').toLowerCase().includes(q)
-|| (l.admin_email||'').toLowerCase().includes(q)
-|| (l.action||'').toLowerCase().includes(q)
-|| (l.ip_address||'').toLowerCase().includes(q);
-});
+  const q = document.getElementById('search').value.toLowerCase();
+  const actionFilter = document.getElementById('action-filter').value;
+  const filtered = allLogs.filter(l => {
+    if(actionFilter && l.action !== actionFilter) return false;
+    if(!q) return true;
+    return (l.admin_name||'').toLowerCase().includes(q)
+      || (l.admin_email||'').toLowerCase().includes(q)
+      || (l.action||'').toLowerCase().includes(q)
+      || (l.ip_address||'').toLowerCase().includes(q);
+  });
 
-document.getElementById('count-badge').textContent = `(${filtered.length}${filtered.length!==allLogs.length ? ' / '+allLogs.length : ''})`;
+  document.getElementById('count-badge').textContent = `(${filtered.length}${filtered.length !== allLogs.length ? ' / '+allLogs.length : ''})`;
 
-const el=document.getElementById('tbl-wrap');
-if(!filtered.length){ el.innerHTML='<div class="empty">Aucune entrée trouvée.</div>'; return; }
+  const el = document.getElementById('tbl-wrap');
+  if(!filtered.length){ el.innerHTML = '<div class="empty">Aucune entrée trouvée.</div>'; return; }
 
-el.innerHTML=`<table class="tbl"><thead><tr><th>Admin</th><th>Action</th><th>Détails</th><th>IP</th><th>Date</th></tr></thead><tbody>
-${filtered.map(l=>{
-const a=labelFor(l.action);
-let details='';
-try{ details = l.details && Object.keys(l.details).length ? JSON.stringify(l.details) : '—'; }catch(e){ details='—'; }
-return `<tr>
-<td><div class="admin-name">${esc(l.admin_name)}</div><div class="admin-email">${esc(l.admin_email)}</div></td>
-<td><span class="action-badge ${a.cls}">${a.label}</span></td>
-<td class="details-mono">${esc(details)}</td>
-<td class="ip">${esc(l.ip_address)}</td>
-<td class="date-cell">${fmtDate(l.created_at)}</td>
-</tr>`;
-}).join('')}
-</tbody></table>`;
+  el.innerHTML = `<table class="tbl"><thead><tr><th>Admin</th><th>Action</th><th>Détails</th><th>IP</th><th>Date</th></tr></thead><tbody>
+  ${filtered.map(l => {
+    const a = labelFor(l.action);
+    let details = '';
+    try { details = l.details && Object.keys(l.details).length ? JSON.stringify(l.details) : '—'; }
+    catch(e){ details = '—'; }
+    return `<tr>
+      <td><div class="admin-name">${escapeHtml(l.admin_name)}</div><div class="admin-email">${escapeHtml(l.admin_email)}</div></td>
+      <td><span class="action-badge ${a.cls}">${a.label}</span></td>
+      <td class="details-mono">${escapeHtml(details)}</td>
+      <td class="ip">${escapeHtml(l.ip_address)}</td>
+      <td class="date-cell">${fmtDate(l.created_at)}</td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
 }
 
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('action-filter').addEventListener('change', render);
 load();
 </script>
 </body>
