@@ -1,39 +1,40 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Webhooks</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --ink:#0B0D17;--bg:#F5F6FB;--surface:#FFFFFF;
   --border:#E7E9F3;--border-soft:#F0F1F8;
-  --blue:#1A3CFF;--blue-deep:#0F2ADB;--blue-tint:#EEF1FF;
-  --gold:#FFB400;--gold-tint:#FFF6E0;
+  --blue:#0A6CFF;--blue-deep:#0052CC;--blue-tint:#E8F0FF;
+  --cyan:#00C4FF;--gold:#FFB400;--gold-tint:#FFF6E0;
   --green:#00C48C;--green-tint:#E3FBF3;
   --danger:#FF4D4D;--danger-tint:#FFEAEA;
   --text:#12131C;--muted:#767A94;
   --sidebar:264px;--r-lg:16px;--r-md:12px;--r-sm:9px;
-  --shadow-sm:0 1px 2px rgba(15,17,32,.04);
+  --shadow-sm:0 4px 16px rgba(10,50,150,.05);
+  --gradient:linear-gradient(135deg,#00C4FF 0%,#0A6CFF 55%,#003399 100%);
 }
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
 h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .icon{width:18px;height:18px;flex-shrink:0}
 .icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);background:var(--ink);display:flex;flex-direction:column;z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1)}
 .sidebar-logo{padding:24px 22px 16px;position:relative;display:flex;align-items:center;justify-content:space-between}
-.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--blue) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
+.sidebar-logo::after{content:'';position:absolute;left:22px;right:22px;bottom:0;height:1px;background:linear-gradient(90deg,var(--cyan) 0%,rgba(255,180,0,.5) 45%,transparent 100%)}
 .logo-text{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.42rem;color:white;text-decoration:none;letter-spacing:-.01em}
-.logo-text span{color:#5B7CFF}
-.plan-badge-pill{background:rgba(26,60,255,0.22);color:#8EA6FF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
+.logo-text span{color:var(--cyan)}
+.plan-badge-pill{background:rgba(10,108,255,0.25);color:#8ECFFF;font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-top:7px;display:inline-block}
 .close-sidebar{display:none;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;padding:4px}
 .corridor{margin:14px 22px 4px;padding:11px 12px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:11px}
 .corridor-label{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:flex;justify-content:space-between}
-.corridor-label b{color:#8EA6FF;font-weight:700}
+.corridor-label b{color:#8ECFFF;font-weight:700}
 .corridor-flags{display:flex;flex-wrap:wrap;gap:5px;font-size:.92rem;line-height:1}
 .sidebar-nav{flex:1;padding:10px 0;overflow-y:auto}
 .nav-group{font-size:.62rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:16px 22px 6px}
@@ -41,11 +42,11 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .nav-link .icon{color:rgba(255,255,255,0.35);transition:color .15s}
 .nav-link:hover{color:white;background:rgba(255,255,255,0.045)}
 .nav-link:hover .icon{color:rgba(255,255,255,0.7)}
-.nav-link.active{color:white;background:rgba(26,60,255,0.16);border-left-color:var(--blue)}
-.nav-link.active .icon{color:#8EA6FF}
+.nav-link.active{color:white;background:rgba(10,108,255,0.18);border-left-color:var(--cyan)}
+.nav-link.active .icon{color:#8ECFFF}
 .sidebar-user{padding:14px 22px;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px}
 .user-row{display:flex;align-items:center;gap:10px}
-.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#5B2CFF);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
+.user-av{width:34px;height:34px;border-radius:50%;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:.86rem;flex-shrink:0}
 .user-name{font-size:.82rem;font-weight:600;color:white}
 .user-email{font-size:.7rem;color:rgba(255,255,255,0.32);margin-top:1px}
 .logout-link{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.32);font-size:.78rem;padding:11px 22px 15px;text-decoration:none;transition:color .15s}
@@ -53,53 +54,59 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 .overlay{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:150;backdrop-filter:blur(2px)}
 .overlay.show{display:block}
 .main{margin-left:var(--sidebar);min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:rgba(255,255,255,0.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 30px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.topbar-left{display:flex;align-items:center;gap:14px}
-.burger-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;flex-direction:column;gap:5px}
-.burger-btn:hover{background:var(--bg)}
-.burger-line{width:20px;height:2px;background:var(--text);border-radius:2px;display:block}
-.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.08rem;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
 
-.page{flex:1;padding:30px;animation:fadeUp .25s ease}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px}
-.card-head{padding:17px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
-.card-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.topbar{background:var(--gradient);padding:20px 30px;color:white;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+.topbar::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+.topbar-left{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.burger-btn{display:none;background:rgba(255,255,255,0.18);border:none;cursor:pointer;padding:10px;border-radius:11px;flex-direction:column;gap:4px;width:42px;height:42px;align-items:center;justify-content:center}
+.burger-btn:hover{background:rgba(255,255,255,0.28)}
+.burger-line{width:18px;height:2px;background:white;border-radius:2px;display:block}
+.topbar-title{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:10px}
+.topbar-title .icon{width:22px;height:22px;color:white}
+
+.page{flex:1;padding:26px 30px 60px;max-width:920px}
+
+.card{background:white;border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:18px;border:1px solid var(--border-soft)}
+.card-head{padding:18px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center}
+.card-title{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .card-body{padding:22px}
 
-.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:var(--r-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+.btn{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.83rem;padding:9px 17px;border-radius:10px;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
 .btn-primary{background:var(--blue);color:white}
 .btn-primary:hover{background:var(--blue-deep)}
 .btn-danger{background:var(--danger);color:white}
-.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-danger:hover{background:#E84545}
+.btn-outline{background:white;color:var(--blue);border:1.5px solid var(--blue)}
 .btn-outline:hover{background:var(--blue-tint)}
-.btn-sm{padding:6px 12px;font-size:.76rem}
+.btn-sm{padding:7px 14px;font-size:.78rem}
 
-.webhook-card{background:var(--bg);border-radius:var(--r-md);border:1px solid var(--border);padding:16px 18px;margin-bottom:12px}
+.webhook-card{background:var(--bg);border-radius:12px;border:1px solid var(--border);padding:16px 18px;margin-bottom:12px}
 .wh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .wh-url{font-family:'JetBrains Mono',monospace;font-size:.83rem;font-weight:600;word-break:break-all}
 .wh-desc{font-size:.76rem;color:var(--muted);margin-top:4px}
-.event-tag{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:.7rem;font-family:'JetBrains Mono',monospace;margin-right:4px;display:inline-block;margin-top:8px}
+.event-tag{background:white;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:.7rem;font-family:'JetBrains Mono',monospace;margin-right:4px;display:inline-block;margin-top:8px}
 .wh-actions{display:flex;gap:8px;flex-shrink:0}
 
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(8,9,16,0.55);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
 .modal-bg.show{display:flex}
-.modal{background:var(--surface);border-radius:20px;padding:30px;width:100%;max-width:480px;margin:20px;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
-.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:18px}
+.modal{background:white;border-radius:20px;padding:28px;width:100%;max-width:480px;margin:20px;box-shadow:0 30px 60px rgba(10,12,25,0.25)}
+.modal h3{font-size:1.05rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px}
 .form-group{margin-bottom:14px}
 .form-label{font-size:.71rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:block}
-.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:.87rem;outline:none}
+.form-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.87rem;outline:none}
 .form-input:focus{border-color:var(--blue)}
-.checkbox-item{display:flex;align-items:center;gap:9px;font-size:.85rem;margin-bottom:8px;font-family:'JetBrains Mono',monospace}
+.checkbox-item{display:flex;align-items:center;gap:9px;font-size:.85rem;margin-bottom:8px;font-family:'JetBrains Mono',monospace;cursor:pointer}
+.checkbox-item input{width:16px;height:16px;accent-color:var(--blue)}
 .modal-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end}
 
 .event-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .event-info-card{padding:14px;background:var(--bg);border-radius:10px}
-.event-info-card code{background:var(--surface);border:1px solid var(--border);padding:3px 8px;border-radius:5px;font-size:.8rem;display:block;margin-bottom:6px;font-family:'JetBrains Mono',monospace}
+.event-info-card code{background:white;border:1px solid var(--border);padding:3px 8px;border-radius:5px;font-size:.8rem;display:block;margin-bottom:6px;font-family:'JetBrains Mono',monospace}
 .event-info-desc{font-size:.76rem;color:var(--muted)}
 
-.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:.85rem}
-#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green)}
+.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:.85rem;line-height:1.6}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;box-shadow:0 12px 28px rgba(10,12,25,0.28);transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;border-left:4px solid var(--green);max-width:90%}
 #toast.show{transform:translateY(0);opacity:1}
 
 @media(max-width:900px){
@@ -108,7 +115,8 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   .main{margin-left:0}
   .burger-btn{display:flex}
   .close-sidebar{display:block}
-  .page{padding:16px}
+  .page{padding:16px;max-width:100%}
+  .topbar{padding:16px 20px}
   .event-info-grid{grid-template-columns:1fr}
 }
 </style>
@@ -134,7 +142,7 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
   </defs>
 </svg>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="overlay" id="overlay"></div>
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
@@ -142,16 +150,12 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <a href="/dashboard" class="logo-text">Flin<span>pay</span></a>
       <div class="plan-badge-pill">🚀 Starter</div>
     </div>
-    <button class="close-sidebar" onclick="closeSidebar()">✕</button>
+    <button class="close-sidebar" id="close-sidebar">✕</button>
   </div>
-
   <div class="corridor">
     <div class="corridor-label"><span>Corridors actifs</span> <b>7 pays</b></div>
-    <div class="corridor-flags" title="Cameroun, Côte d'Ivoire, Burkina Faso, Bénin, Togo, RDC, Gabon">
-      🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦
-    </div>
+    <div class="corridor-flags">🇨🇲 🇨🇮 🇧🇫 🇧🇯 🇹🇬 🇨🇩 🇬🇦</div>
   </div>
-
   <nav class="sidebar-nav">
     <div class="nav-group">Principal</div>
     <a class="nav-link" href="/dashboard"><span class="icon"><svg><use href="#ic-grid"/></svg></span> Vue d'ensemble</a>
@@ -168,7 +172,6 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
     <a class="nav-link" href="/billing"><span class="icon"><svg><use href="#ic-wallet"/></svg></span> Facturation</a>
     <a class="nav-link" href="/referral"><span class="icon"><svg><use href="#ic-gift"/></svg></span> Parrainage</a>
   </nav>
-
   <div class="sidebar-user">
     <div class="user-row">
       <div class="user-av" id="user-av">{{ user.firstname[0]|upper if user.firstname else "U" }}</div>
@@ -184,10 +187,10 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
 <div class="main">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="burger-btn" onclick="openSidebar()"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
+      <button class="burger-btn" id="burger-btn"><span class="burger-line"></span><span class="burger-line"></span><span class="burger-line"></span></button>
       <div class="topbar-title"><span class="icon"><svg><use href="#ic-zap"/></svg></span> Webhooks</div>
     </div>
-    <button class="btn btn-primary btn-sm" onclick="openModal()"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Ajouter un webhook</button>
+    <button class="btn btn-primary btn-sm" id="btn-open-modal"><span class="icon"><svg><use href="#ic-plus"/></svg></span> Ajouter</button>
   </div>
 
   <div class="page">
@@ -202,11 +205,11 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
         <div class="event-info-grid">
           <div class="event-info-card">
             <code>payment.success</code>
-            <div class="event-info-desc">Envoyé automatiquement quand un paiement est confirmé</div>
+            <div class="event-info-desc">Envoyé quand un paiement est confirmé</div>
           </div>
           <div class="event-info-card">
             <code>payment.failed</code>
-            <div class="event-info-desc">Envoyé automatiquement quand un paiement échoue</div>
+            <div class="event-info-desc">Envoyé quand un paiement échoue</div>
           </div>
         </div>
       </div>
@@ -231,24 +234,34 @@ h1,h2,h3{font-family:'Space Grotesk',sans-serif}
       <label class="checkbox-item"><input type="checkbox" name="events" value="payment.failed" checked> payment.failed</label>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
-      <button class="btn btn-primary" id="btn-save-wh" onclick="saveWebhook()">Enregistrer</button>
+      <button class="btn btn-outline" id="btn-close-modal">Annuler</button>
+      <button class="btn btn-primary" id="btn-save-wh">Enregistrer</button>
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
-<script>
-function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+<script nonce="{{ csp_nonce }}">
+"use strict";
+
+function getCsrfToken(){const meta=document.querySelector('meta[name="csrf-token"]');return meta?meta.getAttribute('content'):''}
+async function apiFetch(url,options={}){
+  const opts={...options};opts.headers={...(opts.headers||{})};
+  const method=(opts.method||'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){const token=getCsrfToken();if(token)opts.headers['X-CSRF-Token']=token}
+  if(opts.body&&typeof opts.body==='string'){opts.headers['Content-Type']=opts.headers['Content-Type']||'application/json'}
+  return fetch(url,opts);
+}
+
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show');document.body.style.overflow='hidden'}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.body.style.overflow=''}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=(ok?'✅ ':'❌ ')+msg;t.style.borderLeftColor=ok?'var(--green)':'var(--danger)';t.classList.add('show');clearTimeout(t._hideTimer);t._hideTimer=setTimeout(()=>t.classList.remove('show'),3000)}
 function openModal(){document.getElementById('modal').classList.add('show')}
 function closeModal(){document.getElementById('modal').classList.remove('show')}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 
 async function loadProfile(){
   try{
-    const r=await fetch('/api/me');
+    const r=await apiFetch('/api/me');
     if(r.status===401||r.redirected){ window.location.href='/login'; return; }
     const data=await r.json();
     if(!data.ok) return;
@@ -263,7 +276,7 @@ async function loadWebhooks(){
   const el=document.getElementById('wh-list');
   el.innerHTML='<div class="empty">Chargement...</div>';
   try{
-    const r=await fetch('/api/webhooks');
+    const r=await apiFetch('/api/webhooks');
     const data=await r.json();
     const hooks=data.webhooks||[];
     if(!hooks.length){
@@ -279,12 +292,14 @@ async function loadWebhooks(){
             <div>${(w.events||[]).map(ev=>`<span class="event-tag">${ev}</span>`).join('')}</div>
           </div>
           <div class="wh-actions">
-            <button class="btn btn-outline btn-sm" onclick="testWebhook(${w.id},this)">Tester</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteWebhook(${w.id})"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
+            <button class="btn btn-outline btn-sm" data-test="${w.id}">Tester</button>
+            <button class="btn btn-danger btn-sm" data-delete="${w.id}"><span class="icon"><svg><use href="#ic-trash"/></svg></span></button>
           </div>
         </div>
       </div>
     `).join('');
+    el.querySelectorAll('[data-test]').forEach(b=>b.addEventListener('click',e=>testWebhook(e.currentTarget.dataset.test,e.currentTarget)));
+    el.querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click',e=>deleteWebhook(e.currentTarget.dataset.delete)));
   }catch(e){
     el.innerHTML='<div class="empty">Erreur de chargement.</div>';
   }
@@ -295,54 +310,59 @@ async function saveWebhook(){
   const desc=document.getElementById('wh-desc').value.trim();
   const checks=document.querySelectorAll('input[name="events"]:checked');
   const events=Array.from(checks).map(c=>c.value);
-  if(!url||!url.startsWith('http')){ toast('URL valide requise',false); return; }
+  if(!url||!url.startsWith('https://')){ toast('URL HTTPS requise',false); return; }
   if(!events.length){ toast('Sélectionnez au moins un événement',false); return; }
 
   const btn=document.getElementById('btn-save-wh');
   btn.disabled=true; btn.textContent='Enregistrement...';
   try{
-    const r=await fetch('/api/webhooks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,description:desc,events})});
-    const data=await r.json();
-    if(data.ok){
+    const r=await apiFetch('/api/webhooks',{method:'POST',body:JSON.stringify({url,description:desc,events})});
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){
       closeModal();
       document.getElementById('wh-url').value='';
       document.getElementById('wh-desc').value='';
       toast('Webhook ajouté !');
       loadWebhooks();
     }else{
-      toast(data.error||'Erreur',false);
+      toast((data&&data.error)||('Erreur '+r.status),false);
     }
-  }catch(e){
-    toast('Erreur de connexion',false);
-  }
+  }catch(e){ toast('Erreur de connexion',false); }
   btn.disabled=false; btn.textContent='Enregistrer';
 }
 
 async function testWebhook(id, btn){
   btn.disabled=true; btn.textContent='...';
   try{
-    const r=await fetch('/api/webhooks/'+id+'/test',{method:'POST'});
-    const data=await r.json();
-    if(data.ok){ toast('Test envoyé — réponse HTTP '+data.status_code); }
-    else{ toast(data.error||'Échec du test',false); }
-  }catch(e){
-    toast('Erreur de connexion',false);
-  }
+    const r=await apiFetch('/api/webhooks/'+id+'/test',{method:'POST'});
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){ toast('Test envoyé — HTTP '+(data.status_code||'?')); }
+    else{ toast((data&&data.error)||('Erreur '+r.status),false); }
+  }catch(e){ toast('Erreur de connexion',false); }
   btn.disabled=false; btn.textContent='Tester';
 }
 
 async function deleteWebhook(id){
   if(!confirm('Supprimer ce webhook ?')) return;
   try{
-    const r=await fetch('/api/webhooks/'+id,{method:'DELETE'});
-    const data=await r.json();
-    if(data.ok){ toast('Webhook supprimé'); loadWebhooks(); }
-    else{ toast(data.error||'Erreur',false); }
+    const r=await apiFetch('/api/webhooks/'+id,{method:'DELETE'});
+    let data=null; try{data=await r.json();}catch(e){}
+    if(data&&data.ok){ toast('Webhook supprimé'); loadWebhooks(); }
+    else{ toast((data&&data.error)||('Erreur '+r.status),false); }
   }catch(e){ toast('Erreur de connexion',false); }
 }
 
-loadProfile();
-loadWebhooks();
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('burger-btn').addEventListener('click',openSidebar);
+  document.getElementById('close-sidebar').addEventListener('click',closeSidebar);
+  document.getElementById('overlay').addEventListener('click',closeSidebar);
+  document.getElementById('btn-open-modal').addEventListener('click',openModal);
+  document.getElementById('btn-close-modal').addEventListener('click',closeModal);
+  document.getElementById('btn-save-wh').addEventListener('click',saveWebhook);
+  document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+  loadProfile();
+  loadWebhooks();
+});
 </script>
 </body>
 </html>
