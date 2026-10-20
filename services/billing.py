@@ -1,4 +1,5 @@
 import logging
+import json
 from datetime import datetime, timedelta
 
 from db.supabase import sb_get_eq, sb_get_one, sb_post, sb_patch
@@ -23,18 +24,41 @@ def get_currency_for_country(country_code: str) -> str:
     return 'XOF'
 
 
-# ── Soldes par devise ───────────────────────────────
-def get_balances(user: dict) -> dict:
-    """Lit les colonnes balance_* du user (déjà chargé par get_current_user).
-    Retourne {devise: montant} uniquement pour les devises > 0."""
+# ── Soldes (colonne JSON `balances`) ────────────────
+def _read_balances_raw(user: dict) -> dict:
+    """Retourne le dict brut de la colonne `balances` (peut inclure des devises à 0).
+    Gère le cas où Supabase renvoie la valeur comme string JSON."""
     if not user:
         return {}
+    raw = user.get('balances')
+    if not raw:
+        return {}
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, dict) else {}
+        except (ValueError, TypeError):
+            return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def get_balances(user: dict) -> dict:
+    """Retourne {devise: montant} depuis la colonne `balances` (filtre > 0)."""
+    if not user:
+        return {}
+    raw = user.get('balances')
+    if not raw:
+        return {}
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except (ValueError, TypeError):
+            return {}
+    if not isinstance(raw, dict):
+        return {}
+
     balances = {}
-    for currency in ('XOF', 'XAF', 'CDF', 'GHS', 'NGN', 'EUR', 'USD'):
-        col = f'balance_{currency.lower()}'
-        val = user.get(col)
-        if val is None:
-            continue
+    for currency, val in raw.items():
         try:
             amount = float(val)
         except (TypeError, ValueError):
@@ -45,13 +69,7 @@ def get_balances(user: dict) -> dict:
 
 
 def get_balance_for_currency(user: dict, currency: str) -> float:
-    if not user:
-        return 0.0
-    col = f'balance_{currency.lower()}'
-    try:
-        return float(user.get(col) or 0)
-    except (TypeError, ValueError):
-        return 0.0
+    return get_balances(user).get(currency, 0.0)
 
 
 def credit_user_balance(user_id: str, currency: str, amount: float):
@@ -59,9 +77,10 @@ def credit_user_balance(user_id: str, currency: str, amount: float):
         user = sb_get_one('users', 'id', user_id)
         if not user:
             return False
-        col = f'balance_{currency.lower()}'
-        current = float(user.get(col) or 0)
-        return sb_patch('users', 'id', user_id, {col: round(current + float(amount), 2)})
+        balances = _read_balances_raw(user)
+        current = float(balances.get(currency) or 0)
+        balances[currency] = round(current + float(amount), 2)
+        return sb_patch('users', 'id', user_id, {'balances': balances})
     except Exception as e:
         logger.error(f"[credit_user_balance] {e}")
         return False
@@ -72,12 +91,13 @@ def debit_user_balance(user_id: str, currency: str, amount: float):
         user = sb_get_one('users', 'id', user_id)
         if not user:
             return False
-        col = f'balance_{currency.lower()}'
-        current = float(user.get(col) or 0)
+        balances = _read_balances_raw(user)
+        current = float(balances.get(currency) or 0)
         new_val = round(current - float(amount), 2)
         if new_val < 0:
             new_val = 0
-        return sb_patch('users', 'id', user_id, {col: new_val})
+        balances[currency] = new_val
+        return sb_patch('users', 'id', user_id, {'balances': balances})
     except Exception as e:
         logger.error(f"[debit_user_balance] {e}")
         return False
