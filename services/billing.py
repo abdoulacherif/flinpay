@@ -8,12 +8,14 @@ from config import config
 logger = logging.getLogger('flinpay.billing')
 
 
+# ── Utilisateur ─────────────────────────────────────
 def get_user_by_id(user_id):
     if not user_id:
         return None
     return sb_get_one('users', 'id', user_id)
 
 
+# ── Devises / pays ──────────────────────────────────
 def get_currency_for_country(country_code: str) -> str:
     for c in config.COUNTRIES:
         if c['code'] == country_code:
@@ -21,30 +23,24 @@ def get_currency_for_country(country_code: str) -> str:
     return 'XOF'
 
 
+# ── Soldes par devise ───────────────────────────────
 def get_balances(user: dict) -> dict:
-    """Retourne {devise: montant} pour toutes les devises avec un solde > 0.
-    Lit toutes les colonnes balance_* possibles et log ce qu'il trouve pour
-    faciliter le debug en production."""
+    """Lit les colonnes balance_* du user (déjà chargé par get_current_user).
+    Retourne {devise: montant} uniquement pour les devises > 0."""
     if not user:
-        logger.info("[get_balances] user is None")
         return {}
-
     balances = {}
     for currency in ('XOF', 'XAF', 'CDF', 'GHS', 'NGN', 'EUR', 'USD'):
         col = f'balance_{currency.lower()}'
         val = user.get(col)
-        logger.info(f"[get_balances] {col} = {val!r}")
         if val is None:
             continue
         try:
             amount = float(val)
         except (TypeError, ValueError):
-            logger.warning(f"[get_balances] {col} non convertible en float: {val!r}")
             continue
         if amount > 0:
             balances[currency] = amount
-
-    logger.info(f"[get_balances] final = {balances}")
     return balances
 
 
@@ -87,6 +83,7 @@ def debit_user_balance(user_id: str, currency: str, amount: float):
         return False
 
 
+# ── Quotas mensuels ─────────────────────────────────
 def get_monthly_transaction_count(user_id: str) -> int:
     try:
         start_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
@@ -117,6 +114,7 @@ def check_quota(user_id: str) -> tuple:
         return True, None
 
 
+# ── Marges (liens de paiement / API) ────────────────
 def _apply_markup(base_amount: float, operator: str, percent_map: dict, flat_map: dict, default_percent: float, default_flat: float) -> float:
     percent = percent_map.get(operator, default_percent)
     flat = flat_map.get(operator, default_flat)
@@ -147,10 +145,12 @@ def api_amount_with_markup(base_amount: float, operator: str = '') -> float:
     )
 
 
+# ── Abonnement Pro ──────────────────────────────────
 def get_subscription_price() -> float:
     return 8500.0
 
 
+# ── Parrainage ──────────────────────────────────────
 def ensure_referral_code(user: dict) -> str:
     if not user:
         return ''
