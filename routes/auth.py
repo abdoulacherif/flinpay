@@ -19,14 +19,15 @@ from services.auth import (
 from services.restrictions import is_login_blocked, login_block_message
 from services.activity_log import log_user_activity
 from services.billing import get_user_by_id, get_balances, get_monthly_transaction_count
-from services.email import send_verification_email, send_login_magic_link_email
+from services.email import (
+    send_verification_email, send_login_magic_link_email, send_password_reset_email,
+)
 
 logger = logging.getLogger('flinpay.routes.auth')
 auth_bp = Blueprint('auth', __name__)
 DUMMY_HASH = bcrypt.hashpw(b'dummy_password_for_timing', bcrypt.gensalt()).decode()
 
 
-# ── Connexion ───────────────────────────────────────
 @auth_bp.route('/api/login', methods=['POST'])
 @limiter.limit('5 per minute')
 def api_login():
@@ -202,7 +203,6 @@ def api_me():
         return jsonify({'ok': False}), 404
     balances = get_balances(user)
     total_balance = sum(balances.values()) if balances else 0
-    logger.info(f"[api_me] user={user.get('email')} balances={balances}")
     return jsonify({'ok': True, 'user': {
         'firstname': user['firstname'], 'lastname': user['lastname'],
         'email': user['email'], 'company': user.get('company', ''),
@@ -311,6 +311,71 @@ def api_resend_verification():
     return jsonify({'ok': True})
 
 
+# ── Mot de passe oublié ─────────────────────────────
+@auth_bp.route('/api/forgot-password', methods=['POST'])
+@limiter.limit('3 per hour')
+def api_forgot_password():
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({'ok': False, 'error': 'Email requis'}), 400
+
+    user = sb_get_one('users', 'email', email)
+    if user:
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        expires_at = (datetime.utcnow() + timedelta(hours=1)).isoformat()
+
+        sb_patch('users', 'id', user['id'], {
+            'password_reset_token_hash': token_hash,
+            'password_reset_expires_at': expires_at,
+        })
+
+        reset_url = f"https://www.flinpay.cfd/reset-password/{raw_token}"
+        try:
+            send_password_reset_email(email, user.get('firstname', ''), reset_url)
+        except Exception as e:
+            logger.warning(f"[forgot_password] email send failed: {e}")
+
+    return jsonify({
+        'ok': True,
+        'message': "Si un compte correspond à cet email, un lien de réinitialisation a été envoyé.",
+    })
+
+
+@auth_bp.route('/api/reset-password/<token>', methods=['POST'])
+@limiter.limit('5 per hour')
+def api_reset_password(token):
+    data = request.get_json() or {}
+    new_password = data.get('new_password') or ''
+    if len(new_password) < 8:
+        return jsonify({'ok': False, 'error': 'Le mot de passe doit contenir au moins 8 caractères'}), 400
+
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    user = sb_get_one('users', 'password_reset_token_hash', token_hash)
+    if not user:
+        return jsonify({'ok': False, 'error': 'Lien invalide ou déjà utilisé'}), 401
+
+    expires_at = user.get('password_reset_expires_at')
+    if not expires_at or datetime.fromisoformat(expires_at.replace('Z', '+00:00')).replace(tzinfo=None) < datetime.utcnow():
+        return jsonify({'ok': False, 'error': 'Lien expiré. Faites une nouvelle demande.'}), 401
+
+    new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    ok = sb_patch('users', 'id', user['id'], {
+        'password_hash': new_hash,
+        'password_reset_token_hash': None,
+        'password_reset_expires_at': None,
+        'login_attempts': 0,
+        'locked_until': None,
+    })
+    if not ok:
+        return jsonify({'ok': False, 'error': "Erreur lors de la mise à jour"}), 500
+
+    log_user_activity(user['id'], 'password_reset', {})
+    return jsonify({'ok': True, 'message': 'Mot de passe réinitialisé. Vous pouvez vous connecter.'})
+
+
+# ── 2FA ─────────────────────────────────────────────
 @auth_bp.route('/api/2fa/setup', methods=['POST'])
 @user_required
 def api_2fa_setup():
