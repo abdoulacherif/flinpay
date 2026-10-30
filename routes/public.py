@@ -4,6 +4,7 @@ pages login/register (le HTML, pas l'API), documentation, page mot de passe
 oublié, page de réinitialisation, script du widget "Payer avec Flinpay"
 embarquable sur un site tiers.
 """
+import json
 from flask import Blueprint, render_template, Response
 
 from config import config
@@ -24,6 +25,26 @@ def index():
     features = sb_get('features', 'is_visible=eq.true&order=order_index.asc')
     plans = sb_get('pricing_plans', 'is_visible=eq.true&order=order_index.asc')
     testimonials = sb_get('testimonials', 'is_visible=eq.true&order=order_index.asc')
+
+    # Parse sécurisé des features JSON côté serveur (évite les replace/split
+    # hasardeux dans le template et protège contre les injections dans ce champ)
+    for plan in plans:
+        raw = plan.get('features')
+        parsed = []
+        if isinstance(raw, list):
+            parsed = [str(f).strip() for f in raw if str(f).strip()]
+        elif isinstance(raw, str) and raw.strip():
+            try:
+                loaded = json.loads(raw)
+                if isinstance(loaded, list):
+                    parsed = [str(f).strip() for f in loaded if str(f).strip()]
+                else:
+                    parsed = [str(loaded).strip()] if str(loaded).strip() else []
+            except (json.JSONDecodeError, ValueError):
+                # Fallback : split par virgule si ce n'est pas du JSON valide
+                parsed = [f.strip() for f in raw.split(',') if f.strip()]
+        plan['parsed_features'] = parsed
+
     return render_template(
         'index.html', cfg=cfg, stats=stats, features=features, plans=plans,
         testimonials=testimonials, countries=config.COUNTRIES
