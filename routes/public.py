@@ -1,7 +1,8 @@
 """
 routes/public.py — routes accessibles sans authentification : page d'accueil,
-pages login/register (le HTML, pas l'API), documentation, script du widget
-"Payer avec Flinpay" embarquable sur un site tiers.
+pages login/register (le HTML, pas l'API), documentation, page mot de passe
+oublié, page de réinitialisation, script du widget "Payer avec Flinpay"
+embarquable sur un site tiers.
 """
 from flask import Blueprint, render_template, Response
 
@@ -37,6 +38,16 @@ def register():
 @public_bp.route('/login')
 def login_page():
     return render_template('login.html')
+
+
+@public_bp.route('/forgot-password')
+def forgot_password_page():
+    return render_template('forgot_password.html')
+
+
+@public_bp.route('/reset-password/<token>')
+def reset_password_page(token):
+    return render_template('reset_password.html', token=token)
 
 
 @public_bp.route('/docs')
