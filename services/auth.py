@@ -13,6 +13,8 @@ from services.activity_log import log_user_activity
 
 logger = logging.getLogger('flinpay.auth')
 
+SESSION_COOKIE_NAME = 'fp_user_token'
+
 
 # ── CSRF (manuel, compatible X-CSRF-Token) ──────
 def csrf_protect(f):
@@ -43,19 +45,42 @@ def csrf_protect(f):
 
 # ── User helpers ─────────────────────────────────
 def get_current_user():
-    token = request.cookies.get('fp_user_token')
+    """Retourne l'utilisateur courant ou None.
+
+    Vérifie en plus le `session_version` du JWT contre celui en base, pour
+    invalider immédiatement toute session après reset de mot de passe,
+    désactivation 2FA, ou changement de compte.
+    """
+    token = request.cookies.get(SESSION_COOKIE_NAME)
     if not token:
         return None
     try:
         payload = jwt.decode(token, config.JWT_SECRET, algorithms=['HS256'])
-        user_id = payload.get('sub')
-        if not user_id:
-            return None
-        return sb_get_one('users', 'id', user_id)
     except jwt.ExpiredSignatureError:
         return None
     except jwt.InvalidTokenError:
         return None
+
+    if payload.get('type') != 'session':
+        return None
+
+    user_id = payload.get('sub')
+    if not user_id:
+        return None
+
+    user = sb_get_one('users', 'id', user_id)
+    if not user:
+        return None
+
+    # Invalidation de session (post-reset mdp, désactivation 2FA, etc.)
+    token_sv = payload.get('session_version', 0)
+    user_sv = int(user.get('session_version') or 0)
+    if token_sv != user_sv:
+        logger.info(f"[get_current_user] session_version mismatch user={user_id} "
+                    f"token={token_sv} db={user_sv}")
+        return None
+
+    return user
 
 
 def get_current_user_optional():
@@ -107,7 +132,7 @@ def is_locked_out(user):
     if not locked_until:
         return False
     try:
-        dt = datetime.fromisoformat(locked_until.replace('Z', '+00:00')).replace(tzinfo=None)
+        dt = datetime.fromisoformat(str(locked_until).replace('Z', '+00:00')).replace(tzinfo=None)
         return dt > datetime.utcnow()
     except (ValueError, TypeError):
         return False
@@ -127,14 +152,29 @@ def reset_failed_login(user_id):
     sb_patch('users', 'id', user_id, {'login_attempts': 0, 'locked_until': None})
 
 
+# ── Session invalidation ─────────────────────────
+def bump_session_version(user_id: str) -> bool:
+    """Incrémente le compteur de sessions d'un utilisateur, invalidant tous
+    les JWT existants. À appeler après un reset de mot de passe, une
+    désactivation 2FA, ou toute action sensible.
+    """
+    user = sb_get_one('users', 'id', user_id)
+    if not user:
+        return False
+    new_version = int(user.get('session_version') or 0) + 1
+    return sb_patch('users', 'id', user_id, {'session_version': new_version})
+
+
 # ── Tokens ───────────────────────────────────────
-def _create_token(user_id, token_type, expires_in_hours=24):
+def _create_token(user_id, token_type, expires_in_hours=24, extra=None):
     payload = {
         'sub': user_id,
         'type': token_type,
         'iat': datetime.utcnow(),
         'exp': datetime.utcnow() + timedelta(hours=expires_in_hours),
     }
+    if extra:
+        payload.update(extra)
     return jwt.encode(payload, config.JWT_SECRET, algorithm='HS256')
 
 
@@ -142,8 +182,12 @@ def generate_pending_2fa_token(user_id):
     return _create_token(user_id, 'pending_2fa', expires_in_hours=1)
 
 
-def generate_session_token(user_id):
-    return _create_token(user_id, 'session', expires_in_hours=24)
+def generate_session_token(user_id, session_version=0):
+    return _create_token(
+        user_id, 'session',
+        expires_in_hours=24,
+        extra={'session_version': int(session_version or 0)},
+    )
 
 
 def verify_token(token):
@@ -157,7 +201,8 @@ def verify_token(token):
 
 # ── Login response ───────────────────────────────
 def _login_success_response(user):
-    token = generate_session_token(user['id'])
+    session_version = int(user.get('session_version') or 0)
+    token = generate_session_token(user['id'], session_version=session_version)
     resp = make_response(jsonify({
         'ok': True,
         'user': {
@@ -168,7 +213,7 @@ def _login_success_response(user):
         }
     }))
     resp.set_cookie(
-        'fp_user_token', token,
+        SESSION_COOKIE_NAME, token,
         max_age=24 * 3600,
         secure=config.IS_PRODUCTION,
         httponly=True,
