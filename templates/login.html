@@ -59,11 +59,10 @@ input{
 input:focus{border-color:var(--blue);background:white}
 input::placeholder{color:#A6AABF}
 .code-input{letter-spacing:.5em;text-align:center;font-family:'JetBrains Mono',monospace;font-size:1.15rem}
-.forgot-row{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 16px}
-.forgot-row a{font-size:.78rem;color:#767A94;text-decoration:none}
-.forgot-row a:hover{color:#12131C}
-.link-btn{background:none;border:none;color:#767A94;font-size:.78rem;cursor:pointer;text-decoration:underline;padding:0}
-.link-btn:hover{color:#12131C}
+.forgot-row{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 16px;gap:12px}
+.forgot-row a,.forgot-row .link-btn{font-size:.78rem;color:#767A94;text-decoration:none;white-space:nowrap}
+.forgot-row a:hover,.forgot-row .link-btn:hover{color:#12131C}
+.link-btn{background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit}
 .btn-login{
   width:100%;padding:14px;
   background:var(--gradient);color:white;
@@ -85,6 +84,14 @@ input::placeholder{color:#A6AABF}
   cursor:pointer;margin-top:10px;
 }
 .btn-back-step:hover{color:#12131C;border-color:#A6AABF}
+.btn-secondary{
+  width:100%;padding:10px;
+  background:transparent;color:var(--blue);
+  border:1.5px dashed rgba(10,108,255,.4);border-radius:10px;
+  font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.82rem;
+  cursor:pointer;margin-top:10px;
+}
+.btn-secondary:hover{background:rgba(10,108,255,.06);border-style:solid}
 .error{
   background:#FFEAEA;
   border:1px solid rgba(255,77,77,0.3);
@@ -113,6 +120,7 @@ input::placeholder{color:#A6AABF}
 .signup-link a:hover{text-decoration:underline}
 .step2-desc{color:#767A94;font-size:.83rem;line-height:1.6;margin-bottom:18px;text-align:center}
 #step2{display:none}
+#verify-email-box{display:none;margin-top:14px}
 </style>
 </head>
 <body>
@@ -134,6 +142,9 @@ input::placeholder{color:#A6AABF}
       <a href="/forgot-password">Mot de passe oublié ?</a>
     </div>
     <button class="btn-login" id="btn-login">Se connecter →</button>
+    <div id="verify-email-box">
+      <button class="btn-secondary" id="btn-resend-verify">Renvoyer l'email de vérification</button>
+    </div>
     <div class="signup-link">
       Pas encore de compte ? <a href="/register">Créer un compte</a>
     </div>
@@ -156,95 +167,228 @@ input::placeholder{color:#A6AABF}
 
 <script nonce="{{ csp_nonce }}">
 "use strict";
-let pendingToken=null, magicLinkToken=null;
+let pendingToken = null;
+let magicLinkToken = null;
 
-function showError(msg){const el=document.getElementById('error-msg');el.textContent='⚠ '+msg;el.style.display='block';document.getElementById('success-msg').style.display='none'}
-function showSuccess(msg){const el=document.getElementById('success-msg');el.textContent='✅ '+msg;el.style.display='block';document.getElementById('error-msg').style.display='none'}
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+  document.getElementById('success-msg').style.display = 'none';
+}
+function showSuccess(msg) {
+  const el = document.getElementById('success-msg');
+  el.textContent = '✅ ' + msg;
+  el.style.display = 'block';
+  document.getElementById('error-msg').style.display = 'none';
+}
+function hideMessages() {
+  document.getElementById('error-msg').style.display = 'none';
+  document.getElementById('success-msg').style.display = 'none';
+}
+function showVerifyEmailBox(show) {
+  document.getElementById('verify-email-box').style.display = show ? 'block' : 'none';
+}
 
-function goToStep2(title,desc){
-  document.getElementById('step1').style.display='none';
-  document.getElementById('step2').style.display='block';
-  document.getElementById('subtitle').textContent=title;
-  document.getElementById('step2-desc').textContent=desc;
-  document.getElementById('error-msg').style.display='none';
-  document.getElementById('twofa-code').value='';
+function goToStep2(title, desc) {
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+  document.getElementById('subtitle').textContent = title;
+  document.getElementById('step2-desc').textContent = desc;
+  hideMessages();
+  document.getElementById('twofa-code').value = '';
   document.getElementById('twofa-code').focus();
 }
-function backToStep1(){
-  pendingToken=null;magicLinkToken=null;
-  document.getElementById('step1').style.display='block';
-  document.getElementById('step2').style.display='none';
-  document.getElementById('subtitle').textContent='Connexion à votre compte';
-  document.getElementById('error-msg').style.display='none';
-  document.getElementById('success-msg').style.display='none';
-  document.getElementById('password').value='';
+
+function backToStep1() {
+  pendingToken = null;
+  magicLinkToken = null;
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('subtitle').textContent = 'Connexion à votre compte';
+  hideMessages();
+  showVerifyEmailBox(false);
+  document.getElementById('password').value = '';
 }
 
-async function doLogin(){
-  const email=document.getElementById('email').value.trim();
-  const password=document.getElementById('password').value;
-  const btn=document.getElementById('btn-login');
-  if(!email||!password){showError('Veuillez remplir tous les champs');return}
-  btn.textContent='Connexion...';btn.disabled=true;
-  document.getElementById('error-msg').style.display='none';
-  try{
-    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
-    let data=null;try{data=await r.json();}catch(e){}
-    if(data&&data.ok&&data.requires_2fa){pendingToken=data.pending_token;goToStep2('Vérification en deux étapes','Entrez le code à 6 chiffres généré par votre application.');}
-    else if(data&&data.ok){window.location.href='/dashboard';}
-    else if(data){showError(data.error||'Identifiants incorrects');}
-    else{showError('Erreur serveur ('+r.status+')');}
-  }catch(e){showError('Erreur de connexion réseau.');}
-  btn.textContent='Se connecter →';btn.disabled=false;
+async function doLogin() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btn-login');
+
+  if (!email || !password) { showError('Veuillez remplir tous les champs'); return; }
+
+  btn.textContent = 'Connexion...';
+  btn.disabled = true;
+  hideMessages();
+  showVerifyEmailBox(false);
+
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    let data = null;
+    try { data = await r.json(); } catch (e) {}
+
+    if (data && data.ok && data.requires_2fa) {
+      pendingToken = data.pending_token;
+      goToStep2(
+        'Vérification en deux étapes',
+        'Entrez le code à 6 chiffres généré par votre application.'
+      );
+    } else if (data && data.ok) {
+      window.location.href = '/dashboard';
+    } else if (data && data.email_unverified) {
+      showError(data.error || 'Vérifiez votre email avant de vous connecter.');
+      showVerifyEmailBox(true);
+    } else if (data) {
+      showError(data.error || 'Identifiants incorrects');
+    } else {
+      showError('Erreur serveur (' + r.status + ')');
+    }
+  } catch (e) {
+    showError('Erreur de connexion réseau.');
+  }
+  btn.textContent = 'Se connecter →';
+  btn.disabled = false;
 }
 
-async function doMagicLink(){
-  const email=document.getElementById('email').value.trim();
-  const password=document.getElementById('password').value;
-  if(!email||!password){showError('Entrez votre email et mot de passe.');return}
-  const btn=document.getElementById('btn-magic');
-  btn.textContent='Envoi...';btn.disabled=true;
-  try{
-    const r=await fetch('/api/login/email-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
-    let data=null;try{data=await r.json();}catch(e){}
-    if(data&&data.ok){showSuccess('Lien envoyé ! Vérifiez votre boîte mail.');}
-    else if(data){showError(data.error||'Erreur serveur.');}
-    else{showError('Erreur serveur ('+r.status+')');}
-  }catch(e){showError('Erreur réseau.');}
-  btn.textContent='Recevoir un lien de connexion';btn.disabled=false;
+async function doMagicLink() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  if (!email || !password) { showError('Entrez votre email et mot de passe.'); return; }
+
+  const btn = document.getElementById('btn-magic');
+  btn.textContent = 'Envoi...';
+  btn.disabled = true;
+  hideMessages();
+
+  try {
+    const r = await fetch('/api/login/email-link', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    let data = null;
+    try { data = await r.json(); } catch (e) {}
+
+    if (data && data.ok) {
+      showSuccess('Lien envoyé ! Vérifiez votre boîte mail et cliquez sur le lien.');
+    } else if (data) {
+      showError(data.error || 'Erreur serveur.');
+    } else {
+      showError('Erreur serveur (' + r.status + ')');
+    }
+  } catch (e) {
+    showError('Erreur réseau.');
+  }
+  btn.textContent = 'Recevoir un lien de connexion';
+  btn.disabled = false;
 }
 
-async function doVerify(){
-  const code=document.getElementById('twofa-code').value.trim();
-  const btn=document.getElementById('btn-verify');
-  if(!/^\d{6}$/.test(code)){showError('Entrez un code à 6 chiffres');return}
-  if(!pendingToken&&!magicLinkToken){showError('Session expirée');backToStep1();return}
-  btn.textContent='Vérification...';btn.disabled=true;
-  document.getElementById('error-msg').style.display='none';
-  try{
-    let endpoint='/api/login/2fa';
-    let payload={pending_token:pendingToken,code:code};
-    if(magicLinkToken){endpoint='/api/login/verify-link';payload={token:magicLinkToken,code:code};}
-    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    let data=null;try{data=await r.json();}catch(e){}
-    if(data&&data.ok){window.location.href='/dashboard';}
-    else if(data){showError(data.error||'Code invalide');}
-    else{showError('Erreur serveur ('+r.status+')');}
-  }catch(e){showError('Erreur de connexion.');}
-  btn.textContent='Vérifier →';btn.disabled=false;
+async function doResendVerify() {
+  const email = document.getElementById('email').value.trim();
+  if (!email) { showError('Entrez votre email.'); return; }
+
+  const btn = document.getElementById('btn-resend-verify');
+  btn.textContent = 'Envoi...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch('/api/resend-verification', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email})
+    });
+    let data = null;
+    try { data = await r.json(); } catch (e) {}
+
+    if (data && data.ok) {
+      showSuccess('Si un compte correspond, un nouvel email a été envoyé.');
+    } else if (data) {
+      showError(data.error || 'Erreur serveur.');
+    } else {
+      showError('Erreur serveur (' + r.status + ')');
+    }
+  } catch (e) {
+    showError('Erreur réseau.');
+  }
+  btn.textContent = "Renvoyer l'email de vérification";
+  btn.disabled = false;
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  const urlParams=new URLSearchParams(window.location.search);
-  const token=urlParams.get('link_token');
-  if(token){magicLinkToken=token;goToStep2('Vérification par lien','Entrez le code de secours reçu par email.');}
-  document.getElementById('btn-login').addEventListener('click',doLogin);
-  document.getElementById('btn-magic').addEventListener('click',doMagicLink);
-  document.getElementById('btn-verify').addEventListener('click',doVerify);
-  document.getElementById('btn-back').addEventListener('click',backToStep1);
-  document.getElementById('email').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
-  document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
-  document.getElementById('twofa-code').addEventListener('keydown',e=>{if(e.key==='Enter')doVerify()});
+async function doVerify() {
+  const code = document.getElementById('twofa-code').value.trim();
+  const btn = document.getElementById('btn-verify');
+
+  if (!/^\d{6}$/.test(code)) { showError('Entrez un code à 6 chiffres'); return; }
+  if (!pendingToken && !magicLinkToken) {
+    showError('Session expirée');
+    backToStep1();
+    return;
+  }
+
+  btn.textContent = 'Vérification...';
+  btn.disabled = true;
+  hideMessages();
+
+  try {
+    let endpoint = '/api/login/2fa';
+    let payload = {pending_token: pendingToken, code};
+    if (magicLinkToken) {
+      endpoint = '/api/login/verify-link';
+      payload = {token: magicLinkToken, code};
+    }
+
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    let data = null;
+    try { data = await r.json(); } catch (e) {}
+
+    if (data && data.ok) {
+      window.location.href = '/dashboard';
+    } else if (data) {
+      showError(data.error || 'Code invalide');
+    } else {
+      showError('Erreur serveur (' + r.status + ')');
+    }
+  } catch (e) {
+    showError('Erreur de connexion.');
+  }
+  btn.textContent = 'Vérifier →';
+  btn.disabled = false;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('link_token');
+  if (token) {
+    magicLinkToken = token;
+    goToStep2(
+      'Vérification par lien',
+      'Entrez le code de secours reçu par email.'
+    );
+  }
+
+  document.getElementById('btn-login').addEventListener('click', doLogin);
+  document.getElementById('btn-magic').addEventListener('click', doMagicLink);
+  document.getElementById('btn-verify').addEventListener('click', doVerify);
+  document.getElementById('btn-back').addEventListener('click', backToStep1);
+  document.getElementById('btn-resend-verify').addEventListener('click', doResendVerify);
+
+  document.getElementById('email').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('twofa-code').addEventListener('keydown', e => { if (e.key === 'Enter') doVerify(); });
+
+  // Autofocus 2FA si on arrive via magic link
+  if (token) {
+    setTimeout(() => document.getElementById('twofa-code').focus(), 50);
+  }
 });
 </script>
 </body>
