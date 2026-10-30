@@ -1,7 +1,6 @@
 import logging
 import re
 import smtplib
-from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import parseaddr
@@ -13,7 +12,6 @@ logger = logging.getLogger('flinpay.email')
 _EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
 def _clean_header(value: str, max_len: int = 200) -> str:
-    """Retire tout caractère de contrôle pour empêcher l'injection d'en-têtes SMTP."""
     value = str(value or '')
     value = re.sub(r'[\r\n\x00-\x1f]', ' ', value).strip()
     return value[:max_len]
@@ -69,10 +67,10 @@ def send_verification_email(to_email, firstname, token):
     
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #1A3CFF;">Bienvenue sur Flinpay</h2>
+        <h2 style="color: #0A6CFF;">Bienvenue sur Flinpay</h2>
         <p>Bonjour {firstname},</p>
         <p>Merci de vous être inscrit. Confirmez votre adresse email pour activer votre compte :</p>
-        <a href="{verify_url}" style="display:inline-block; padding:12px 24px; background:#1A3CFF; color:white; text-decoration:none; border-radius:8px; font-weight:bold; margin: 20px 0;">
+        <a href="{verify_url}" style="display:inline-block; padding:12px 24px; background:#0A6CFF; color:white; text-decoration:none; border-radius:8px; font-weight:bold; margin: 20px 0;">
             Confirmer mon email
         </a>
         <p style="font-size: 13px; color: #666;">Si le bouton ne fonctionne pas, copiez ce lien : <br>{verify_url}</p>
@@ -94,10 +92,10 @@ def send_login_magic_link_email(to_email, firstname, magic_url, backup_code):
     
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #1A3CFF;">Connexion sécurisée</h2>
+        <h2 style="color: #0A6CFF;">Connexion sécurisée</h2>
         <p>Bonjour {firstname},</p>
         <p>Vous avez demandé à vous connecter à Flinpay. Cliquez sur le bouton ci-dessous :</p>
-        <a href="{magic_url}" style="display:inline-block; padding:12px 24px; background:#1A3CFF; color:white; text-decoration:none; border-radius:8px; font-weight:bold; margin: 20px 0;">
+        <a href="{magic_url}" style="display:inline-block; padding:12px 24px; background:#0A6CFF; color:white; text-decoration:none; border-radius:8px; font-weight:bold; margin: 20px 0;">
             Me connecter
         </a>
         <p style="font-size: 13px; color: #666;">Ce lien expire dans 15 minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
@@ -107,6 +105,34 @@ def send_login_magic_link_email(to_email, firstname, magic_url, backup_code):
     </div>
     """
     _send(to_email, "Votre lien de connexion sécurisé Flinpay", text, html)
+
+
+def send_password_reset_email(to_email, firstname, reset_url):
+    firstname = _clean_header(firstname, max_len=100)
+    
+    text = (
+        f"Bonjour {firstname},\n\n"
+        f"Vous avez demandé à réinitialiser votre mot de passe Flinpay.\n"
+        f"Cliquez sur ce lien pour choisir un nouveau mot de passe :\n\n"
+        f"{reset_url}\n\n"
+        f"Ce lien expire dans 1 heure. Si vous n'êtes pas à l'origine de cette "
+        f"demande, ignorez cet email — votre mot de passe restera inchangé.\n\n"
+        f"— L'équipe Flinpay"
+    )
+    
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #0A6CFF;">Réinitialisation de mot de passe</h2>
+        <p>Bonjour {firstname},</p>
+        <p>Vous avez demandé à réinitialiser votre mot de passe Flinpay.</p>
+        <a href="{reset_url}" style="display:inline-block; padding:12px 24px; background:#0A6CFF; color:white; text-decoration:none; border-radius:8px; font-weight:bold; margin: 20px 0;">
+            Choisir un nouveau mot de passe
+        </a>
+        <p style="font-size: 13px; color: #666;">Ce lien expire dans 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe restera inchangé.</p>
+        <p style="font-size: 13px; color: #666;">Si le bouton ne fonctionne pas, copiez ce lien : <br>{reset_url}</p>
+    </div>
+    """
+    _send(to_email, "Réinitialisation de votre mot de passe — Flinpay", text, html)
 
 
 def send_payment_notification_email(merchant, tx):
