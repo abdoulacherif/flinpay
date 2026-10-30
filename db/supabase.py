@@ -37,6 +37,7 @@ ALLOWED_FILTER_COLUMNS = {
     'login_link_token_hash', 'login_link_code_hash', 'login_link_expires_at',
     'password_reset_token_hash', 'password_reset_expires_at',
     'kyc_id_number_hash', 'password_hash', 'locked_until', 'login_attempts',
+    'session_version',
 
     # 2FA
     'totp_secret',
@@ -172,6 +173,7 @@ def sb_patch(table, field, value, data):
         )
         if not r.ok:
             logger.error(f"[sb_patch] {table} failed: status={r.status_code}")
+            logger.debug(f"[sb_patch] {table} body={r.text[:300]}")
         return r.ok
     except (requests.RequestException, ValueError) as e:
         logger.error(f"[sb_patch] {table} error: {e}")
