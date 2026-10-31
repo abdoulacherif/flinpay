@@ -4,12 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flinpay — Créer un compte</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style nonce="{{ csp_nonce }}">
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --blue:#0A6CFF;--blue-deep:#0052CC;--cyan:#00C4FF;
+  --blue-tint:#E8F0FF;
   --gold:#FFB400;--green:#00C48C;--danger:#FF4D4D;
   --ink:#0B0D17;--ink-soft:#161829;--muted:#767A94;
   --ease:cubic-bezier(.16,.8,.3,1);
@@ -374,6 +376,9 @@ $('register-form').addEventListener('submit', async function(e){
 
   const btn=$('btn-register');
   const btnLabel=$('btn-label');
+  const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  const csrfToken = csrfMeta ? csrfMeta.content : '';
+  
   submitting=true;
   btn.disabled=true;
   btn.classList.add('loading');
@@ -382,7 +387,10 @@ $('register-form').addEventListener('submit', async function(e){
   try{
     const r=await fetch('/api/register', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'X-CSRFToken': csrfToken
+      },
       body:JSON.stringify({firstname, lastname, email, company, country, phone, password, referral_code: referral})
     });
     let data=null;
