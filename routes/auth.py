@@ -15,6 +15,7 @@ from services.auth import (
     generate_pending_2fa_token, verify_token, _login_success_response,
     is_locked_out, register_failed_login, reset_failed_login,
     user_required, get_current_user,
+    SESSION_COOKIE_NAME,
 )
 from services.restrictions import is_login_blocked, login_block_message
 from services.activity_log import log_user_activity
@@ -223,11 +224,12 @@ def api_toggle_email_link():
     return jsonify({'ok': True, 'enabled': enabled})
 
 
-@auth_bp.route('/api/logout')
+# ── Logout (CORRIGÉ) ─────────────────────────────────
+@auth_bp.route('/api/logout', methods=['GET', 'POST'])
 def api_logout():
     resp = make_response(redirect(url_for('public.login_page')))
-    resp.delete_cookie('__Host-fp_session')
-    resp.delete_cookie('fp_csrf_token')
+    resp.delete_cookie(SESSION_COOKIE_NAME, secure=config.IS_PRODUCTION, httponly=True, samesite='Strict')
+    resp.delete_cookie('fp_csrf_token', secure=config.IS_PRODUCTION, samesite='Strict')
     return resp
 
 
@@ -431,18 +433,20 @@ def api_reset_password(token):
         }), 401
 
     new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    new_version = int(user.get('session_version') or 0) + 1
     ok = sb_patch('users', 'id', user['id'], {
         'password_hash': new_hash,
         'password_reset_token_hash': None,
         'password_reset_expires_at': None,
         'login_attempts': 0,
         'locked_until': None,
+        'session_version': new_version,  # ← Invalide toutes les sessions
     })
     if not ok:
         return jsonify({'ok': False, 'error': "Erreur lors de la mise à jour"}), 500
 
     log_user_activity(user['id'], 'password_reset', {'ip': get_client_ip()})
-    logger.info(f"[reset_password] user={user['id']} ip={get_client_ip()}")
+    logger.info(f"[reset_password] user={user['id']} ip={get_client_ip()} sv={new_version}")
     return jsonify({
         'ok': True,
         'message': 'Mot de passe réinitialisé. Vous pouvez vous connecter.'
@@ -517,10 +521,12 @@ def api_2fa_disable():
         register_failed_login(user)
         return jsonify({'ok': False, 'error': 'Code invalide'}), 401
 
+    new_version = int(user.get('session_version') or 0) + 1
     ok = sb_patch('users', 'id', request.user_id, {
         'totp_enabled': False,
         'totp_secret': None,
+        'session_version': new_version,  # ← Invalide toutes les sessions
     })
     if not ok:
         return jsonify({'ok': False, 'error': 'Erreur lors de la désactivation'}), 500
-    return jsonify({'ok': True, 'message': '2FA désactivée'})
+    return jsonify({'ok': True, 'message': '2FA désactivée. Veuillez vous reconnecter.'})
