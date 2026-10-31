@@ -33,7 +33,6 @@ h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif}
 
 .announce{background:var(--ink);color:rgba(255,255,255,.85);text-align:center;padding:9px 20px;font-size:.82rem;font-weight:500}
 
-/* ── NAV ── */
 nav{
   position:sticky;top:0;z-index:100;
   background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
@@ -78,7 +77,6 @@ nav.scrolled{height:60px;box-shadow:0 8px 28px rgba(10,50,150,.08)}
 .scrim{display:none;position:fixed;inset:0;background:rgba(6,7,14,.5);z-index:98;opacity:0;transition:opacity .3s}
 .scrim.open{opacity:1}
 
-/* ── REVEAL ── */
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
 .reveal.in{opacity:1;transform:translateY(0)}
 .reveal-stagger.in > *{opacity:1;transform:translateY(0)}
@@ -91,7 +89,6 @@ nav.scrolled{height:60px;box-shadow:0 8px 28px rgba(10,50,150,.08)}
 .reveal-stagger.in > *:nth-child(6){transition-delay:.43s}
 .reveal-stagger.in > *:nth-child(7){transition-delay:.51s}
 
-/* ── HERO DÉGRADÉ ── */
 .hero{
   background:var(--gradient);
   min-height:92vh;display:flex;flex-direction:column;
@@ -140,7 +137,7 @@ nav.scrolled{height:60px;box-shadow:0 8px 28px rgba(10,50,150,.08)}
 .chip-flag{font-size:1.5rem}
 .chip-label{font-size:.68rem;color:white;font-family:'JetBrains Mono',monospace;letter-spacing:.02em;font-weight:600}
 
-/* ── STATS ── */
+/* STATS */
 .stats-strip{background:var(--ink);padding:50px 6%;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);max-width:920px;margin:0 auto;gap:20px}
 .stat-item{text-align:center;padding:16px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;transition:transform .3s var(--ease)}
@@ -149,7 +146,7 @@ nav.scrolled{height:60px;box-shadow:0 8px 28px rgba(10,50,150,.08)}
 .stat-value{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.9rem;color:white;letter-spacing:-.02em}
 .stat-label{font-size:.78rem;color:rgba(255,255,255,.55);margin-top:5px}
 
-/* ── SECTIONS ── */
+/* SECTIONS */
 section{padding:100px 6%}
 .section-head{max-width:640px;margin:0 auto 56px;text-align:center}
 .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;background:var(--gradient-soft);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
@@ -475,13 +472,13 @@ footer{background:var(--ink);padding:60px 6% 30px;border-top:1px solid rgba(255,
 <div class="plan-name">{{ p.name }}</div>
 <div class="plan-price">{{ p.price }}<span class="plan-period"> {{ p.period or '' }}</span></div>
 <div class="plan-desc">{{ p.description or '' }}</div>
+
 <ul class="plan-features">
-{% if p.features %}
-{% for feat in p.features | replace('[','') | replace(']','') | replace('"','') | split(',') %}
-<li><span class="icon check-mini"><svg><use href="#ic-check"/></svg></span> {{ feat | trim }}</li>
+{% for feat in p.parsed_features %}
+<li><span class="icon check-mini"><svg><use href="#ic-check"/></svg></span> {{ feat }}</li>
 {% endfor %}
-{% endif %}
 </ul>
+
 <a href="/register" class="plan-btn btn {% if p.is_popular %}btn-gold{% else %}btn-primary{% endif %}">
 {{ p.cta_text or 'Choisir' }}
 </a>
@@ -559,6 +556,7 @@ footer{background:var(--ink);padding:60px 6% 30px;border-top:1px solid rgba(255,
 </footer>
 
 <button class="to-top" id="toTop" aria-label="Retour en haut"><span class="icon" style="width:18px;height:18px"><svg><use href="#ic-arrow-up"/></svg></span></button>
+
 <script nonce="{{ csp_nonce }}">
 (function(){
 "use strict";
@@ -567,6 +565,7 @@ var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 var progress = document.getElementById('scrollProgress');
 var nav = document.getElementById('mainNav');
 var toTop = document.getElementById('toTop');
+
 function onScroll(){
   var h = document.documentElement;
   var scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
@@ -574,29 +573,47 @@ function onScroll(){
   nav.classList.toggle('scrolled', h.scrollTop > 30);
   toTop.classList.toggle('show', h.scrollTop > 600);
 }
+
 document.addEventListener('scroll', onScroll, {passive:true});
 onScroll();
-toTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduceMotion ? 'auto' : 'smooth'}); });
+
+toTop.addEventListener('click', function(){
+  window.scrollTo({
+    top:0,
+    behavior: reduceMotion ? 'auto' : 'smooth'
+  });
+});
 
 var burger = document.getElementById('burgerBtn');
 var panel = document.getElementById('mobilePanel');
 var scrim = document.getElementById('scrim');
+
 function closeMenu(){
-  burger.classList.remove('open'); burger.setAttribute('aria-expanded','false');
-  panel.classList.remove('open'); scrim.classList.remove('open');
+  burger.classList.remove('open');
+  burger.setAttribute('aria-expanded','false');
+  panel.classList.remove('open');
+  scrim.classList.remove('open');
   document.body.style.overflow = '';
 }
+
 function toggleMenu(){
   var opening = !panel.classList.contains('open');
-  burger.classList.toggle('open', opening); burger.setAttribute('aria-expanded', opening);
-  panel.classList.toggle('open', opening); scrim.classList.toggle('open', opening);
+  burger.classList.toggle('open', opening);
+  burger.setAttribute('aria-expanded', opening);
+  panel.classList.toggle('open', opening);
+  scrim.classList.toggle('open', opening);
   document.body.style.overflow = opening ? 'hidden' : '';
 }
+
 burger.addEventListener('click', toggleMenu);
 scrim.addEventListener('click', closeMenu);
-panel.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', closeMenu); });
+
+panel.querySelectorAll('a').forEach(function(a){
+  a.addEventListener('click', closeMenu);
+});
 
 var revealables = document.querySelectorAll('.reveal, .reveal-stagger');
+
 if('IntersectionObserver' in window){
   var io = new IntersectionObserver(function(entries){
     entries.forEach(function(entry){
@@ -605,41 +622,92 @@ if('IntersectionObserver' in window){
         io.unobserve(entry.target);
       }
     });
-  }, {threshold:.15, rootMargin:'0px 0px -60px 0px'});
-  revealables.forEach(function(el){ io.observe(el); });
+  }, {
+    threshold:.15,
+    rootMargin:'0px 0px -60px 0px'
+  });
+
+  revealables.forEach(function(el){
+    io.observe(el);
+  });
 } else {
-  revealables.forEach(function(el){ el.classList.add('in'); });
+  revealables.forEach(function(el){
+    el.classList.add('in');
+  });
 }
 
 var statValues = document.querySelectorAll('.stat-value');
+
 function parseRaw(raw){
   var match = raw.match(/^([^\d]*)([\d\s.,]+)(.*)$/);
-  if(!match) return {prefix:'', number:0, suffix: raw, decimals:0};
+
+  if(!match){
+    return {
+      prefix:'',
+      number:0,
+      suffix:raw,
+      decimals:0
+    };
+  }
+
   var prefix = match[1] || '';
   var numStr = match[2].replace(/\s/g,'');
   var suffix = match[3] || '';
   var decimals = 0;
   var normalized = numStr;
-  if(numStr.indexOf(',') > -1 && numStr.indexOf('.') === -1){ normalized = numStr.replace(',', '.'); }
-  if(normalized.indexOf('.') > -1){ decimals = normalized.split('.')[1].length; }
-  return {prefix: prefix, number: parseFloat(normalized) || 0, suffix: suffix, decimals: decimals};
+
+  if(numStr.indexOf(',') > -1 && numStr.indexOf('.') === -1){
+    normalized = numStr.replace(',', '.');
+  }
+
+  if(normalized.indexOf('.') > -1){
+    decimals = normalized.split('.')[1].length;
+  }
+
+  return {
+    prefix:prefix,
+    number:parseFloat(normalized) || 0,
+    suffix:suffix,
+    decimals:decimals
+  };
 }
+
 function animateCount(el){
   var raw = el.getAttribute('data-raw') || el.textContent;
   var parsed = parseRaw(raw);
-  if(reduceMotion){ el.textContent = raw; return; }
-  var duration = 1400, start = null;
+
+  if(reduceMotion){
+    el.textContent = raw;
+    return;
+  }
+
+  var duration = 1400;
+  var start = null;
+
   function step(ts){
     if(!start) start = ts;
+
     var p = Math.min((ts - start) / duration, 1);
     var eased = 1 - Math.pow(1 - p, 3);
     var current = parsed.number * eased;
-    el.textContent = parsed.prefix + current.toLocaleString('fr-FR', {minimumFractionDigits:parsed.decimals, maximumFractionDigits:parsed.decimals}) + parsed.suffix;
-    if(p < 1) requestAnimationFrame(step);
+
+    el.textContent = parsed.prefix +
+      current.toLocaleString('fr-FR', {
+        minimumFractionDigits:parsed.decimals,
+        maximumFractionDigits:parsed.decimals
+      }) +
+      parsed.suffix;
+
+    if(p < 1){
+      requestAnimationFrame(step);
+    }
   }
+
   requestAnimationFrame(step);
 }
+
 var statsGrid = document.getElementById('statsGrid');
+
 if(statsGrid && 'IntersectionObserver' in window){
   var statsIo = new IntersectionObserver(function(entries){
     entries.forEach(function(entry){
@@ -648,19 +716,26 @@ if(statsGrid && 'IntersectionObserver' in window){
         statsIo.unobserve(entry.target);
       }
     });
-  }, {threshold:.4});
+  }, {
+    threshold:.4
+  });
+
   statsIo.observe(statsGrid);
 } else {
-  statValues.forEach(function(el){ el.textContent = el.getAttribute('data-raw'); });
+  statValues.forEach(function(el){
+    el.textContent = el.getAttribute('data-raw');
+  });
 }
 
 document.querySelectorAll('[data-tilt]').forEach(function(card){
   card.addEventListener('mousemove', function(e){
     var r = card.getBoundingClientRect();
+
     card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
     card.style.setProperty('--my', (e.clientY - r.top) + 'px');
   });
 });
+
 })();
 </script>
 </body>
