@@ -1,36 +1,7 @@
-"""
-services/gateway.py — intégration avec notre prestataire de paiement mobile
-money (désigné ici uniquement par "la passerelle" ou "le prestataire" — son
-nom commercial n'apparaît nulle part côté utilisateur : ni dans les messages
-d'erreur, ni dans les emails, ni dans les logs visibles). En interne, dans les
-commentaires techniques, on le nomme pour la maintenabilité — c'est la
-plateforme Mysoleas / API SoleasPay.
-
-ARCHITECTURE DU NOUVEAU FLUX (par rapport à l'ancienne intégration à un seul
-appel) : chaque paiement (collection) ou retrait (disbursement) se fait
-maintenant en trois temps :
-  1. intent   — on décrit ce qu'on veut faire, on reçoit une transaction_reference
-  2. execute  — on déclenche réellement l'opération chez le prestataire
-  3. status   — on interroge l'état, jusqu'à un état final (polling)
-
-AUTHENTIFICATION : OAuth2 client_credentials. On récupère un token via
-découverte OpenID (/.well-known/openid-configuration) pour ne pas dépendre
-d'un chemin d'endpoint précis qui pourrait changer — la documentation fournie
-donne deux chemins légèrement différents selon la page, on ne devine donc pas
-lequel est le bon.
-
-SÉCURITÉ WEBHOOK : le nouveau webhook entrant n'a PAS de signature
-cryptographique (contrairement à l'ancien header x-private-key). On ne fait
-donc JAMAIS confiance à son contenu pour créditer un solde — il ne sert qu'à
-savoir QUAND revérifier, via un appel authentifié à /collection/status ou
-/disbursement/status (voir routes/webhook_callback.py), qui est la seule
-source de vérité.
-"""
 import logging
 import threading
 import time
 import uuid as uuid_lib
-from datetime import datetime
 
 import requests
 
@@ -40,18 +11,12 @@ logger = logging.getLogger('flinpay.gateway')
 
 DEFAULT_TIMEOUT = 15
 
-# États finaux / non finaux d'une transaction (collection ou disbursement),
-# tels que documentés par le prestataire.
 SUCCESS_STATUSES = {'COMPLETED', 'SUCCESS'}
 FAILURE_STATUSES = {'FAILED', 'CANCELLED', 'REFUNDED'}
 FINAL_STATUSES = SUCCESS_STATUSES | FAILURE_STATUSES
 
 
 def map_remote_status(remote_status: str) -> str:
-    """Traduit le statut du prestataire vers notre statut interne
-    pending/paid/failed. Tout ce qui n'est pas explicitement listé comme
-    final est traité comme 'pending' par prudence (mieux vaut continuer à
-    interroger que de conclure trop vite)."""
     if remote_status in SUCCESS_STATUSES:
         return 'paid'
     if remote_status in FAILURE_STATUSES:
@@ -66,7 +31,6 @@ class GatewayError(Exception):
         self.status_code = status_code
 
 
-# ── Authentification (OAuth2 client_credentials, via découverte) ───
 _token_lock = threading.Lock()
 _token_cache = {'access_token': None, 'expires_at': 0, 'token_endpoint': None}
 
@@ -75,26 +39,23 @@ def _discover_token_endpoint() -> str:
     if _token_cache['token_endpoint']:
         return _token_cache['token_endpoint']
     try:
-        r = requests.get(f'{config.IDENTITY_BASE_URL}/.well-known/openid-configuration', timeout=DEFAULT_TIMEOUT)
+        r = requests.get(
+            f'{config.IDENTITY_BASE_URL}/.well-known/openid-configuration',
+            timeout=DEFAULT_TIMEOUT,
+        )
         if r.ok:
             endpoint = r.json().get('token_endpoint')
             if endpoint:
                 _token_cache['token_endpoint'] = endpoint
                 return endpoint
     except (requests.RequestException, ValueError) as e:
-        logger.warning(f"[gateway] découverte OIDC indisponible, repli sur l'endpoint documenté: {e}")
-    # Repli documenté si la découverte échoue.
+        logger.warning(f"[gateway] découverte OIDC indisponible: {e}")
     fallback = f'{config.IDENTITY_BASE_URL}/oauth/v2/token'
     _token_cache['token_endpoint'] = fallback
     return fallback
 
 
 def _get_access_token() -> str:
-    """Retourne un token valide, en le renouvelant automatiquement avant
-    expiration. Le cache est en mémoire de process : sur un déploiement
-    multi-worker (gunicorn -w N), chaque worker gère le sien — acceptable en
-    l'état, un partage via Redis serait l'étape suivante si le volume
-    d'authentifications devenait un problème."""
     with _token_lock:
         now = time.time()
         if _token_cache['access_token'] and now < _token_cache['expires_at'] - 30:
@@ -115,31 +76,21 @@ def _get_access_token() -> str:
             data = r.json()
         except (requests.RequestException, ValueError) as e:
             logger.error(f"[gateway] échec d'authentification: {e}")
-            raise GatewayError("Authentification auprès du prestataire de paiement impossible") from e
+            raise GatewayError("Authentification auprès du prestataire impossible") from e
 
         token = data.get('access_token')
         if not r.ok or not token:
-            logger.error(f"[gateway] authentification refusée: status={r.status_code} body={r.text[:300]}")
-            # On remonte le vrai statut et le corps de la réponse (sans les
-            # secrets envoyés, seulement ce que Mysoleas a répondu) pour que
-            # le diagnostic admin (/api/admin/gateway-check) puisse dire
-            # précisément ce qui cloche plutôt qu'un message générique.
+            logger.error(f"[gateway] auth refusée: status={r.status_code} body={r.text[:300]}")
             error_detail = data if isinstance(data, dict) else {'raw': r.text[:300]}
-            # Ajouté uniquement pour le diagnostic admin : quel endpoint a été
-            # appelé et un fragment tronqué du client_id (jamais le secret),
-            # pour confirmer que les bonnes variables d'environnement sont
-            # bien celles utilisées, sans jamais les exposer en entier.
             error_detail['_debug_endpoint'] = endpoint
             error_detail['_debug_client_id_prefix'] = (config.GATEWAY_CLIENT_ID or '')[:6] + '…'
             raise GatewayError(
-                "Authentification auprès du prestataire de paiement refusée",
+                "Authentification auprès du prestataire refusée",
                 detail=error_detail,
                 status_code=r.status_code,
             )
 
         expires_in = data.get('expires_in') or 3600
-        # Le format de la doc "démarrage rapide" renvoie parfois un timestamp absolu
-        # (token_expired_at) plutôt qu'une durée — on gère les deux.
         if data.get('token_expired_at'):
             _token_cache['expires_at'] = float(data['token_expired_at'])
         else:
@@ -154,8 +105,6 @@ def _invalidate_token():
 
 
 def _gateway_request(method, path, json_body=None, params=None, extra_headers=None, retry_on_auth_fail=True):
-    """Appel générique à la gateway, avec injection du token et un seul
-    retry automatique si le token s'avère expiré/rejeté (401)."""
     token = _get_access_token()
     headers = {
         'x-sp-auth-token': f'Bearer {token}',
@@ -172,10 +121,10 @@ def _gateway_request(method, path, json_body=None, params=None, extra_headers=No
         r = requests.request(method, url, json=json_body, params=params, headers=headers, timeout=DEFAULT_TIMEOUT)
     except requests.RequestException as e:
         logger.error(f"[gateway] {method} {path} erreur réseau: {e}")
-        raise GatewayError("Le prestataire de paiement est momentanément injoignable") from e
+        raise GatewayError("Le prestataire est momentanément injoignable") from e
 
     if r.status_code == 401 and retry_on_auth_fail:
-        logger.info(f"[gateway] token rejeté sur {path}, renouvellement et nouvelle tentative")
+        logger.info(f"[gateway] token rejeté sur {path}, renouvellement")
         _invalidate_token()
         return _gateway_request(method, path, json_body, params, extra_headers, retry_on_auth_fail=False)
 
@@ -183,7 +132,7 @@ def _gateway_request(method, path, json_body=None, params=None, extra_headers=No
         data = r.json()
     except ValueError:
         logger.error(f"[gateway] {method} {path} réponse non-JSON: status={r.status_code}")
-        raise GatewayError("Réponse invalide du prestataire de paiement", status_code=r.status_code)
+        raise GatewayError("Réponse invalide du prestataire", status_code=r.status_code)
 
     if not r.ok or data.get('success') is False:
         message = data.get('message', 'erreur inconnue')
@@ -193,11 +142,8 @@ def _gateway_request(method, path, json_body=None, params=None, extra_headers=No
     return data.get('data', data)
 
 
-# ── Catalogue (pays, services, frais) — mis en cache brièvement ────
 _catalogue_cache = {}
-_CATALOGUE_TTL = 600  # 10 minutes : assez court pour suivre les changements
-                       # de disponibilité, assez long pour ne pas spammer l'API
-                       # à chaque paiement.
+_CATALOGUE_TTL = 600
 
 
 def _cached(key, ttl, fetch_fn):
@@ -225,8 +171,6 @@ def list_countries():
 
 
 def list_services(country_code_alpha2: str, currency: str = None):
-    """Retourne les services actifs pour un pays (et une devise si précisée).
-    Remplace l'ancien dict SOLEASPAY_SERVICES codé en dur."""
     country3 = alpha3(country_code_alpha2)
     cache_key = f'services:{country3}:{currency or "*"}'
 
@@ -236,16 +180,14 @@ def list_services(country_code_alpha2: str, currency: str = None):
             params['currency'] = currency
         data = _gateway_request('GET', '/service/list', params=params)
         items = data if isinstance(data, list) else data.get('items', [])
-        return [s for s in items if s.get('is_active')]
+        logger.info(f"[gateway] services {country3}: {len(items)} bruts")
+        if items:
+            logger.info(f"[gateway] premier service: {list(items[0].keys())}")
+        return [s for s in items if s.get('is_active', True)]
     return _cached(cache_key, _CATALOGUE_TTL, _fetch)
 
 
 def find_service(country_code_alpha2: str, operator_key: str, for_operation: str = 'collect'):
-    """operator_key = fragment du code service attendu côté client, ex 'momo',
-    'om', 'moov'... on cherche le service dont le `code` CONTIENT ce fragment
-    pour ce pays (les codes réels sont du type mtn_cmr, orange_cmr). Retourne
-    le dict service complet (avec son id numérique nécessaire au devis de
-    frais) ou None si indisponible."""
     services = list_services(country_code_alpha2)
     need_flag = 'is_can_collect' if for_operation == 'collect' else 'is_can_disburse'
     operator_key = (operator_key or '').lower()
@@ -253,19 +195,12 @@ def find_service(country_code_alpha2: str, operator_key: str, for_operation: str
         code = (s.get('code') or '').lower()
         if operator_key and operator_key not in code:
             continue
-        if s.get(need_flag):
+        if s.get(need_flag, True):
             return s
     return None
 
 
 def build_countries_operators(country_codes_alpha2):
-    """Construit, pour chaque pays donné (codes alpha-2 internes Flinpay), la
-    liste des services de paiement actifs — remplace l'ancien dict figé
-    autrefois codé en dur. Utilisé par les templates publics (pay.html,
-    invoice_view.html) pour peupler le choix d'opérateur. Dégradé en liste
-    vide par pays si le catalogue est momentanément injoignable, plutôt que
-    de faire échouer toute la page. Centralisé ici (plutôt que dupliqué dans
-    chaque blueprint) pour éviter tout import circulaire entre routes/."""
     result = {}
     for code in country_codes_alpha2:
         try:
@@ -277,44 +212,26 @@ def build_countries_operators(country_codes_alpha2):
 
 
 def get_fee_quote(service_id: int, amount: float, currency: str):
-    """Interroge le montant réel des frais prestataire pour ce service et ce
-    montant, AVANT de lancer la transaction — c'est ce qui nous permet de
-    garantir que ces frais ne rognent jamais notre propre marge (voir
-    compute_customer_charge ci-dessous)."""
     return _gateway_request('POST', '/transactions/fees/quote', json_body={
         'serviceId': service_id, 'amount': amount, 'currency': currency
     })
 
 
 def compute_customer_charge(base_amount: float, service_id: int, currency: str):
-    """Calcule ce qu'il faut réellement demander au client pour que Flinpay
-    reçoive `base_amount` net, quels que soient les frais prélevés par le
-    prestataire sur cette transaction précise.
-
-    Retourne (montant_a_demander_au_client, frais_prestataire, base_amount).
-
-    Voir config.GATEWAY_FEES_DEDUCTED_FROM_MERCHANT : tant que la config
-    réelle de feeBearer côté prestataire n'est pas confirmée, on part du
-    principe le plus prudent pour Flinpay (les frais sont déduits de nous, on
-    se couvre nous-mêmes) plutôt que de faire confiance à un mécanisme
-    automatique non vérifié."""
     try:
         quote = get_fee_quote(service_id, base_amount, currency)
         fee = float(quote.get('feeAmount') or 0)
     except GatewayError as e:
-        logger.warning(f"[gateway] devis de frais indisponible, on ne collecte pas de frais du prestataire cette fois: {e}")
+        logger.warning(f"[gateway] devis de frais indisponible: {e}")
         fee = 0.0
 
     if config.GATEWAY_FEES_DEDUCTED_FROM_MERCHANT:
         customer_charge = round(base_amount + fee, 2)
     else:
-        # On suppose que le prestataire ajoute lui-même ses frais au client
-        # (feeBearer=CUSTOMER confirmé) : on ne les rajoute pas une seconde fois.
         customer_charge = round(base_amount, 2)
     return customer_charge, fee, base_amount
 
 
-# ── Collections (encaissement) ──────────────────────
 def collection_intent(amount, currency, provider_code, customer_wallet, description, transaction_uuid=None, channel='PROVIDER'):
     transaction_uuid = transaction_uuid or uuid_lib.uuid4().hex
     body = {
@@ -340,15 +257,6 @@ def collection_status(transaction_reference):
 
 
 def collect_payment(*, base_amount, currency, service, customer_wallet, description, invoice_reference, otp=None):
-    """Enchaîne intent -> execute pour une collection, en calculant d'abord
-    le montant réel à demander au client via compute_customer_charge().
-    `otp` est transmis tel quel à l'exécution si l'opérateur choisi l'exige
-    (service['is_need_otp']) — avant, ce champ était toujours écrasé à None
-    par erreur, ce qui aurait cassé tout paiement sur un opérateur
-    nécessitant un code de confirmation à la soumission.
-    Retourne un dict prêt à être stocké dans `transactions` :
-    {ok, transaction_reference, customer_charge, provider_fee, base_amount, confirmation_url, confirmation_helper}
-    ou {ok: False, error}."""
     customer_charge, provider_fee, base_amount = compute_customer_charge(base_amount, service['id'], currency)
     if customer_charge < config.GATEWAY_MIN_AMOUNT:
         return {'ok': False, 'error': f"Montant trop faible (minimum {config.GATEWAY_MIN_AMOUNT} {currency})"}
@@ -362,7 +270,7 @@ def collect_payment(*, base_amount, currency, service, customer_wallet, descript
         )
         tx_ref = intent.get('transaction_reference')
         if not tx_ref:
-            return {'ok': False, 'error': "Réponse inattendue du prestataire de paiement"}
+            return {'ok': False, 'error': "Réponse inattendue du prestataire"}
 
         exec_result = collection_execute(tx_ref, invoice_reference=invoice_reference, otp=otp)
         return {
@@ -378,7 +286,6 @@ def collect_payment(*, base_amount, currency, service, customer_wallet, descript
         return {'ok': False, 'error': e.detail.get('message') if isinstance(e.detail, dict) else str(e)}
 
 
-# ── Disbursements (retrait / décaissement) ───────────
 def disbursement_intent(amount, currency, provider_code, customer_wallet, description, transaction_uuid=None, channel='PROVIDER'):
     transaction_uuid = transaction_uuid or uuid_lib.uuid4().hex
     body = {
@@ -402,7 +309,6 @@ def disbursement_status(transaction_reference):
 
 
 def send_payout(*, amount, currency, service, customer_wallet, description, invoice_reference):
-    """Enchaîne intent -> execute pour un décaissement (retrait marchand)."""
     try:
         intent = disbursement_intent(
             amount=amount, currency=currency, provider_code=service['code'],
@@ -411,20 +317,19 @@ def send_payout(*, amount, currency, service, customer_wallet, description, invo
         tx_ref = intent.get('transaction_reference')
         fee = float(intent.get('fee') or 0)
         if not tx_ref:
-            return {'ok': False, 'error': "Réponse inattendue du prestataire de paiement"}
+            return {'ok': False, 'error': "Réponse inattendue du prestataire"}
         disbursement_execute(tx_ref, invoice_reference=invoice_reference)
         return {'ok': True, 'transaction_reference': tx_ref, 'provider_fee': fee}
     except GatewayError as e:
         msg = e.detail.get('message') if isinstance(e.detail, dict) else str(e)
         friendly = {
-            'insufficient_balance': "Solde insuffisant chez le prestataire de paiement pour ce retrait",
+            'insufficient_balance': "Solde insuffisant chez le prestataire pour ce retrait",
             'provider_not_found': "Opérateur indisponible pour ce pays",
             'user_wallet_not_found': "Aucun portefeuille compatible pour cette devise",
         }.get(msg, msg)
         return {'ok': False, 'error': friendly}
 
 
-# ── Souscriptions (abonnement récurrent) ─────────────
 def subscription_create(*, customer_email, customer_phone, amount, currency, frequency, description, metadata=None, idempotency_key=None):
     body = {
         'customer_email': customer_email, 'customer_phone_number': customer_phone,
@@ -447,19 +352,18 @@ def subscription_payments(reference):
     return _gateway_request('GET', f'/merchand/billing/subscriptions/payments/{reference}')
 
 
-# ── Vérification de numéro (optionnelle, clé API dédiée) ─────
 def verify_phone_number(wallet: str, country_code_alpha2: str):
     if not config.GATEWAY_MERCHANT_API_KEY:
-        return None  # fonctionnalité de confort non configurée — on continue sans bloquer
+        return None
     try:
         r = requests.post(
             f'{config.GATEWAY_BASE_URL}/phone-numbers/verify',
             headers={'X-API-Key': config.GATEWAY_MERCHANT_API_KEY, 'Content-Type': 'application/json'},
             json={'wallet': wallet, 'country': alpha3(country_code_alpha2)},
-            timeout=DEFAULT_TIMEOUT
+            timeout=DEFAULT_TIMEOUT,
         )
         data = r.json()
         return data if data.get('valid') else None
     except (requests.RequestException, ValueError, GatewayError) as e:
-        logger.info(f"[gateway] vérification de numéro indisponible (non bloquant): {e}")
+        logger.info(f"[gateway] vérification de numéro indisponible: {e}")
         return None
